@@ -27,6 +27,7 @@ func GRPCGateway(ctx context.Context, conf Config, metricsHandler http.HandlerFu
 	}
 	serverAddress := ":" + strconv.Itoa(conf.GrpcPort)
 
+	// Register handlers
 	err := pb.RegisterClusterHandlerFromEndpoint(ctx, mux, serverAddress, opts)
 	if err != nil {
 		return nil, err
@@ -40,6 +41,10 @@ func GRPCGateway(ctx context.Context, conf Config, metricsHandler http.HandlerFu
 		return nil, err
 	}
 	err = pb.RegisterCrushRuleHandlerFromEndpoint(ctx, mux, serverAddress, opts)
+	if err != nil {
+		return nil, err
+	}
+	err = pb.RegisterStatusHandlerFromEndpoint(ctx, mux, serverAddress, opts)
 	if err != nil {
 		return nil, err
 	}

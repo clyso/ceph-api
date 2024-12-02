@@ -23,6 +23,9 @@
       "name": "CrushRule"
     },
     {
+      "name": "Status"
+    },
+    {
       "name": "Users"
     }
   ],
@@ -611,6 +614,29 @@
         ]
       }
     },
+    "/api/status/ceph": {
+      "get": {
+        "summary": "command: ceph status",
+        "operationId": "Status_GetCephStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cephGetCephStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Status"
+        ]
+      }
+    },
     "/api/user": {
       "get": {
         "operationId": "Users_ListUsers",
@@ -870,6 +896,196 @@
         }
       }
     },
+    "cephCephStatusFSMap": {
+      "type": "object",
+      "properties": {
+        "epoch": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "byRank": {
+          "type": "array",
+          "items": {}
+        },
+        "upStandby": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "cephCephStatusHealth": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "checks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "mutes": {
+          "type": "array",
+          "items": {}
+        }
+      }
+    },
+    "cephCephStatusMgrMap": {
+      "type": "object",
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "numStandbys": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "modules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "services": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "cephCephStatusMonMap": {
+      "type": "object",
+      "properties": {
+        "epoch": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "minMonReleaseName": {
+          "type": "string"
+        },
+        "numMons": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "cephCephStatusOSDMap": {
+      "type": "object",
+      "properties": {
+        "epoch": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numOsds": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numUpOsds": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "osdUpSince": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numInOsds": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "osdInSince": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numRemappedPgs": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "cephCephStatusPGMap": {
+      "type": "object",
+      "properties": {
+        "pgsByState": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephCephStatusPGState"
+          }
+        },
+        "numPgs": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numPools": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "numObjects": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "dataBytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "bytesUsed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "bytesAvail": {
+          "type": "string",
+          "format": "int64"
+        },
+        "bytesTotal": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephCephStatusPGState": {
+      "type": "object",
+      "properties": {
+        "stateName": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "cephCephStatusService": {
+      "type": "object",
+      "properties": {
+        "daemons": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
+    },
+    "cephCephStatusServiceMap": {
+      "type": "object",
+      "properties": {
+        "epoch": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "modified": {
+          "type": "string"
+        },
+        "services": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/cephCephStatusService"
+          }
+        }
+      }
+    },
     "cephClusterStatus": {
       "type": "object",
       "properties": {
@@ -1014,6 +1230,59 @@
           "type": "string",
           "format": "byte",
           "title": "User key and capabilities in Ceph config file format"
+        }
+      }
+    },
+    "cephGetCephStatusResponse": {
+      "type": "object",
+      "properties": {
+        "fsid": {
+          "type": "string"
+        },
+        "health": {
+          "$ref": "#/definitions/cephCephStatusHealth"
+        },
+        "electionEpoch": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "quorum": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "quorumNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "quorumAge": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "monmap": {
+          "$ref": "#/definitions/cephCephStatusMonMap"
+        },
+        "osdmap": {
+          "$ref": "#/definitions/cephCephStatusOSDMap"
+        },
+        "pgmap": {
+          "$ref": "#/definitions/cephCephStatusPGMap"
+        },
+        "fsmap": {
+          "$ref": "#/definitions/cephCephStatusFSMap"
+        },
+        "mgrmap": {
+          "$ref": "#/definitions/cephCephStatusMgrMap"
+        },
+        "servicemap": {
+          "$ref": "#/definitions/cephCephStatusServiceMap"
+        },
+        "progressEvents": {
+          "type": "object"
         }
       }
     },

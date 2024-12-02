@@ -77,3 +77,7 @@ http:
       body: "*"
     - selector: ceph.CrushRule.DeleteRule
       delete: /api/crush_rule/{name}
+    # Status
+    - selector: ceph.Status.GetCephStatus
+      get: /api/status/ceph
+      response_body: "*"

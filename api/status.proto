@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+option go_package = "github.com/clyso/ceph-api/api/ceph;pb";
+
+package ceph;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+service Status {
+  // command: ceph status
+  rpc GetCephStatus (google.protobuf.Empty) returns (GetCephStatusResponse) {}
+}
+
+message GetCephStatusResponse {
+  string fsid = 1;
+  CephStatusHealth health = 2;
+  int32 election_epoch = 3;
+  repeated int32 quorum = 4;
+  repeated string quorum_names = 5;
+  int32 quorum_age = 6;
+  CephStatusMonMap monmap = 7;
+  CephStatusOSDMap osdmap = 8;
+  CephStatusPGMap pgmap = 9;
+  CephStatusFSMap fsmap = 10;
+  CephStatusMgrMap mgrmap = 11;
+  CephStatusServiceMap servicemap = 12;
+  google.protobuf.Struct progress_events = 13; 
+}
+
+message CephStatusHealth {
+  string status = 1;
+  map<string, google.protobuf.Struct> checks = 2; 
+  repeated google.protobuf.Value mutes = 3;     
+}
+
+message CephStatusMonMap {
+  int32 epoch = 1;
+  string min_mon_release_name = 2;
+  int32 num_mons = 3;
+}
+
+message CephStatusOSDMap {
+  int32 epoch = 1;
+  int32 num_osds = 2;
+  int32 num_up_osds = 3;
+  int64 osd_up_since = 4;
+  int32 num_in_osds = 5;
+  int64 osd_in_since = 6;
+  int32 num_remapped_pgs = 7;
+}
+
+message CephStatusPGMap {
+  repeated CephStatusPGState pgs_by_state = 1;
+  int32 num_pgs = 2;
+  int32 num_pools = 3;
+  int32 num_objects = 4;
+  int64 data_bytes = 5;
+  int64 bytes_used = 6;
+  int64 bytes_avail = 7;
+  int64 bytes_total = 8;
+}
+
+message CephStatusPGState {
+  string state_name = 1;
+  int32 count = 2;
+}
+
+message CephStatusFSMap {
+  int32 epoch = 1;
+  repeated google.protobuf.Value by_rank = 2; 
+  int32 up_standby = 3; 
+}
+
+message CephStatusMgrMap {
+  bool available = 1;
+  int32 num_standbys = 2;
+  repeated string modules = 3;
+  map<string, string> services = 4;
+}
+
+message CephStatusServiceMap {
+  int32 epoch = 1;
+  string modified = 2;
+  map<string, CephStatusService> services = 3;
+}
+
+message CephStatusService {
+  map<string, google.protobuf.Value> daemons = 1;
+  string summary = 2;
+}
+
