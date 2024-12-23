@@ -17,7 +17,7 @@ func New(conf Config) (*Svc, error) {
 	if err != nil {
 		return nil, err
 	}
-	if conf.MonHost == "" || conf.UserKeyring == "" {
+	if conf.MonHost == "" || conf.UserKeyring == "" || conf.RadosTimeout == 0 {
 		err = conn.ReadDefaultConfigFile()
 	} else {
 		err = conn.ParseCmdLineArgs([]string{"--mon-host", conf.MonHost, "--key", conf.UserKeyring, "--client_mount_timeout", "3"})
@@ -26,12 +26,7 @@ func New(conf Config) (*Svc, error) {
 		return nil, err
 	}
 
-	// set default timeout to 10 seconds
-	if conf.RadosTimeout == 0 {
-		conf.RadosTimeout = 10
-	}
-
-	timeout := strconv.FormatFloat(conf.RadosTimeout, 'f', -1, 64)
+	timeout := strconv.FormatFloat(conf.RadosTimeout.Seconds(), 'f', -1, 64)
 
 	err = conn.SetConfigOption("rados_osd_op_timeout", timeout)
 	if err != nil {

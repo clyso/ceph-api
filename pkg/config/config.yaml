@@ -19,6 +19,7 @@ rados: # RADOS connection credentials
   user: "admin" # required
   userKeyring: "" # if no keyring provided then keyring and monHost from this config will be ignored and app will try to look up default config file in /etc/ceph directory
   monHost: "" # if no monhost provided then keyring and monHost from this config will be ignored and app will try to look up default config file in /etc/ceph directory
+  radosTimeout: 10s # timeout for rados operations
 auth:
   accessTokenLifespan: 1m
   refreshTokenLifespan: 1h
