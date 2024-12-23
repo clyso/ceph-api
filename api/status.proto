@@ -15,6 +15,8 @@ service Status {
   rpc GetCephMonDump (google.protobuf.Empty) returns (CephMonDumpResponse) {}
   // command: ceph osd dump
   rpc GetCephOsdDump (google.protobuf.Empty) returns (GetCephOsdDumpResponse) {}
+  // command: ceph pg dump
+  rpc GetCephPgDump (google.protobuf.Empty) returns (GetCephPgDumpResponse) {}
 }
 
 message GetCephStatusResponse {
@@ -358,4 +360,504 @@ message OsdDumpStretchMode {
   int32 degraded_stretch_mode = 3;
   int32 recovering_stretch_mode = 4;
   int32 stretch_mode_bucket = 5;
+}
+
+// PG DUMP
+message GetCephPgDumpResponse {
+  bool pg_ready = 1;
+  PGMap pg_map = 2;
+}
+
+message PGMap {
+  int64 version = 1;
+  google.protobuf.Timestamp stamp = 2;
+  int64 last_osdmap_epoch = 3;
+  int64 last_pg_scan = 4;
+
+  PGStatsSum pg_stats_sum = 5;
+  OSDStatsSum osd_stats_sum = 6;
+  PGStatsDelta pg_stats_delta = 7;
+
+  repeated PGStat pg_stats = 8;
+  repeated PoolStats pool_stats = 9;
+  repeated OsdStats osd_stats = 10;
+  repeated PoolStatFs pool_statfs = 11;
+}
+
+message PGStatsSum {
+  PGStatsSum_StatSum stat_sum = 1;
+  PGStatsSum_StoreStats store_stats = 2;
+  int64 log_size = 3;
+  int64 ondisk_log_size = 4;
+  int64 up = 5;
+  int64 acting = 6;
+  int64 num_store_stats = 7;
+
+  message PGStatsSum_StatSum {
+    int64 num_bytes = 1;
+    int64 num_objects = 2;
+    int64 num_object_clones = 3;
+    int64 num_object_copies = 4;
+    int64 num_objects_missing_on_primary = 5;
+    int64 num_objects_missing = 6;
+    int64 num_objects_degraded = 7;
+    int64 num_objects_misplaced = 8;
+    int64 num_objects_unfound = 9;
+    int64 num_objects_dirty = 10;
+    int64 num_whiteouts = 11;
+    int64 num_read = 12;
+    int64 num_read_kb = 13;
+    int64 num_write = 14;
+    int64 num_write_kb = 15;
+    int64 num_scrub_errors = 16;
+    int64 num_shallow_scrub_errors = 17;
+    int64 num_deep_scrub_errors = 18;
+    int64 num_objects_recovered = 19;
+    int64 num_bytes_recovered = 20;
+    int64 num_keys_recovered = 21;
+    int64 num_objects_omap = 22;
+    int64 num_objects_hit_set_archive = 23;
+    int64 num_bytes_hit_set_archive = 24;
+    int64 num_flush = 25;
+    int64 num_flush_kb = 26;
+    int64 num_evict = 27;
+    int64 num_evict_kb = 28;
+    int64 num_promote = 29;
+    int64 num_flush_mode_high = 30;
+    int64 num_flush_mode_low = 31;
+    int64 num_evict_mode_some = 32;
+    int64 num_evict_mode_full = 33;
+    int64 num_objects_pinned = 34;
+    int64 num_legacy_snapsets = 35;
+    int64 num_large_omap_objects = 36;
+    int64 num_objects_manifest = 37;
+    int64 num_omap_bytes = 38;
+    int64 num_omap_keys = 39;
+    int64 num_objects_repaired = 40;
+  }
+
+  message PGStatsSum_StoreStats {
+    int64 total = 1;
+    int64 available = 2;
+    int64 internally_reserved = 3;
+    int64 allocated = 4;
+    int64 data_stored = 5;
+    int64 data_compressed = 6;
+    int64 data_compressed_allocated = 7;
+    int64 data_compressed_original = 8;
+    int64 omap_allocated = 9;
+    int64 internal_metadata = 10;
+  }
+}
+
+message OSDStatsSum {
+  int64 up_from = 1;
+  int64 seq = 2;
+  int64 num_pgs = 3;
+  int64 num_osds = 4;
+  int64 num_per_pool_osds = 5;
+  int64 num_per_pool_omap_osds = 6;
+  int64 kb = 7;
+  int64 kb_used = 8;
+  int64 kb_used_data = 9;
+  int64 kb_used_omap = 10;
+  int64 kb_used_meta = 11;
+  int64 kb_avail = 12;
+  StatFs statfs = 13;
+  repeated int64 hb_peers = 14;
+  int64 snap_trim_queue_len = 15;
+  int64 num_snap_trimming = 16;
+  int64 num_shards_repaired = 17;
+  OpQueueAgeHist op_queue_age_hist = 18;
+  PerfStat perf_stat = 19;
+  repeated string alerts = 20;
+  repeated NetworkPingTime network_ping_times = 21;
+
+  message StatFs {
+    int64 total = 1;
+    int64 available = 2;
+    int64 internally_reserved = 3;
+    int64 allocated = 4;
+    int64 data_stored = 5;
+    int64 data_compressed = 6;
+    int64 data_compressed_allocated = 7;
+    int64 data_compressed_original = 8;
+    int64 omap_allocated = 9;
+    int64 internal_metadata = 10;
+  }
+
+  message OpQueueAgeHist {
+    repeated int64 histogram = 1;
+    int64 upper_bound = 2;
+  }
+
+  message PerfStat {
+    int64 commit_latency_ms = 1;
+    int64 apply_latency_ms = 2;
+    int64 commit_latency_ns = 3;
+    int64 apply_latency_ns = 4;
+  }
+
+  message NetworkPingTime {
+    int64 osd = 1;
+    google.protobuf.Timestamp last_update = 2;
+    repeated Interface interfaces = 3;
+
+    message Interface {
+      string interface_name = 1;
+      Average average = 2;
+      Min min = 3;
+      Max max = 4;
+      double last = 5;
+
+      message Average {
+        double min1 = 1;
+        double min5 = 2;
+        double min15 = 3;
+      }
+
+      message Min {
+        double min1 = 1;
+        double min5 = 2;
+        double min15 = 3;
+      }
+
+      message Max {
+        double min1 = 1;
+        double min5 = 2;
+        double min15 = 3;
+      }
+    }
+  }
+}
+
+message PGStatsDelta {
+  PGStatsDelta_StatSum stat_sum = 1;
+  PGStatsDelta_StoreStats store_stats = 2;
+  int64 log_size = 3;
+  int64 ondisk_log_size = 4;
+  int64 up = 5;
+  int64 acting = 6;
+  int64 num_store_stats = 7;
+  string stamp_delta = 8;
+
+  message PGStatsDelta_StatSum {
+    int64 num_bytes = 1;
+    int64 num_objects = 2;
+    int64 num_object_clones = 3;
+    int64 num_object_copies = 4;
+    int64 num_objects_missing_on_primary = 5;
+    int64 num_objects_missing = 6;
+    int64 num_objects_degraded = 7;
+    int64 num_objects_misplaced = 8;
+    int64 num_objects_unfound = 9;
+    int64 num_objects_dirty = 10;
+    int64 num_whiteouts = 11;
+    int64 num_read = 12;
+    int64 num_read_kb = 13;
+    int64 num_write = 14;
+    int64 num_write_kb = 15;
+    int64 num_scrub_errors = 16;
+    int64 num_shallow_scrub_errors = 17;
+    int64 num_deep_scrub_errors = 18;
+    int64 num_objects_recovered = 19;
+    int64 num_bytes_recovered = 20;
+    int64 num_keys_recovered = 21;
+    int64 num_objects_omap = 22;
+    int64 num_objects_hit_set_archive = 23;
+    int64 num_bytes_hit_set_archive = 24;
+    int64 num_flush = 25;
+    int64 num_flush_kb = 26;
+    int64 num_evict = 27;
+    int64 num_evict_kb = 28;
+    int64 num_promote = 29;
+    int64 num_flush_mode_high = 30;
+    int64 num_flush_mode_low = 31;
+    int64 num_evict_mode_some = 32;
+    int64 num_evict_mode_full = 33;
+    int64 num_objects_pinned = 34;
+    int64 num_legacy_snapsets = 35;
+    int64 num_large_omap_objects = 36;
+    int64 num_objects_manifest = 37;
+    int64 num_omap_bytes = 38;
+    int64 num_omap_keys = 39;
+    int64 num_objects_repaired = 40;
+  }
+
+  message PGStatsDelta_StoreStats {
+    int64 total = 1;
+    int64 available = 2;
+    int64 internally_reserved = 3;
+    int64 allocated = 4;
+    int64 data_stored = 5;
+    int64 data_compressed = 6;
+    int64 data_compressed_allocated = 7;
+    int64 data_compressed_original = 8;
+    int64 omap_allocated = 9;
+    int64 internal_metadata = 10;
+  }
+}
+
+message PGStat {
+  string pgid = 1;
+  string version = 2;
+  int64 reported_seq = 3;
+  int64 reported_epoch = 4;
+  string state = 5;
+  google.protobuf.Timestamp last_fresh = 6;
+  google.protobuf.Timestamp last_change = 7;
+  google.protobuf.Timestamp last_active = 8;
+  google.protobuf.Timestamp last_peered = 9;
+  google.protobuf.Timestamp last_clean = 10;
+  google.protobuf.Timestamp last_became_active = 11;
+  google.protobuf.Timestamp last_became_peered = 12;
+  google.protobuf.Timestamp last_unstale = 13;
+  google.protobuf.Timestamp last_undegraded = 14;
+  google.protobuf.Timestamp last_fullsized = 15;
+  int64 mapping_epoch = 16;
+  string log_start = 17;
+  string ondisk_log_start = 18;
+  int64 created = 19;
+  int64 last_epoch_clean = 20;
+  string parent = 21;
+  int64 parent_split_bits = 22;
+  string last_scrub = 23;
+  google.protobuf.Timestamp last_scrub_stamp = 24;
+  string last_deep_scrub = 25;
+  google.protobuf.Timestamp last_deep_scrub_stamp = 26;
+  google.protobuf.Timestamp last_clean_scrub_stamp = 27;
+  int64 objects_scrubbed = 28;
+  int64 log_size = 29;
+  int64 log_dups_size = 30;
+  int64 ondisk_log_size = 31;
+  bool stats_invalid = 32;
+  bool dirty_stats_invalid = 33;
+  bool omap_stats_invalid = 34;
+  bool hitset_stats_invalid = 35;
+  bool hitset_bytes_stats_invalid = 36;
+  bool pin_stats_invalid = 37;
+  bool manifest_stats_invalid = 38;
+  int64 snaptrimq_len = 39;
+  int64 last_scrub_duration = 40;
+  string scrub_schedule = 41;
+  double scrub_duration = 42;
+  int64 objects_trimmed = 43;
+  double snaptrim_duration = 44;
+  PGStat_StatSum stat_sum = 45;
+  repeated int64 up = 46;
+  repeated int64 acting = 47;
+  repeated int64 avail_no_missing = 48;
+  repeated int64 object_location_counts = 49;
+  repeated int64 blocked_by = 50;
+  int64 up_primary = 51;
+  int64 acting_primary = 52;
+  repeated int64 purged_snaps = 53;
+
+  message PGStat_StatSum {
+    int64 num_bytes = 1;
+    int64 num_objects = 2;
+    int64 num_object_clones = 3;
+    int64 num_object_copies = 4;
+    int64 num_objects_missing_on_primary = 5;
+    int64 num_objects_missing = 6;
+    int64 num_objects_degraded = 7;
+    int64 num_objects_misplaced = 8;
+    int64 num_objects_unfound = 9;
+    int64 num_objects_dirty = 10;
+    int64 num_whiteouts = 11;
+    int64 num_read = 12;
+    int64 num_read_kb = 13;
+    int64 num_write = 14;
+    int64 num_write_kb = 15;
+    int64 num_scrub_errors = 16;
+    int64 num_shallow_scrub_errors = 17;
+    int64 num_deep_scrub_errors = 18;
+    int64 num_objects_recovered = 19;
+    int64 num_bytes_recovered = 20;
+    int64 num_keys_recovered = 21;
+    int64 num_objects_omap = 22;
+    int64 num_objects_hit_set_archive = 23;
+    int64 num_bytes_hit_set_archive = 24;
+    int64 num_flush = 25;
+    int64 num_flush_kb = 26;
+    int64 num_evict = 27;
+    int64 num_evict_kb = 28;
+    int64 num_promote = 29;
+    int64 num_flush_mode_high = 30;
+    int64 num_flush_mode_low = 31;
+    int64 num_evict_mode_some = 32;
+    int64 num_evict_mode_full = 33;
+    int64 num_objects_pinned = 34;
+    int64 num_legacy_snapsets = 35;
+    int64 num_large_omap_objects = 36;
+    int64 num_objects_manifest = 37;
+    int64 num_omap_bytes = 38;
+    int64 num_omap_keys = 39;
+    int64 num_objects_repaired = 40;
+  }
+}
+
+message PoolStats {
+  int64 poolid = 1;
+  int64 num_pg = 2;
+  PoolStats_StatSum stat_sum = 3;
+  PoolStats_StoreStats store_stats = 4;
+  int64 log_size = 5;
+  int64 ondisk_log_size = 6;
+  int64 up = 7;
+  int64 acting = 8;
+  int64 num_store_stats = 9;
+
+  message PoolStats_StatSum {
+    int64 num_bytes = 1;
+    int64 num_objects = 2;
+    int64 num_object_clones = 3;
+    int64 num_object_copies = 4;
+    int64 num_objects_missing_on_primary = 5;
+    int64 num_objects_missing = 6;
+    int64 num_objects_degraded = 7;
+    int64 num_objects_misplaced = 8;
+    int64 num_objects_unfound = 9;
+    int64 num_objects_dirty = 10;
+    int64 num_whiteouts = 11;
+    int64 num_read = 12;
+    int64 num_read_kb = 13;
+    int64 num_write = 14;
+    int64 num_write_kb = 15;
+    int64 num_scrub_errors = 16;
+    int64 num_shallow_scrub_errors = 17;
+    int64 num_deep_scrub_errors = 18;
+    int64 num_objects_recovered = 19;
+    int64 num_bytes_recovered = 20;
+    int64 num_keys_recovered = 21;
+    int64 num_objects_omap = 22;
+    int64 num_objects_hit_set_archive = 23;
+    int64 num_bytes_hit_set_archive = 24;
+    int64 num_flush = 25;
+    int64 num_flush_kb = 26;
+    int64 num_evict = 27;
+    int64 num_evict_kb = 28;
+    int64 num_promote = 29;
+    int64 num_flush_mode_high = 30;
+    int64 num_flush_mode_low = 31;
+    int64 num_evict_mode_some = 32;
+    int64 num_evict_mode_full = 33;
+    int64 num_objects_pinned = 34;
+    int64 num_legacy_snapsets = 35;
+    int64 num_large_omap_objects = 36;
+    int64 num_objects_manifest = 37;
+    int64 num_omap_bytes = 38;
+    int64 num_omap_keys = 39;
+    int64 num_objects_repaired = 40;
+  }
+
+  message PoolStats_StoreStats {
+    int64 total = 1;
+    int64 available = 2;
+    int64 internally_reserved = 3;
+    int64 allocated = 4;
+    int64 data_stored = 5;
+    int64 data_compressed = 6;
+    int64 data_compressed_allocated = 7;
+    int64 data_compressed_original = 8;
+    int64 omap_allocated = 9;
+    int64 internal_metadata = 10;
+  }
+}
+
+message OsdStats {
+  int64 osd = 1;
+  int64 up_from = 2;
+  int64 seq = 3;
+  int64 num_pgs = 4;
+  int64 num_osds = 5;
+  int64 num_per_pool_osds = 6;
+  int64 num_per_pool_omap_osds = 7;
+  int64 kb = 8;
+  int64 kb_used = 9;
+  int64 kb_used_data = 10;
+  int64 kb_used_omap = 11;
+  int64 kb_used_meta = 12;
+  int64 kb_avail = 13;
+  StatFs statfs = 14;
+  repeated int64 hb_peers = 15;
+  int64 snap_trim_queue_len = 16;
+  int64 num_snap_trimming = 17;
+  int64 num_shards_repaired = 18;
+  OpQueueAgeHist op_queue_age_hist = 19;
+  PerfStat perf_stat = 20;
+  repeated string alerts = 21;
+  repeated NetworkPingTime network_ping_times = 22;
+
+  message StatFs {
+    int64 total = 1;
+    int64 available = 2;
+    int64 internally_reserved = 3;
+    int64 allocated = 4;
+    int64 data_stored = 5;
+    int64 data_compressed = 6;
+    int64 data_compressed_allocated = 7;
+    int64 data_compressed_original = 8;
+    int64 omap_allocated = 9;
+    int64 internal_metadata = 10;
+  }
+
+  message OpQueueAgeHist {
+    repeated int64 histogram = 1;
+    int64 upper_bound = 2;
+  }
+
+  message PerfStat {
+    int64 commit_latency_ms = 1;
+    int64 apply_latency_ms = 2;
+    int64 commit_latency_ns = 3;
+    int64 apply_latency_ns = 4;
+  }
+
+  message NetworkPingTime {
+    int64 osd = 1;
+    string last_update = 2;
+    repeated Interface interfaces = 3;
+
+    message Interface {
+      string interface_name = 1;
+      Average average = 2;
+      Min min = 3;
+      Max max = 4;
+      double last = 5;
+
+      message Average {
+        double min1 = 1;
+        double min5 = 2;
+        double min15 = 3;
+      }
+
+      message Min {
+        double min1 = 1;
+        double min5 = 2;
+        double min15 = 3;
+      }
+
+      message Max {
+        double min1 = 1;
+        double min5 = 2;
+        double min15 = 3;
+      }
+    }
+  }
+}
+
+message PoolStatFs {
+  int64 poolid = 1;
+  int64 osd = 2;
+  int64 total = 3;
+  int64 available = 4;
+  int64 internally_reserved = 5;
+  int64 allocated = 6;
+  int64 data_stored = 7;
+  int64 data_compressed = 8;
+  int64 data_compressed_allocated = 9;
+  int64 data_compressed_original = 10;
+  int64 omap_allocated = 11;
+  int64 internal_metadata = 12;
 }

@@ -141,6 +141,83 @@ type OsdDumpOsdXInfo struct {
 	DeadEpoch            int32         `json:"dead_epoch,omitempty"`
 }
 
+// PG Dump Response
+
+type PgDumpResponse struct {
+	PgReady bool   `json:"pg_ready,omitempty"`
+	PgMap   *PGMap `json:"pg_map"`
+}
+
+type PGMap struct {
+	Version         int64            `json:"version,omitempty"`
+	Stamp           CephTimestamp    `json:"stamp,omitempty"`
+	LastOsdmapEpoch int64            `json:"last_osdmap_epoch,omitempty"`
+	LastPgScan      int64            `json:"last_pg_scan,omitempty"`
+	PgStatsSum      *pb.PGStatsSum   `json:"pg_stats_sum,omitempty"`
+	OsdStatsSum     *pb.OSDStatsSum  `json:"osd_stats_sum,omitempty"`
+	PgStatsDelta    *pb.PGStatsDelta `json:"pg_stats_delta,omitempty"`
+	PgStats         []*PGStat        `json:"pg_stats,omitempty"`
+	PoolStats       []*pb.PoolStats  `json:"pool_stats,omitempty"`
+	OsdStats        []*pb.OsdStats   `json:"osd_stats,omitempty"`
+	PoolStatfs      []*pb.PoolStatFs `json:"pool_statfs,omitempty"`
+}
+
+type PGStat struct {
+	Pgid                    string                    `json:"pgid,omitempty"`
+	Version                 string                    `json:"version,omitempty"`
+	ReportedSeq             int64                     `json:"reported_seq,omitempty"`
+	ReportedEpoch           int64                     `json:"reported_epoch,omitempty"`
+	State                   string                    `json:"state,omitempty"`
+	LastFresh               CephTimestamp             `json:"last_fresh,omitempty"`
+	LastChange              CephTimestamp             `json:"last_change,omitempty"`
+	LastActive              CephTimestamp             `json:"last_active,omitempty"`
+	LastPeered              CephTimestamp             `json:"last_peered,omitempty"`
+	LastClean               CephTimestamp             `json:"last_clean,omitempty"`
+	LastBecameActive        CephTimestamp             `json:"last_became_active,omitempty"`
+	LastBecamePeered        CephTimestamp             `json:"last_became_peered,omitempty"`
+	LastUnstale             CephTimestamp             `json:"last_unstale,omitempty"`
+	LastUndegraded          CephTimestamp             `json:"last_undegraded,omitempty"`
+	LastFullsized           CephTimestamp             `json:"last_fullsized,omitempty"`
+	MappingEpoch            int64                     `json:"mapping_epoch,omitempty"`
+	LogStart                string                    `json:"log_start,omitempty"`
+	OndiskLogStart          string                    `json:"ondisk_log_start,omitempty"`
+	Created                 int64                     `json:"created,omitempty"`
+	LastEpochClean          int64                     `json:"last_epoch_clean,omitempty"`
+	Parent                  string                    `json:"parent,omitempty"`
+	ParentSplitBits         int64                     `json:"parent_split_bits,omitempty"`
+	LastScrub               string                    `json:"last_scrub,omitempty"`
+	LastScrubStamp          CephTimestamp             `json:"last_scrub_stamp,omitempty"`
+	LastDeepScrub           string                    `json:"last_deep_scrub,omitempty"`
+	LastDeepScrubStamp      CephTimestamp             `json:"last_deep_scrub_stamp,omitempty"`
+	LastCleanScrubStamp     CephTimestamp             `json:"last_clean_scrub_stamp,omitempty"`
+	ObjectsScrubbed         int64                     `json:"objects_scrubbed,omitempty"`
+	LogSize                 int64                     `json:"log_size,omitempty"`
+	LogDupsSize             int64                     `json:"log_dups_size,omitempty"`
+	OndiskLogSize           int64                     `json:"ondisk_log_size,omitempty"`
+	StatsInvalid            bool                      `json:"stats_invalid,omitempty"`
+	DirtyStatsInvalid       bool                      `json:"dirty_stats_invalid,omitempty"`
+	OmapStatsInvalid        bool                      `json:"omap_stats_invalid,omitempty"`
+	HitsetStatsInvalid      bool                      `json:"hitset_stats_invalid,omitempty"`
+	HitsetBytesStatsInvalid bool                      `json:"hitset_bytes_stats_invalid,omitempty"`
+	PinStatsInvalid         bool                      `json:"pin_stats_invalid,omitempty"`
+	ManifestStatsInvalid    bool                      `json:"manifest_stats_invalid,omitempty"`
+	SnaptrimqLen            int64                     `json:"snaptrimq_len,omitempty"`
+	LastScrubDuration       int64                     `json:"last_scrub_duration,omitempty"`
+	ScrubSchedule           string                    `json:"scrub_schedule,omitempty"`
+	ScrubDuration           float64                   `json:"scrub_duration,omitempty"`
+	ObjectsTrimmed          int64                     `json:"objects_trimmed,omitempty"`
+	SnaptrimDuration        float64                   `json:"snaptrim_duration,omitempty"`
+	StatSum                 *pb.PGStat_PGStat_StatSum `json:"stat_sum,omitempty"`
+	Up                      []int64                   `json:"up,omitempty"`
+	Acting                  []int64                   `json:"acting,omitempty"`
+	AvailNoMissing          []int64                   `json:"avail_no_missing,omitempty"`
+	ObjectLocationCounts    []int64                   `json:"object_location_counts,omitempty"`
+	BlockedBy               []int64                   `json:"blocked_by,omitempty"`
+	UpPrimary               int64                     `json:"up_primary,omitempty"`
+	ActingPrimary           int64                     `json:"acting_primary,omitempty"`
+	PurgedSnaps             []int64                   `json:"purged_snaps,omitempty"`
+}
+
 type CephTimestamp struct {
 	*timestamppb.Timestamp
 }

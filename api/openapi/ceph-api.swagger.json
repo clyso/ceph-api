@@ -914,6 +914,801 @@
     }
   },
   "definitions": {
+    "PGStatPGStat_StatSum": {
+      "type": "object",
+      "properties": {
+        "numBytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectClones": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectCopies": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMissingOnPrimary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMissing": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsDegraded": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMisplaced": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsUnfound": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsDirty": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWhiteouts": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numRead": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numReadKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWrite": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWriteKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numShallowScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numDeepScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numBytesRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numKeysRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsOmap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsHitSetArchive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numBytesHitSetArchive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlush": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvict": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numPromote": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushModeHigh": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushModeLow": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictModeSome": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictModeFull": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsPinned": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numLegacySnapsets": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numLargeOmapObjects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsManifest": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numOmapBytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numOmapKeys": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsRepaired": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PGStatsDeltaPGStatsDelta_StatSum": {
+      "type": "object",
+      "properties": {
+        "numBytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectClones": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectCopies": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMissingOnPrimary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMissing": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsDegraded": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMisplaced": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsUnfound": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsDirty": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWhiteouts": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numRead": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numReadKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWrite": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWriteKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numShallowScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numDeepScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numBytesRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numKeysRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsOmap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsHitSetArchive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numBytesHitSetArchive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlush": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvict": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numPromote": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushModeHigh": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushModeLow": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictModeSome": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictModeFull": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsPinned": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numLegacySnapsets": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numLargeOmapObjects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsManifest": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numOmapBytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numOmapKeys": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsRepaired": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PGStatsDeltaPGStatsDelta_StoreStats": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internallyReserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataStored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedOriginal": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omapAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internalMetadata": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PGStatsSumPGStatsSum_StatSum": {
+      "type": "object",
+      "properties": {
+        "numBytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectClones": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectCopies": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMissingOnPrimary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMissing": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsDegraded": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMisplaced": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsUnfound": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsDirty": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWhiteouts": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numRead": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numReadKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWrite": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWriteKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numShallowScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numDeepScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numBytesRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numKeysRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsOmap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsHitSetArchive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numBytesHitSetArchive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlush": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvict": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numPromote": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushModeHigh": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushModeLow": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictModeSome": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictModeFull": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsPinned": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numLegacySnapsets": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numLargeOmapObjects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsManifest": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numOmapBytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numOmapKeys": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsRepaired": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PGStatsSumPGStatsSum_StoreStats": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internallyReserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataStored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedOriginal": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omapAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internalMetadata": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PoolStatsPoolStats_StatSum": {
+      "type": "object",
+      "properties": {
+        "numBytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectClones": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectCopies": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMissingOnPrimary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMissing": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsDegraded": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsMisplaced": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsUnfound": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsDirty": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWhiteouts": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numRead": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numReadKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWrite": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numWriteKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numShallowScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numDeepScrubErrors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numBytesRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numKeysRecovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsOmap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsHitSetArchive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numBytesHitSetArchive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlush": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvict": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictKb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numPromote": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushModeHigh": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numFlushModeLow": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictModeSome": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numEvictModeFull": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsPinned": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numLegacySnapsets": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numLargeOmapObjects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsManifest": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numOmapBytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numOmapKeys": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numObjectsRepaired": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PoolStatsPoolStats_StoreStats": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internallyReserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataStored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedOriginal": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omapAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internalMetadata": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "UsersUpdateRoleBody": {
       "type": "object",
       "properties": {
@@ -1573,6 +2368,18 @@
         }
       }
     },
+    "cephGetCephPgDumpResponse": {
+      "type": "object",
+      "properties": {
+        "pgReady": {
+          "type": "boolean"
+        },
+        "pgMap": {
+          "$ref": "#/definitions/cephPGMap"
+        }
+      },
+      "title": "PG DUMP"
+    },
     "cephGetCephStatusResponse": {
       "type": "object",
       "properties": {
@@ -1677,6 +2484,274 @@
               "type": "object"
             }
           }
+        }
+      }
+    },
+    "cephOSDStatsSum": {
+      "type": "object",
+      "properties": {
+        "upFrom": {
+          "type": "string",
+          "format": "int64"
+        },
+        "seq": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numPgs": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numOsds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numPerPoolOsds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numPerPoolOmapOsds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kbUsed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kbUsedData": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kbUsedOmap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kbUsedMeta": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kbAvail": {
+          "type": "string",
+          "format": "int64"
+        },
+        "statfs": {
+          "$ref": "#/definitions/cephOSDStatsSumStatFs"
+        },
+        "hbPeers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "snapTrimQueueLen": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numSnapTrimming": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numShardsRepaired": {
+          "type": "string",
+          "format": "int64"
+        },
+        "opQueueAgeHist": {
+          "$ref": "#/definitions/cephOSDStatsSumOpQueueAgeHist"
+        },
+        "perfStat": {
+          "$ref": "#/definitions/cephOSDStatsSumPerfStat"
+        },
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "networkPingTimes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephOSDStatsSumNetworkPingTime"
+          }
+        }
+      }
+    },
+    "cephOSDStatsSumNetworkPingTime": {
+      "type": "object",
+      "properties": {
+        "osd": {
+          "type": "string",
+          "format": "int64"
+        },
+        "lastUpdate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephOSDStatsSumNetworkPingTimeInterface"
+          }
+        }
+      }
+    },
+    "cephOSDStatsSumNetworkPingTimeInterface": {
+      "type": "object",
+      "properties": {
+        "interfaceName": {
+          "type": "string"
+        },
+        "average": {
+          "$ref": "#/definitions/cephOSDStatsSumNetworkPingTimeInterfaceAverage"
+        },
+        "min": {
+          "$ref": "#/definitions/cephOSDStatsSumNetworkPingTimeInterfaceMin"
+        },
+        "max": {
+          "$ref": "#/definitions/cephOSDStatsSumNetworkPingTimeInterfaceMax"
+        },
+        "last": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOSDStatsSumNetworkPingTimeInterfaceAverage": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOSDStatsSumNetworkPingTimeInterfaceMax": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOSDStatsSumNetworkPingTimeInterfaceMin": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOSDStatsSumOpQueueAgeHist": {
+      "type": "object",
+      "properties": {
+        "histogram": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "upperBound": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephOSDStatsSumPerfStat": {
+      "type": "object",
+      "properties": {
+        "commitLatencyMs": {
+          "type": "string",
+          "format": "int64"
+        },
+        "applyLatencyMs": {
+          "type": "string",
+          "format": "int64"
+        },
+        "commitLatencyNs": {
+          "type": "string",
+          "format": "int64"
+        },
+        "applyLatencyNs": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephOSDStatsSumStatFs": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internallyReserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataStored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedOriginal": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omapAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internalMetadata": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -2193,6 +3268,710 @@
         "stretchModeBucket": {
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "cephOsdStats": {
+      "type": "object",
+      "properties": {
+        "osd": {
+          "type": "string",
+          "format": "int64"
+        },
+        "upFrom": {
+          "type": "string",
+          "format": "int64"
+        },
+        "seq": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numPgs": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numOsds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numPerPoolOsds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numPerPoolOmapOsds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kbUsed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kbUsedData": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kbUsedOmap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kbUsedMeta": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kbAvail": {
+          "type": "string",
+          "format": "int64"
+        },
+        "statfs": {
+          "$ref": "#/definitions/cephOsdStatsStatFs"
+        },
+        "hbPeers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "snapTrimQueueLen": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numSnapTrimming": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numShardsRepaired": {
+          "type": "string",
+          "format": "int64"
+        },
+        "opQueueAgeHist": {
+          "$ref": "#/definitions/cephOsdStatsOpQueueAgeHist"
+        },
+        "perfStat": {
+          "$ref": "#/definitions/cephOsdStatsPerfStat"
+        },
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "networkPingTimes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephOsdStatsNetworkPingTime"
+          }
+        }
+      }
+    },
+    "cephOsdStatsNetworkPingTime": {
+      "type": "object",
+      "properties": {
+        "osd": {
+          "type": "string",
+          "format": "int64"
+        },
+        "lastUpdate": {
+          "type": "string"
+        },
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephOsdStatsNetworkPingTimeInterface"
+          }
+        }
+      }
+    },
+    "cephOsdStatsNetworkPingTimeInterface": {
+      "type": "object",
+      "properties": {
+        "interfaceName": {
+          "type": "string"
+        },
+        "average": {
+          "$ref": "#/definitions/cephOsdStatsNetworkPingTimeInterfaceAverage"
+        },
+        "min": {
+          "$ref": "#/definitions/cephOsdStatsNetworkPingTimeInterfaceMin"
+        },
+        "max": {
+          "$ref": "#/definitions/cephOsdStatsNetworkPingTimeInterfaceMax"
+        },
+        "last": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOsdStatsNetworkPingTimeInterfaceAverage": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOsdStatsNetworkPingTimeInterfaceMax": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOsdStatsNetworkPingTimeInterfaceMin": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOsdStatsOpQueueAgeHist": {
+      "type": "object",
+      "properties": {
+        "histogram": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "upperBound": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephOsdStatsPerfStat": {
+      "type": "object",
+      "properties": {
+        "commitLatencyMs": {
+          "type": "string",
+          "format": "int64"
+        },
+        "applyLatencyMs": {
+          "type": "string",
+          "format": "int64"
+        },
+        "commitLatencyNs": {
+          "type": "string",
+          "format": "int64"
+        },
+        "applyLatencyNs": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephOsdStatsStatFs": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internallyReserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataStored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedOriginal": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omapAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internalMetadata": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephPGMap": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "stamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastOsdmapEpoch": {
+          "type": "string",
+          "format": "int64"
+        },
+        "lastPgScan": {
+          "type": "string",
+          "format": "int64"
+        },
+        "pgStatsSum": {
+          "$ref": "#/definitions/cephPGStatsSum"
+        },
+        "osdStatsSum": {
+          "$ref": "#/definitions/cephOSDStatsSum"
+        },
+        "pgStatsDelta": {
+          "$ref": "#/definitions/cephPGStatsDelta"
+        },
+        "pgStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephPGStat"
+          }
+        },
+        "poolStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephPoolStats"
+          }
+        },
+        "osdStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephOsdStats"
+          }
+        },
+        "poolStatfs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephPoolStatFs"
+          }
+        }
+      }
+    },
+    "cephPGStat": {
+      "type": "object",
+      "properties": {
+        "pgid": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "reportedSeq": {
+          "type": "string",
+          "format": "int64"
+        },
+        "reportedEpoch": {
+          "type": "string",
+          "format": "int64"
+        },
+        "state": {
+          "type": "string"
+        },
+        "lastFresh": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastChange": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastActive": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastPeered": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastClean": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastBecameActive": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastBecamePeered": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastUnstale": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastUndegraded": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastFullsized": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mappingEpoch": {
+          "type": "string",
+          "format": "int64"
+        },
+        "logStart": {
+          "type": "string"
+        },
+        "ondiskLogStart": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "int64"
+        },
+        "lastEpochClean": {
+          "type": "string",
+          "format": "int64"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "parentSplitBits": {
+          "type": "string",
+          "format": "int64"
+        },
+        "lastScrub": {
+          "type": "string"
+        },
+        "lastScrubStamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastDeepScrub": {
+          "type": "string"
+        },
+        "lastDeepScrubStamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastCleanScrubStamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "objectsScrubbed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "logSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "logDupsSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "ondiskLogSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "statsInvalid": {
+          "type": "boolean"
+        },
+        "dirtyStatsInvalid": {
+          "type": "boolean"
+        },
+        "omapStatsInvalid": {
+          "type": "boolean"
+        },
+        "hitsetStatsInvalid": {
+          "type": "boolean"
+        },
+        "hitsetBytesStatsInvalid": {
+          "type": "boolean"
+        },
+        "pinStatsInvalid": {
+          "type": "boolean"
+        },
+        "manifestStatsInvalid": {
+          "type": "boolean"
+        },
+        "snaptrimqLen": {
+          "type": "string",
+          "format": "int64"
+        },
+        "lastScrubDuration": {
+          "type": "string",
+          "format": "int64"
+        },
+        "scrubSchedule": {
+          "type": "string"
+        },
+        "scrubDuration": {
+          "type": "number",
+          "format": "double"
+        },
+        "objectsTrimmed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "snaptrimDuration": {
+          "type": "number",
+          "format": "double"
+        },
+        "statSum": {
+          "$ref": "#/definitions/PGStatPGStat_StatSum"
+        },
+        "up": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "acting": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "availNoMissing": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "objectLocationCounts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "blockedBy": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "upPrimary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "actingPrimary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "purgedSnaps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        }
+      }
+    },
+    "cephPGStatsDelta": {
+      "type": "object",
+      "properties": {
+        "statSum": {
+          "$ref": "#/definitions/PGStatsDeltaPGStatsDelta_StatSum"
+        },
+        "storeStats": {
+          "$ref": "#/definitions/PGStatsDeltaPGStatsDelta_StoreStats"
+        },
+        "logSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "ondiskLogSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "up": {
+          "type": "string",
+          "format": "int64"
+        },
+        "acting": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numStoreStats": {
+          "type": "string",
+          "format": "int64"
+        },
+        "stampDelta": {
+          "type": "string"
+        }
+      }
+    },
+    "cephPGStatsSum": {
+      "type": "object",
+      "properties": {
+        "statSum": {
+          "$ref": "#/definitions/PGStatsSumPGStatsSum_StatSum"
+        },
+        "storeStats": {
+          "$ref": "#/definitions/PGStatsSumPGStatsSum_StoreStats"
+        },
+        "logSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "ondiskLogSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "up": {
+          "type": "string",
+          "format": "int64"
+        },
+        "acting": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numStoreStats": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephPoolStatFs": {
+      "type": "object",
+      "properties": {
+        "poolid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "osd": {
+          "type": "string",
+          "format": "int64"
+        },
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internallyReserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataStored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dataCompressedOriginal": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omapAllocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internalMetadata": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephPoolStats": {
+      "type": "object",
+      "properties": {
+        "poolid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numPg": {
+          "type": "string",
+          "format": "int64"
+        },
+        "statSum": {
+          "$ref": "#/definitions/PoolStatsPoolStats_StatSum"
+        },
+        "storeStats": {
+          "$ref": "#/definitions/PoolStatsPoolStats_StoreStats"
+        },
+        "logSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "ondiskLogSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "up": {
+          "type": "string",
+          "format": "int64"
+        },
+        "acting": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numStoreStats": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

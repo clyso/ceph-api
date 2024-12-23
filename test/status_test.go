@@ -129,3 +129,67 @@ func Test_GetCephOsdDump(t *testing.T) {
 	}
 	r.NotEmpty(res.ErasureCodeProfiles, "ErasureCodeProfiles should not be empty")
 }
+
+func Test_GetCephPgDump(t *testing.T) {
+	r := require.New(t)
+
+	// This would be your gRPC client to test
+	client := pb.NewStatusClient(admConn)
+
+	// Execute the call
+	res, err := client.GetCephPgDump(tstCtx, &emptypb.Empty{})
+
+	// Basic checks
+	r.NoError(err, "GetCephPgDump should not return an error")
+	r.NotNil(res, "GetCephPgDump response should not be nil")
+
+	// Check top-level fields
+	r.NotNil(res.PgMap, "pg_map should not be nil")
+
+	// Check a few fields from pg_map
+	r.NotNil(res.PgMap.Stamp, "pg_map.stamp should not be nil")
+	r.NotNil(res.PgMap.PgStatsSum, "pg_stats_sum should not be nil in pg_map")
+	r.NotNil(res.PgMap.OsdStatsSum, "osd_stats_sum should not be nil in pg_map")
+
+	// Validate one of the nested fields in pg_stats_sum, e.g., log_size
+	r.NotNil(res.PgMap.PgStatsSum.LogSize, "pg_stats_sum.log_size should not be nil")
+	if len(res.PgMap.PgStats) > 0 {
+		// Check the first PGStat
+		pgStat := res.PgMap.PgStats[0]
+		r.NotEmpty(pgStat.Pgid, "PGStat.pgid should not be empty")
+		r.NotEmpty(pgStat.State, "PGStat.state should not be empty")
+
+		r.NotNil(pgStat.LastFresh, "PGStat.last_fresh should not be nil")
+		r.NotNil(pgStat.LastScrubStamp, "PGStat.last_scrub_stamp should not be nil")
+		r.NotNil(pgStat.LastDeepScrubStamp, "PGStat.last_deep_scrub_stamp should not be nil")
+
+	} else {
+
+		t.Log("pg_map.pg_stats is empty; skipping PGStat checks.")
+	}
+
+	if res.PgMap.PgStatsDelta != nil {
+		r.NotNil(res.PgMap.PgStatsDelta.StatSum, "pg_stats_delta.stat_sum should not be nil")
+		r.NotNil(res.PgMap.PgStatsDelta.StoreStats, "pg_stats_delta.store_stats should not be nil")
+		r.NotNil(res.PgMap.PgStatsDelta.StampDelta, "pg_stats_delta.stamp_delta should not be nil")
+	} else {
+		t.Log("pg_stats_delta is nil; skipping delta checks.")
+	}
+
+	if len(res.PgMap.OsdStats) > 0 {
+		osdStat := res.PgMap.OsdStats[0]
+		r.NotZero(osdStat.Osd, "osd stats: osd should not be zero")
+
+		// If network_ping_times is present:
+		if len(osdStat.NetworkPingTimes) > 0 {
+			netPingTime := osdStat.NetworkPingTimes[0]
+			r.NotZero(netPingTime.Osd, "osd_stats[0].network_ping_times[0].osd should not be zero")
+			r.NotNil(netPingTime.LastUpdate, "osd_stats[0].network_ping_times[0].last_update should not be nil")
+		} else {
+			t.Log("osd_stats[0].network_ping_times is empty; skipping ping time checks.")
+		}
+	} else {
+		t.Log("osd_stats is empty; skipping OSD stats checks.")
+	}
+
+}
