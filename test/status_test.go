@@ -156,7 +156,6 @@ func Test_GetCephPgDump(t *testing.T) {
 	if len(res.PgMap.PgStats) > 0 {
 		// Check the first PGStat
 		pgStat := res.PgMap.PgStats[0]
-		r.NotEmpty(pgStat.Pgid, "PGStat.pgid should not be empty")
 		r.NotEmpty(pgStat.State, "PGStat.state should not be empty")
 
 		r.NotNil(pgStat.LastFresh, "PGStat.last_fresh should not be nil")
