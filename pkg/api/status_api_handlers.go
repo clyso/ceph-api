@@ -255,8 +255,8 @@ func convertToPbGetCephOsdDumpResponse(osdDump types.CephOsdDumpResponse) *pb.Ge
 
 func convertToPbGetCephPgDumpReponse(pgDump *types.PgDumpResponse) *pb.GetCephPgDumpResponse {
 	pgStats := make([]*pb.PGStat, len(pgDump.PgMap.PgStats))
-	for _, pgStat := range pgDump.PgMap.PgStats {
-		pgStats = append(pgStats, &pb.PGStat{
+	for i, pgStat := range pgDump.PgMap.PgStats {
+		pgStats[i] = &pb.PGStat{
 			Pgid:                    pgStat.Pgid,
 			Version:                 pgStat.Version,
 			ReportedSeq:             pgStat.ReportedSeq,
@@ -310,7 +310,7 @@ func convertToPbGetCephPgDumpReponse(pgDump *types.PgDumpResponse) *pb.GetCephPg
 			UpPrimary:               pgStat.UpPrimary,
 			ActingPrimary:           pgStat.ActingPrimary,
 			PurgedSnaps:             pgStat.PurgedSnaps,
-		})
+		}
 	}
 	pgMap := &pb.PGMap{
 		Version:         pgDump.PgMap.Version,
