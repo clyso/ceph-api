@@ -98,6 +98,27 @@ func (s *statusAPI) GetCephOsdDump(ctx context.Context, body *emptypb.Empty) (*p
 	return response, nil
 }
 
+func (s *statusAPI) GetCephPgDump(ctx context.Context, body *emptypb.Empty) (*pb.GetCephPgDumpResponse, error) {
+	if err := user.HasPermissions(ctx, user.ScopeMonitor, user.PermRead); err != nil {
+		return nil, err
+	}
+
+	const cmdTempl = `{"prefix": "pg dump", "format": "json"}`
+	res, err := s.radosSvc.ExecMon(ctx, cmdTempl)
+	if err != nil {
+		return nil, err
+	}
+
+	var pgDump types.PgDumpResponse
+	if err := json.Unmarshal(res, &pgDump); err != nil {
+		return nil, err
+	}
+
+	response := convertToPbGetCephPgDumpReponse(&pgDump)
+
+	return response, nil
+}
+
 func convertToPbGetCephOsdDumpResponse(osdDump types.CephOsdDumpResponse) *pb.GetCephOsdDumpResponse {
 	// Convert pools
 	var osdDumpPools []*pb.OsdDumpPool
@@ -229,5 +250,83 @@ func convertToPbGetCephOsdDumpResponse(osdDump types.CephOsdDumpResponse) *pb.Ge
 		CrushNodeFlags:   osdDump.CrushNodeFlags,
 		DeviceClassFlags: osdDump.DeviceClassFlags,
 		StretchMode:      osdDump.StretchMode,
+	}
+}
+
+func convertToPbGetCephPgDumpReponse(pgDump *types.PgDumpResponse) *pb.GetCephPgDumpResponse {
+	pgStats := make([]*pb.PGStat, len(pgDump.PgMap.PgStats))
+	for _, pgStat := range pgDump.PgMap.PgStats {
+		pgStats = append(pgStats, &pb.PGStat{
+			Pgid:                    pgStat.Pgid,
+			Version:                 pgStat.Version,
+			ReportedSeq:             pgStat.ReportedSeq,
+			ReportedEpoch:           pgStat.ReportedEpoch,
+			State:                   pgStat.State,
+			LastFresh:               pgStat.LastFresh.Timestamp,
+			LastChange:              pgStat.LastChange.Timestamp,
+			LastActive:              pgStat.LastActive.Timestamp,
+			LastPeered:              pgStat.LastPeered.Timestamp,
+			LastClean:               pgStat.LastClean.Timestamp,
+			LastBecameActive:        pgStat.LastBecameActive.Timestamp,
+			LastBecamePeered:        pgStat.LastBecamePeered.Timestamp,
+			LastUnstale:             pgStat.LastUnstale.Timestamp,
+			LastUndegraded:          pgStat.LastUndegraded.Timestamp,
+			LastFullsized:           pgStat.LastFullsized.Timestamp,
+			MappingEpoch:            pgStat.MappingEpoch,
+			LogStart:                pgStat.LogStart,
+			OndiskLogStart:          pgStat.OndiskLogStart,
+			Created:                 pgStat.Created,
+			LastEpochClean:          pgStat.LastEpochClean,
+			Parent:                  pgStat.Parent,
+			ParentSplitBits:         pgStat.ParentSplitBits,
+			LastScrub:               pgStat.LastScrub,
+			LastScrubStamp:          pgStat.LastScrubStamp.Timestamp,
+			LastDeepScrub:           pgStat.LastDeepScrub,
+			LastDeepScrubStamp:      pgStat.LastDeepScrubStamp.Timestamp,
+			LastCleanScrubStamp:     pgStat.LastCleanScrubStamp.Timestamp,
+			ObjectsScrubbed:         pgStat.ObjectsScrubbed,
+			LogSize:                 pgStat.LogSize,
+			LogDupsSize:             pgStat.LogDupsSize,
+			OndiskLogSize:           pgStat.OndiskLogSize,
+			StatsInvalid:            pgStat.StatsInvalid,
+			DirtyStatsInvalid:       pgStat.DirtyStatsInvalid,
+			OmapStatsInvalid:        pgStat.OmapStatsInvalid,
+			HitsetStatsInvalid:      pgStat.HitsetStatsInvalid,
+			HitsetBytesStatsInvalid: pgStat.HitsetBytesStatsInvalid,
+			PinStatsInvalid:         pgStat.PinStatsInvalid,
+			ManifestStatsInvalid:    pgStat.ManifestStatsInvalid,
+			SnaptrimqLen:            pgStat.SnaptrimqLen,
+			LastScrubDuration:       pgStat.LastScrubDuration,
+			ScrubSchedule:           pgStat.ScrubSchedule,
+			ScrubDuration:           pgStat.ScrubDuration,
+			ObjectsTrimmed:          pgStat.ObjectsTrimmed,
+			SnaptrimDuration:        pgStat.SnaptrimDuration,
+			StatSum:                 pgStat.StatSum,
+			Up:                      pgStat.Up,
+			Acting:                  pgStat.Acting,
+			AvailNoMissing:          pgStat.AvailNoMissing,
+			ObjectLocationCounts:    pgStat.ObjectLocationCounts,
+			BlockedBy:               pgStat.BlockedBy,
+			UpPrimary:               pgStat.UpPrimary,
+			ActingPrimary:           pgStat.ActingPrimary,
+			PurgedSnaps:             pgStat.PurgedSnaps,
+		})
+	}
+	pgMap := &pb.PGMap{
+		Version:         pgDump.PgMap.Version,
+		Stamp:           pgDump.PgMap.Stamp.Timestamp,
+		LastOsdmapEpoch: pgDump.PgMap.LastOsdmapEpoch,
+		LastPgScan:      pgDump.PgMap.LastPgScan,
+		PgStatsSum:      pgDump.PgMap.PgStatsSum,
+		OsdStatsSum:     pgDump.PgMap.OsdStatsSum,
+		PgStatsDelta:    pgDump.PgMap.PgStatsDelta,
+		PgStats:         pgStats,
+		PoolStats:       pgDump.PgMap.PoolStats,
+		OsdStats:        pgDump.PgMap.OsdStats,
+		PoolStatfs:      pgDump.PgMap.PoolStatfs,
+	}
+	return &pb.GetCephPgDumpResponse{
+		PgReady: pgDump.PgReady,
+		PgMap:   pgMap,
 	}
 }

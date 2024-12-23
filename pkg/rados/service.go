@@ -26,7 +26,12 @@ func New(conf Config) (*Svc, error) {
 		return nil, err
 	}
 
-	timeout := strconv.FormatFloat(3, 'f', -1, 64)
+	// set default timeout to 10 seconds
+	if conf.RadosTimeout == 0 {
+		conf.RadosTimeout = 10
+	}
+
+	timeout := strconv.FormatFloat(conf.RadosTimeout, 'f', -1, 64)
 
 	err = conn.SetConfigOption("rados_osd_op_timeout", timeout)
 	if err != nil {
