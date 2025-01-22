@@ -17,6 +17,8 @@ service Status {
   rpc GetCephOsdDump (google.protobuf.Empty) returns (GetCephOsdDumpResponse) {}
   // command: ceph pg dump
   rpc GetCephPgDump (google.protobuf.Empty) returns (GetCephPgDumpResponse) {}
+  // command: ceph report
+  rpc GetCephReport (google.protobuf.Empty) returns (google.protobuf.Struct) {}
 }
 
 message GetCephStatusResponse {

@@ -192,3 +192,57 @@ func Test_GetCephPgDump(t *testing.T) {
 	}
 
 }
+
+func Test_GetCephReport(t *testing.T) {
+	r := require.New(t)
+	client := pb.NewStatusClient(admConn)
+
+	res, err := client.GetCephReport(tstCtx, &emptypb.Empty{})
+
+	r.NoError(err, "GetCephReport should not return an error")
+	r.NotNil(res, "GetCephReport response should not be nil")
+
+	r.NotEmpty(res.Fields, "Fields should not be empty")
+
+	clusterFingerprint, ok := res.Fields["cluster_fingerprint"]
+	r.True(ok, "Cluster fingerprint field should exist")
+	r.NotEmpty(clusterFingerprint.GetStringValue(), "Cluster fingerprint should not be empty")
+
+	versionField, ok := res.Fields["version"]
+	r.True(ok, "Version field should exist")
+	r.NotEmpty(versionField.GetStringValue(), "Version field should not be empty")
+
+	healthField, ok := res.Fields["health"]
+	r.True(ok, "Health field should exist")
+	healthStruct := healthField.GetStructValue()
+	r.NotNil(healthStruct, "Health field should be a struct")
+
+	healthStatus, ok := healthStruct.Fields["status"]
+	r.True(ok, "Health status field should exist")
+	r.Equal("HEALTH_OK", healthStatus.GetStringValue(), "Health status should be HEALTH_OK")
+
+	monmapField, ok := res.Fields["monmap"]
+	r.True(ok, "Monmap field should exist")
+	monmapStruct := monmapField.GetStructValue()
+	r.NotNil(monmapStruct, "Monmap field should be a struct")
+
+	epochField, ok := monmapStruct.Fields["epoch"]
+	r.True(ok, "Epoch field in monmap should exist")
+	r.NotZero(epochField.GetNumberValue(), "Epoch field in monmap should not be zero")
+
+	osdmapField, ok := res.Fields["osdmap"]
+	r.True(ok, "OSDMap field should exist")
+	osdmapStruct := osdmapField.GetStructValue()
+	r.NotNil(osdmapStruct, "OSDMap field should be a struct")
+
+	poolsField, ok := osdmapStruct.Fields["pools"]
+	r.True(ok, "Pools field in OSDMap should exist")
+	poolsList := poolsField.GetListValue()
+	r.NotNil(poolsList, "Pools field in OSDMap should be a list")
+
+	firstPool := poolsList.Values[0].GetStructValue()
+	r.NotNil(firstPool, "First pool should be a struct")
+	poolName, ok := firstPool.Fields["pool_name"]
+	r.True(ok, "Pool name field should exist in the first pool")
+	r.NotEmpty(poolName.GetStringValue(), "Pool name should not be empty")
+}
