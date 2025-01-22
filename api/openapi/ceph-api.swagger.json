@@ -683,6 +683,29 @@
         ]
       }
     },
+    "/api/status/report": {
+      "get": {
+        "summary": "command: ceph report",
+        "operationId": "Status_GetCephReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Status"
+        ]
+      }
+    },
     "/api/user": {
       "get": {
         "operationId": "Users_ListUsers",

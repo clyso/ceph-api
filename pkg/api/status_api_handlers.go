@@ -9,6 +9,7 @@ import (
 	"github.com/clyso/ceph-api/pkg/types"
 	"github.com/clyso/ceph-api/pkg/user"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -20,6 +21,33 @@ func NewStatusAPI(radosSvc *rados.Svc) pb.StatusServer {
 
 type statusAPI struct {
 	radosSvc *rados.Svc
+}
+
+// GetCephReport implements pb.StatusServer.
+func (s *statusAPI) GetCephReport(ctx context.Context, body *emptypb.Empty) (*structpb.Struct, error) {
+	if err := user.HasPermissions(ctx, user.ScopeMonitor, user.PermRead); err != nil {
+		return nil, err
+	}
+
+	const cmdTempl = `{"prefix": "report", "format": "json"}`
+	res, err := s.radosSvc.ExecMon(ctx, cmdTempl)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the JSON response into a generic interface
+	var statusDump map[string]interface{}
+	if err := json.Unmarshal(res, &statusDump); err != nil {
+		return nil, err
+	}
+
+	// Convert the map to a structpb.Struct
+	structData, err := structpb.NewStruct(statusDump)
+	if err != nil {
+		return nil, err
+	}
+
+	return structData, nil
 }
 
 func (s *statusAPI) GetCephStatus(ctx context.Context, body *emptypb.Empty) (*pb.GetCephStatusResponse, error) {

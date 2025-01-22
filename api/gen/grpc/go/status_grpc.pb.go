@@ -8,10 +8,12 @@ package pb
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -24,6 +26,7 @@ const (
 	Status_GetCephMonDump_FullMethodName = "/ceph.Status/GetCephMonDump"
 	Status_GetCephOsdDump_FullMethodName = "/ceph.Status/GetCephOsdDump"
 	Status_GetCephPgDump_FullMethodName  = "/ceph.Status/GetCephPgDump"
+	Status_GetCephReport_FullMethodName  = "/ceph.Status/GetCephReport"
 )
 
 // StatusClient is the client API for Status service.
@@ -38,6 +41,8 @@ type StatusClient interface {
 	GetCephOsdDump(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetCephOsdDumpResponse, error)
 	// command: ceph pg dump
 	GetCephPgDump(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetCephPgDumpResponse, error)
+	// command: ceph report
+	GetCephReport(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*structpb.Struct, error)
 }
 
 type statusClient struct {
@@ -88,6 +93,16 @@ func (c *statusClient) GetCephPgDump(ctx context.Context, in *emptypb.Empty, opt
 	return out, nil
 }
 
+func (c *statusClient) GetCephReport(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*structpb.Struct, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(structpb.Struct)
+	err := c.cc.Invoke(ctx, Status_GetCephReport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StatusServer is the server API for Status service.
 // All implementations should embed UnimplementedStatusServer
 // for forward compatibility.
@@ -100,6 +115,8 @@ type StatusServer interface {
 	GetCephOsdDump(context.Context, *emptypb.Empty) (*GetCephOsdDumpResponse, error)
 	// command: ceph pg dump
 	GetCephPgDump(context.Context, *emptypb.Empty) (*GetCephPgDumpResponse, error)
+	// command: ceph report
+	GetCephReport(context.Context, *emptypb.Empty) (*structpb.Struct, error)
 }
 
 // UnimplementedStatusServer should be embedded to have
@@ -120,6 +137,9 @@ func (UnimplementedStatusServer) GetCephOsdDump(context.Context, *emptypb.Empty)
 }
 func (UnimplementedStatusServer) GetCephPgDump(context.Context, *emptypb.Empty) (*GetCephPgDumpResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCephPgDump not implemented")
+}
+func (UnimplementedStatusServer) GetCephReport(context.Context, *emptypb.Empty) (*structpb.Struct, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCephReport not implemented")
 }
 func (UnimplementedStatusServer) testEmbeddedByValue() {}
 
@@ -213,6 +233,24 @@ func _Status_GetCephPgDump_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Status_GetCephReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StatusServer).GetCephReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Status_GetCephReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StatusServer).GetCephReport(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Status_ServiceDesc is the grpc.ServiceDesc for Status service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -235,6 +273,10 @@ var Status_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCephPgDump",
 			Handler:    _Status_GetCephPgDump_Handler,
+		},
+		{
+			MethodName: "GetCephReport",
+			Handler:    _Status_GetCephReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
