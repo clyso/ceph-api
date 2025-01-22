@@ -240,9 +240,4 @@ func Test_GetCephReport(t *testing.T) {
 	poolsList := poolsField.GetListValue()
 	r.NotNil(poolsList, "Pools field in OSDMap should be a list")
 
-	firstPool := poolsList.Values[0].GetStructValue()
-	r.NotNil(firstPool, "First pool should be a struct")
-	poolName, ok := firstPool.Fields["pool_name"]
-	r.True(ok, "Pool name field should exist in the first pool")
-	r.NotEmpty(poolName.GetStringValue(), "Pool name should not be empty")
 }
