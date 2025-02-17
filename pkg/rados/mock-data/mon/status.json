@@ -1,0 +1,251 @@
+[
+  {
+    "fsid": "8a4e95cb-45d3-4d10-9080-b84b9b1d9cf0",
+    "health": { "status": "HEALTH_OK", "checks": {}, "mutes": [] },
+    "election_epoch": 55,
+    "quorum": [0],
+    "quorum_names": ["lima-ceph"],
+    "quorum_age": 2452,
+    "monmap": { "epoch": 2, "min_mon_release_name": "reef", "num_mons": 1 },
+    "osdmap": {
+      "epoch": 1438,
+      "num_osds": 3,
+      "num_up_osds": 3,
+      "osd_up_since": 1739341085,
+      "num_in_osds": 3,
+      "osd_in_since": 1728305794,
+      "num_remapped_pgs": 0
+    },
+    "pgmap": {
+      "pgs_by_state": [{ "state_name": "active+clean", "count": 129 }],
+      "num_pgs": 129,
+      "num_pools": 5,
+      "num_objects": 223,
+      "data_bytes": 464368,
+      "bytes_used": 217018368,
+      "bytes_avail": 12667883520,
+      "bytes_total": 12884901888
+    },
+    "fsmap": { "epoch": 20, "by_rank": [], "up:standby": 1 },
+    "mgrmap": {
+      "available": true,
+      "num_standbys": 0,
+      "modules": ["dashboard", "iostat", "nfs", "restful"],
+      "services": {
+        "dashboard": "https://192.168.5.15:8443/",
+        "restful": "https://192.168.5.15:8003/"
+      }
+    },
+    "servicemap": {
+      "epoch": 6357,
+      "modified": "2025-02-12T07:49:12.807600+0100",
+      "services": {
+        "rgw": {
+          "daemons": {
+            "summary": "",
+            "264123": {
+              "start_epoch": 6354,
+              "start_stamp": "2025-02-12T07:18:11.571500+0100",
+              "gid": 264123,
+              "addr": "192.168.5.15:0/279870609",
+              "metadata": {
+                "arch": "aarch64",
+                "ceph_release": "reef",
+                "ceph_version": "ceph version 18.2.4 (e7ad5345525c7aa95470c26863873b581076945d) reef (stable)",
+                "ceph_version_short": "18.2.4",
+                "distro": "ubuntu-core",
+                "distro_description": "Ubuntu Core 22",
+                "distro_version": "22",
+                "frontend_config#0": "beast port=80",
+                "frontend_type#0": "beast",
+                "hostname": "lima-ceph",
+                "id": "radosgw.gateway",
+                "kernel_description": "#44-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun  7 19:27:11 UTC 2024",
+                "kernel_version": "6.5.0-44-generic",
+                "mem_swap_kb": "0",
+                "mem_total_kb": "3998004",
+                "num_handles": "1",
+                "os": "Linux",
+                "pid": "1432",
+                "realm_id": "",
+                "realm_name": "",
+                "zone_id": "b2c20654-c13a-4b7a-adad-a1a29b7d6088",
+                "zone_name": "default",
+                "zonegroup_id": "ed17f6e1-83e7-486a-9780-fbd4232bee88",
+                "zonegroup_name": "default"
+              },
+              "task_status": {}
+            }
+          }
+        }
+      }
+    },
+    "progress_events": {}
+  },
+  {
+    "fsid": "8a4e95cb-45d3-4d10-9080-b84b9b1d9cf0",
+    "health": { "status": "HEALTH_OK", "checks": {}, "mutes": [] },
+    "election_epoch": 55,
+    "quorum": [0],
+    "quorum_names": ["lima-ceph"],
+    "quorum_age": 2472,
+    "monmap": { "epoch": 2, "min_mon_release_name": "reef", "num_mons": 1 },
+    "osdmap": {
+      "epoch": 1438,
+      "num_osds": 3,
+      "num_up_osds": 3,
+      "osd_up_since": 1739341085,
+      "num_in_osds": 3,
+      "osd_in_since": 1728305794,
+      "num_remapped_pgs": 0
+    },
+    "pgmap": {
+      "pgs_by_state": [{ "state_name": "active+clean", "count": 129 }],
+      "num_pgs": 129,
+      "num_pools": 5,
+      "num_objects": 223,
+      "data_bytes": 464368,
+      "bytes_used": 217018368,
+      "bytes_avail": 12667883520,
+      "bytes_total": 12884901888
+    },
+    "fsmap": { "epoch": 20, "by_rank": [], "up:standby": 1 },
+    "mgrmap": {
+      "available": true,
+      "num_standbys": 0,
+      "modules": ["dashboard", "iostat", "nfs", "restful"],
+      "services": {
+        "dashboard": "https://192.168.5.15:8443/",
+        "restful": "https://192.168.5.15:8003/"
+      }
+    },
+    "servicemap": {
+      "epoch": 6357,
+      "modified": "2025-02-12T07:49:12.807600+0100",
+      "services": {
+        "rgw": {
+          "daemons": {
+            "summary": "",
+            "264123": {
+              "start_epoch": 6354,
+              "start_stamp": "2025-02-12T07:18:11.571500+0100",
+              "gid": 264123,
+              "addr": "192.168.5.15:0/279870609",
+              "metadata": {
+                "arch": "aarch64",
+                "ceph_release": "reef",
+                "ceph_version": "ceph version 18.2.4 (e7ad5345525c7aa95470c26863873b581076945d) reef (stable)",
+                "ceph_version_short": "18.2.4",
+                "distro": "ubuntu-core",
+                "distro_description": "Ubuntu Core 22",
+                "distro_version": "22",
+                "frontend_config#0": "beast port=80",
+                "frontend_type#0": "beast",
+                "hostname": "lima-ceph",
+                "id": "radosgw.gateway",
+                "kernel_description": "#44-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun  7 19:27:11 UTC 2024",
+                "kernel_version": "6.5.0-44-generic",
+                "mem_swap_kb": "0",
+                "mem_total_kb": "3998004",
+                "num_handles": "1",
+                "os": "Linux",
+                "pid": "1432",
+                "realm_id": "",
+                "realm_name": "",
+                "zone_id": "b2c20654-c13a-4b7a-adad-a1a29b7d6088",
+                "zone_name": "default",
+                "zonegroup_id": "ed17f6e1-83e7-486a-9780-fbd4232bee88",
+                "zonegroup_name": "default"
+              },
+              "task_status": {}
+            }
+          }
+        }
+      }
+    },
+    "progress_events": {}
+  },
+  {
+    "fsid": "8a4e95cb-45d3-4d10-9080-b84b9b1d9cf0",
+    "health": { "status": "HEALTH_OK", "checks": {}, "mutes": [] },
+    "election_epoch": 55,
+    "quorum": [0],
+    "quorum_names": ["lima-ceph"],
+    "quorum_age": 2485,
+    "monmap": { "epoch": 2, "min_mon_release_name": "reef", "num_mons": 1 },
+    "osdmap": {
+      "epoch": 1438,
+      "num_osds": 3,
+      "num_up_osds": 3,
+      "osd_up_since": 1739341085,
+      "num_in_osds": 3,
+      "osd_in_since": 1728305794,
+      "num_remapped_pgs": 0
+    },
+    "pgmap": {
+      "pgs_by_state": [{ "state_name": "active+clean", "count": 129 }],
+      "num_pgs": 129,
+      "num_pools": 5,
+      "num_objects": 223,
+      "data_bytes": 464368,
+      "bytes_used": 217018368,
+      "bytes_avail": 12667883520,
+      "bytes_total": 12884901888
+    },
+    "fsmap": { "epoch": 20, "by_rank": [], "up:standby": 1 },
+    "mgrmap": {
+      "available": true,
+      "num_standbys": 0,
+      "modules": ["dashboard", "iostat", "nfs", "restful"],
+      "services": {
+        "dashboard": "https://192.168.5.15:8443/",
+        "restful": "https://192.168.5.15:8003/"
+      }
+    },
+    "servicemap": {
+      "epoch": 6357,
+      "modified": "2025-02-12T07:49:12.807600+0100",
+      "services": {
+        "rgw": {
+          "daemons": {
+            "summary": "",
+            "264123": {
+              "start_epoch": 6354,
+              "start_stamp": "2025-02-12T07:18:11.571500+0100",
+              "gid": 264123,
+              "addr": "192.168.5.15:0/279870609",
+              "metadata": {
+                "arch": "aarch64",
+                "ceph_release": "reef",
+                "ceph_version": "ceph version 18.2.4 (e7ad5345525c7aa95470c26863873b581076945d) reef (stable)",
+                "ceph_version_short": "18.2.4",
+                "distro": "ubuntu-core",
+                "distro_description": "Ubuntu Core 22",
+                "distro_version": "22",
+                "frontend_config#0": "beast port=80",
+                "frontend_type#0": "beast",
+                "hostname": "lima-ceph",
+                "id": "radosgw.gateway",
+                "kernel_description": "#44-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun  7 19:27:11 UTC 2024",
+                "kernel_version": "6.5.0-44-generic",
+                "mem_swap_kb": "0",
+                "mem_total_kb": "3998004",
+                "num_handles": "1",
+                "os": "Linux",
+                "pid": "1432",
+                "realm_id": "",
+                "realm_name": "",
+                "zone_id": "b2c20654-c13a-4b7a-adad-a1a29b7d6088",
+                "zone_name": "default",
+                "zonegroup_id": "ed17f6e1-83e7-486a-9780-fbd4232bee88",
+                "zonegroup_name": "default"
+              },
+              "task_status": {}
+            }
+          }
+        }
+      }
+    },
+    "progress_events": {}
+  }
+]

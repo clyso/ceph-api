@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	goceph "github.com/ceph/go-ceph/rados"
 	xctx "github.com/clyso/ceph-api/pkg/ctx"
 	"github.com/clyso/ceph-api/pkg/rados"
 	"github.com/clyso/ceph-api/pkg/types"
@@ -57,7 +56,8 @@ func (s *Service) updateFromDB(ctx context.Context) error {
 	s.roles = map[string]Role{}
 	cmdRes, err := s.radosSvc.ExecMon(ctx, getDBMonCmd)
 	if err != nil {
-		if errors.Is(err, goceph.ErrNotFound) {
+		// TODO: Figure this out
+		if errors.Is(err, types.RadosErrorNotFound) {
 			return nil
 		}
 		return err

@@ -5,7 +5,7 @@ services:
     hostname: test
     privileged: true
     image: quay.io/ceph/demo:${CEPH_DEMO_TAG:-main-985bb83-main-centos-arm64-stream8-aarch64} # for ARM
-    # image: quay.io/ceph/demo # alternative image not for ARM 
+    # image: quay.io/ceph/demo # alternative image not for ARM
     command: demo
     environment:
       MON_IP: 192.168.55.2
@@ -40,20 +40,21 @@ services:
       CFG_APP_CREATEADMIN: "true"
       CFG_APP_ADMINUSERNAME: "admin"
       CFG_APP_ADMINPASSWORD: "yoursecretpass"
+      CFG_RADOS_USEMOCK: false
 
 volumes:
   # volume to share ceph creds between services
   ceph-conf:
     driver: local
     driver_opts:
-      o: "size=128m,uid=1000"
+      o: "size=128m,uid=1000,mode=777"
       device: tmpfs
       type: tmpfs
     # driver: local
     # driver_opts:
     #   type: none
     #   o: bind
-    #   device: ${PWD}/ceph_conf/ 
+    #   device: ${PWD}/ceph_conf/
 networks:
   ceph-net:
     ipam:
