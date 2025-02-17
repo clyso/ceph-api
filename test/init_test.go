@@ -47,6 +47,8 @@ func TestMain(m *testing.M) {
 	conf.App.AdminUsername = admin
 	conf.App.AdminPassword = pass
 	conf.App.BcryptPwdCost = 4
+	// make sure use mock is false
+	conf.Rados.UseMock = false
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

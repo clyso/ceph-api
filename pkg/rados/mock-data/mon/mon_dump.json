@@ -1,0 +1,140 @@
+[
+  {
+    "epoch": 2,
+    "fsid": "8a4e95cb-45d3-4d10-9080-b84b9b1d9cf0",
+    "modified": "2024-10-07T12:56:12.682935Z",
+    "created": "2024-10-07T12:56:10.723433Z",
+    "min_mon_release": 18,
+    "min_mon_release_name": "reef",
+    "election_strategy": 1,
+    "disallowed_leaders: ": "",
+    "stretch_mode": false,
+    "tiebreaker_mon": "",
+    "removed_ranks: ": "",
+    "features": {
+      "persistent": [
+        "kraken",
+        "luminous",
+        "mimic",
+        "osdmap-prune",
+        "nautilus",
+        "octopus",
+        "pacific",
+        "elector-pinging",
+        "quincy",
+        "reef"
+      ],
+      "optional": []
+    },
+    "mons": [
+      {
+        "rank": 0,
+        "name": "lima-ceph",
+        "public_addrs": {
+          "addrvec": [
+            { "type": "v2", "addr": "192.168.5.15:3300", "nonce": 0 },
+            { "type": "v1", "addr": "192.168.5.15:6789", "nonce": 0 }
+          ]
+        },
+        "addr": "192.168.5.15:6789/0",
+        "public_addr": "192.168.5.15:6789/0",
+        "priority": 0,
+        "weight": 0,
+        "crush_location": "{}"
+      }
+    ],
+    "quorum": [0]
+  },
+  {
+    "epoch": 2,
+    "fsid": "8a4e95cb-45d3-4d10-9080-b84b9b1d9cf0",
+    "modified": "2024-10-07T12:56:12.682935Z",
+    "created": "2024-10-07T12:56:10.723433Z",
+    "min_mon_release": 18,
+    "min_mon_release_name": "reef",
+    "election_strategy": 1,
+    "disallowed_leaders: ": "",
+    "stretch_mode": false,
+    "tiebreaker_mon": "",
+    "removed_ranks: ": "",
+    "features": {
+      "persistent": [
+        "kraken",
+        "luminous",
+        "mimic",
+        "osdmap-prune",
+        "nautilus",
+        "octopus",
+        "pacific",
+        "elector-pinging",
+        "quincy",
+        "reef"
+      ],
+      "optional": []
+    },
+    "mons": [
+      {
+        "rank": 0,
+        "name": "lima-ceph",
+        "public_addrs": {
+          "addrvec": [
+            { "type": "v2", "addr": "192.168.5.15:3300", "nonce": 0 },
+            { "type": "v1", "addr": "192.168.5.15:6789", "nonce": 0 }
+          ]
+        },
+        "addr": "192.168.5.15:6789/0",
+        "public_addr": "192.168.5.15:6789/0",
+        "priority": 0,
+        "weight": 0,
+        "crush_location": "{}"
+      }
+    ],
+    "quorum": [0]
+  },
+  {
+    "epoch": 2,
+    "fsid": "8a4e95cb-45d3-4d10-9080-b84b9b1d9cf0",
+    "modified": "2024-10-07T12:56:12.682935Z",
+    "created": "2024-10-07T12:56:10.723433Z",
+    "min_mon_release": 18,
+    "min_mon_release_name": "reef",
+    "election_strategy": 1,
+    "disallowed_leaders: ": "",
+    "stretch_mode": false,
+    "tiebreaker_mon": "",
+    "removed_ranks: ": "",
+    "features": {
+      "persistent": [
+        "kraken",
+        "luminous",
+        "mimic",
+        "osdmap-prune",
+        "nautilus",
+        "octopus",
+        "pacific",
+        "elector-pinging",
+        "quincy",
+        "reef"
+      ],
+      "optional": []
+    },
+    "mons": [
+      {
+        "rank": 0,
+        "name": "lima-ceph",
+        "public_addrs": {
+          "addrvec": [
+            { "type": "v2", "addr": "192.168.5.15:3300", "nonce": 0 },
+            { "type": "v1", "addr": "192.168.5.15:6789", "nonce": 0 }
+          ]
+        },
+        "addr": "192.168.5.15:6789/0",
+        "public_addr": "192.168.5.15:6789/0",
+        "priority": 0,
+        "weight": 0,
+        "crush_location": "{}"
+      }
+    ],
+    "quorum": [0]
+  }
+]

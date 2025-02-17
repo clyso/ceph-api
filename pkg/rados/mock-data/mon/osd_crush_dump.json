@@ -1,0 +1,383 @@
+[
+  {
+    "devices": [
+      { "id": 0, "name": "device0" },
+      { "id": 1, "name": "osd.1", "class": "hdd" },
+      { "id": 2, "name": "osd.2", "class": "hdd" },
+      { "id": 3, "name": "osd.3", "class": "hdd" }
+    ],
+    "types": [
+      { "type_id": 0, "name": "osd" },
+      { "type_id": 1, "name": "host" },
+      { "type_id": 2, "name": "chassis" },
+      { "type_id": 3, "name": "rack" },
+      { "type_id": 4, "name": "row" },
+      { "type_id": 5, "name": "pdu" },
+      { "type_id": 6, "name": "pod" },
+      { "type_id": 7, "name": "room" },
+      { "type_id": 8, "name": "datacenter" },
+      { "type_id": 9, "name": "zone" },
+      { "type_id": 10, "name": "region" },
+      { "type_id": 11, "name": "root" }
+    ],
+    "buckets": [
+      {
+        "id": -1,
+        "name": "default",
+        "type_id": 11,
+        "type_name": "root",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [{ "id": -2, "weight": 765, "pos": 0 }]
+      },
+      {
+        "id": -2,
+        "name": "lima-ceph",
+        "type_id": 1,
+        "type_name": "host",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [
+          { "id": 1, "weight": 255, "pos": 0 },
+          { "id": 2, "weight": 255, "pos": 1 },
+          { "id": 3, "weight": 255, "pos": 2 }
+        ]
+      },
+      {
+        "id": -3,
+        "name": "lima-ceph~hdd",
+        "type_id": 1,
+        "type_name": "host",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [
+          { "id": 1, "weight": 255, "pos": 0 },
+          { "id": 2, "weight": 255, "pos": 1 },
+          { "id": 3, "weight": 255, "pos": 2 }
+        ]
+      },
+      {
+        "id": -4,
+        "name": "default~hdd",
+        "type_id": 11,
+        "type_name": "root",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [{ "id": -3, "weight": 765, "pos": 0 }]
+      }
+    ],
+    "rules": [
+      {
+        "rule_id": 0,
+        "rule_name": "replicated_rule",
+        "type": 1,
+        "steps": [
+          { "op": "take", "item": -1, "item_name": "default" },
+          { "op": "chooseleaf_firstn", "num": 0, "type": "host" },
+          { "op": "emit" }
+        ]
+      },
+      {
+        "rule_id": 1,
+        "rule_name": "microceph_auto_osd",
+        "type": 1,
+        "steps": [
+          { "op": "take", "item": -1, "item_name": "default" },
+          { "op": "choose_firstn", "num": 0, "type": "osd" },
+          { "op": "emit" }
+        ]
+      },
+      {
+        "rule_id": 2,
+        "rule_name": "microceph_auto_host",
+        "type": 1,
+        "steps": [
+          { "op": "take", "item": -1, "item_name": "default" },
+          { "op": "chooseleaf_firstn", "num": 0, "type": "host" },
+          { "op": "emit" }
+        ]
+      }
+    ],
+    "tunables": {
+      "choose_local_tries": 0,
+      "choose_local_fallback_tries": 0,
+      "choose_total_tries": 50,
+      "chooseleaf_descend_once": 1,
+      "chooseleaf_vary_r": 1,
+      "chooseleaf_stable": 1,
+      "straw_calc_version": 1,
+      "allowed_bucket_algs": 54,
+      "profile": "jewel",
+      "optimal_tunables": 1,
+      "legacy_tunables": 0,
+      "minimum_required_version": "jewel",
+      "require_feature_tunables": 1,
+      "require_feature_tunables2": 1,
+      "has_v2_rules": 0,
+      "require_feature_tunables3": 1,
+      "has_v3_rules": 0,
+      "has_v4_buckets": 1,
+      "require_feature_tunables5": 1,
+      "has_v5_rules": 0
+    },
+    "choose_args": {}
+  },
+  {
+    "devices": [
+      { "id": 0, "name": "device0" },
+      { "id": 1, "name": "osd.1", "class": "hdd" },
+      { "id": 2, "name": "osd.2", "class": "hdd" },
+      { "id": 3, "name": "osd.3", "class": "hdd" }
+    ],
+    "types": [
+      { "type_id": 0, "name": "osd" },
+      { "type_id": 1, "name": "host" },
+      { "type_id": 2, "name": "chassis" },
+      { "type_id": 3, "name": "rack" },
+      { "type_id": 4, "name": "row" },
+      { "type_id": 5, "name": "pdu" },
+      { "type_id": 6, "name": "pod" },
+      { "type_id": 7, "name": "room" },
+      { "type_id": 8, "name": "datacenter" },
+      { "type_id": 9, "name": "zone" },
+      { "type_id": 10, "name": "region" },
+      { "type_id": 11, "name": "root" }
+    ],
+    "buckets": [
+      {
+        "id": -1,
+        "name": "default",
+        "type_id": 11,
+        "type_name": "root",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [{ "id": -2, "weight": 765, "pos": 0 }]
+      },
+      {
+        "id": -2,
+        "name": "lima-ceph",
+        "type_id": 1,
+        "type_name": "host",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [
+          { "id": 1, "weight": 255, "pos": 0 },
+          { "id": 2, "weight": 255, "pos": 1 },
+          { "id": 3, "weight": 255, "pos": 2 }
+        ]
+      },
+      {
+        "id": -3,
+        "name": "lima-ceph~hdd",
+        "type_id": 1,
+        "type_name": "host",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [
+          { "id": 1, "weight": 255, "pos": 0 },
+          { "id": 2, "weight": 255, "pos": 1 },
+          { "id": 3, "weight": 255, "pos": 2 }
+        ]
+      },
+      {
+        "id": -4,
+        "name": "default~hdd",
+        "type_id": 11,
+        "type_name": "root",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [{ "id": -3, "weight": 765, "pos": 0 }]
+      }
+    ],
+    "rules": [
+      {
+        "rule_id": 0,
+        "rule_name": "replicated_rule",
+        "type": 1,
+        "steps": [
+          { "op": "take", "item": -1, "item_name": "default" },
+          { "op": "chooseleaf_firstn", "num": 0, "type": "host" },
+          { "op": "emit" }
+        ]
+      },
+      {
+        "rule_id": 1,
+        "rule_name": "microceph_auto_osd",
+        "type": 1,
+        "steps": [
+          { "op": "take", "item": -1, "item_name": "default" },
+          { "op": "choose_firstn", "num": 0, "type": "osd" },
+          { "op": "emit" }
+        ]
+      },
+      {
+        "rule_id": 2,
+        "rule_name": "microceph_auto_host",
+        "type": 1,
+        "steps": [
+          { "op": "take", "item": -1, "item_name": "default" },
+          { "op": "chooseleaf_firstn", "num": 0, "type": "host" },
+          { "op": "emit" }
+        ]
+      }
+    ],
+    "tunables": {
+      "choose_local_tries": 0,
+      "choose_local_fallback_tries": 0,
+      "choose_total_tries": 50,
+      "chooseleaf_descend_once": 1,
+      "chooseleaf_vary_r": 1,
+      "chooseleaf_stable": 1,
+      "straw_calc_version": 1,
+      "allowed_bucket_algs": 54,
+      "profile": "jewel",
+      "optimal_tunables": 1,
+      "legacy_tunables": 0,
+      "minimum_required_version": "jewel",
+      "require_feature_tunables": 1,
+      "require_feature_tunables2": 1,
+      "has_v2_rules": 0,
+      "require_feature_tunables3": 1,
+      "has_v3_rules": 0,
+      "has_v4_buckets": 1,
+      "require_feature_tunables5": 1,
+      "has_v5_rules": 0
+    },
+    "choose_args": {}
+  },
+  {
+    "devices": [
+      { "id": 0, "name": "device0" },
+      { "id": 1, "name": "osd.1", "class": "hdd" },
+      { "id": 2, "name": "osd.2", "class": "hdd" },
+      { "id": 3, "name": "osd.3", "class": "hdd" }
+    ],
+    "types": [
+      { "type_id": 0, "name": "osd" },
+      { "type_id": 1, "name": "host" },
+      { "type_id": 2, "name": "chassis" },
+      { "type_id": 3, "name": "rack" },
+      { "type_id": 4, "name": "row" },
+      { "type_id": 5, "name": "pdu" },
+      { "type_id": 6, "name": "pod" },
+      { "type_id": 7, "name": "room" },
+      { "type_id": 8, "name": "datacenter" },
+      { "type_id": 9, "name": "zone" },
+      { "type_id": 10, "name": "region" },
+      { "type_id": 11, "name": "root" }
+    ],
+    "buckets": [
+      {
+        "id": -1,
+        "name": "default",
+        "type_id": 11,
+        "type_name": "root",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [{ "id": -2, "weight": 765, "pos": 0 }]
+      },
+      {
+        "id": -2,
+        "name": "lima-ceph",
+        "type_id": 1,
+        "type_name": "host",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [
+          { "id": 1, "weight": 255, "pos": 0 },
+          { "id": 2, "weight": 255, "pos": 1 },
+          { "id": 3, "weight": 255, "pos": 2 }
+        ]
+      },
+      {
+        "id": -3,
+        "name": "lima-ceph~hdd",
+        "type_id": 1,
+        "type_name": "host",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [
+          { "id": 1, "weight": 255, "pos": 0 },
+          { "id": 2, "weight": 255, "pos": 1 },
+          { "id": 3, "weight": 255, "pos": 2 }
+        ]
+      },
+      {
+        "id": -4,
+        "name": "default~hdd",
+        "type_id": 11,
+        "type_name": "root",
+        "weight": 765,
+        "alg": "straw2",
+        "hash": "rjenkins1",
+        "items": [{ "id": -3, "weight": 765, "pos": 0 }]
+      }
+    ],
+    "rules": [
+      {
+        "rule_id": 0,
+        "rule_name": "replicated_rule",
+        "type": 1,
+        "steps": [
+          { "op": "take", "item": -1, "item_name": "default" },
+          { "op": "chooseleaf_firstn", "num": 0, "type": "host" },
+          { "op": "emit" }
+        ]
+      },
+      {
+        "rule_id": 1,
+        "rule_name": "microceph_auto_osd",
+        "type": 1,
+        "steps": [
+          { "op": "take", "item": -1, "item_name": "default" },
+          { "op": "choose_firstn", "num": 0, "type": "osd" },
+          { "op": "emit" }
+        ]
+      },
+      {
+        "rule_id": 2,
+        "rule_name": "microceph_auto_host",
+        "type": 1,
+        "steps": [
+          { "op": "take", "item": -1, "item_name": "default" },
+          { "op": "chooseleaf_firstn", "num": 0, "type": "host" },
+          { "op": "emit" }
+        ]
+      }
+    ],
+    "tunables": {
+      "choose_local_tries": 0,
+      "choose_local_fallback_tries": 0,
+      "choose_total_tries": 50,
+      "chooseleaf_descend_once": 1,
+      "chooseleaf_vary_r": 1,
+      "chooseleaf_stable": 1,
+      "straw_calc_version": 1,
+      "allowed_bucket_algs": 54,
+      "profile": "jewel",
+      "optimal_tunables": 1,
+      "legacy_tunables": 0,
+      "minimum_required_version": "jewel",
+      "require_feature_tunables": 1,
+      "require_feature_tunables2": 1,
+      "has_v2_rules": 0,
+      "require_feature_tunables3": 1,
+      "has_v3_rules": 0,
+      "has_v4_buckets": 1,
+      "require_feature_tunables5": 1,
+      "has_v5_rules": 0
+    },
+    "choose_args": {}
+  }
+]

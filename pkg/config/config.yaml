@@ -20,13 +20,14 @@ rados: # RADOS connection credentials
   userKeyring: "" # if no keyring provided then keyring and monHost from this config will be ignored and app will try to look up default config file in /etc/ceph directory
   monHost: "" # if no monhost provided then keyring and monHost from this config will be ignored and app will try to look up default config file in /etc/ceph directory
   radosTimeout: 10s # timeout for rados operations
+  useMock: true # use mock rados connection
 auth:
   accessTokenLifespan: 1m
   refreshTokenLifespan: 1h
   clientID: ceph-api # OAuth 2.0 clientID
   issuer: ceph-api # OAuth 2.0 issuer name
 app:
-  createAdmin: false
-  adminUsername: ""
-  adminPassword: ""
+  createAdmin: true
+  adminUsername: "admin"
+  adminPassword: "yoursecretpass"
   bcryptPwdCost: 10 # User password bcrypt cost. Min 4, default 10, greater value means more security and more CPU usage

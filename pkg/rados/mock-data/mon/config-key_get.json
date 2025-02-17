@@ -1,0 +1,30 @@
+[
+  {
+    "users": {
+      "admin": {
+        "username": "admin",
+        "roles": ["administrator"],
+        "password": "$2b$12$ZKJiZOMVy/8Rz5eRaJ4yJO5AEtfpHSUXsb4JECYm2mkpKPXNn.c82",
+        "name": null,
+        "email": null,
+        "lastUpdate": 1728306181,
+        "enabled": true,
+        "pwdExpirationDate": null,
+        "pwdUpdateRequired": false
+      },
+      "ceph-e2e-test-admin": {
+        "username": "ceph-e2e-test-admin",
+        "roles": ["administrator"],
+        "password": "$2a$10$HrRNy2GeYwTXou9pzwvT7.PX/H4pVj/U3CkCx1nCrkGi.v6zHc41S",
+        "name": "ceph api default administrator",
+        "email": null,
+        "lastUpdate": 1737540187,
+        "enabled": true,
+        "pwdExpirationDate": null,
+        "pwdUpdateRequired": false
+      }
+    },
+    "roles": {},
+    "version": 2
+  }
+]
