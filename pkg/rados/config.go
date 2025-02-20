@@ -9,7 +9,6 @@ type Config struct {
 	UserKeyring  string        `yaml:"userKeyring"`
 	MonHost      string        `yaml:"monHost"`
 	RadosTimeout time.Duration `yaml:"radosTimeout"`
-	UseMock      bool          `yaml:"useMock"`
 }
 
 type RadosConnInterface interface {

@@ -47,8 +47,3 @@ func NewRadosConn(conf Config) (RadosConnInterface, error) {
 	prodConn := &ProductionConn{Conn: conn}
 	return prodConn, nil
 }
-
-// stub for mock connection
-func NewMockConn(baseDir string) (RadosConnInterface, error) {
-	return nil, nil
-}

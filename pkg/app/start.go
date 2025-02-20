@@ -18,16 +18,17 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-const (
-	BaseRadosMockDir = "pkg/rados/mock-data"
-)
-
 func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	logger := log.GetLogger(conf.Log)
+	// Determine the connection type message
+	connectionType := "production RADOS connection"
+	if IsMock {
+		connectionType = "mock RADOS connection"
+	}
 	logger.Info().
 		Str("version", build.Version).
 		Str("commit", build.Commit).
-		Msg("app starting...")
+		Msg("app starting with " + connectionType)
 
 	shutdown, tp, err := trace.NewTracerProvider(ctx, conf.Trace, build.Version)
 	if err != nil {
@@ -35,19 +36,13 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	}
 	defer shutdown(context.Background())
 
-	// Create a new Rados connection
-	var radosConn rados.RadosConnInterface
-	if conf.Rados.UseMock {
-		radosConn, err = rados.NewMockConn(BaseRadosMockDir)
-		if err != nil {
-			return err
-		}
-	} else {
-		radosConn, err = rados.NewRadosConn(conf.Rados)
-		if err != nil {
-			return err
-		}
+	// get rados connection
+	radosConn, err := getRadosConnection(conf.Rados)
+
+	if err != nil {
+		return err
 	}
+
 	radosSvc, err := rados.New(radosConn)
 
 	if err != nil {

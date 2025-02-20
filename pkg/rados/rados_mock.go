@@ -3,14 +3,21 @@
 package rados
 
 import (
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
+)
+
+//go:embed mock-data/mon/*.json mock-data/mon-input/*.json mock-data/mgr/*.json
+var responsesFS embed.FS
+
+const (
+	baseDir = "mock-data"
 )
 
 // NewMockConn creates a new mock connection that loads JSON responses from files.
@@ -18,25 +25,24 @@ import (
 //   - "mon"         for ExecMon responses,
 //   - "mon-input"   for ExecMonWithInputBuff responses,
 //   - "mgr"         for ExecMgr responses.
-func NewMockConn(baseDir string) (RadosConnInterface, error) {
-
-	// Build the paths for each category
+func NewMockConn() (RadosConnInterface, error) {
+	// Build the paths for each category within the embedded FS
 	monDir := filepath.Join(baseDir, "mon")
 	monInputDir := filepath.Join(baseDir, "mon-input")
 	mgrDir := filepath.Join(baseDir, "mgr")
 
-	// Load responses
+	// Load responses from the embedded FS
 	monResponses, err := loadResponsesFromDir(monDir)
 	if err != nil {
-		return nil, fmt.Errorf("Error loading mon responses: %v", err)
+		return nil, fmt.Errorf("error loading mon responses: %v", err)
 	}
 	monInputResponses, err := loadResponsesFromDir(monInputDir)
 	if err != nil {
-		return nil, fmt.Errorf("Error loading mon-input responses: %v", err)
+		return nil, fmt.Errorf("error loading mon-input responses: %v", err)
 	}
 	mgrResponses, err := loadResponsesFromDir(mgrDir)
 	if err != nil {
-		return nil, fmt.Errorf("Error loading mgr responses: %v", err)
+		return nil, fmt.Errorf("error loading mgr responses: %v", err)
 	}
 
 	return &MockConn{
@@ -128,10 +134,11 @@ func (mc *MockConn) Shutdown() {
 	// No-op
 }
 
+// loadResponsesFromDir reads JSON response files from the embedded FS
 func loadResponsesFromDir(dir string) (map[string][][]byte, error) {
 	responsesMap := make(map[string][][]byte)
 
-	entries, err := os.ReadDir(dir)
+	entries, err := responsesFS.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read directory %s: %w", dir, err)
 	}
@@ -141,7 +148,7 @@ func loadResponsesFromDir(dir string) (map[string][][]byte, error) {
 			continue
 		}
 		filePath := filepath.Join(dir, entry.Name())
-		data, err := os.ReadFile(filePath)
+		data, err := responsesFS.ReadFile(filePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
 		}
@@ -161,10 +168,4 @@ func loadResponsesFromDir(dir string) (map[string][][]byte, error) {
 	}
 
 	return responsesMap, nil
-}
-
-// NewRadosConn is not available in mock builds
-// It returns an error to signal that the real connection cannot be used
-func NewRadosConn(conf Config) (RadosConnInterface, error) {
-	return nil, errors.New("NewRadosConn is not available in mock builds")
 }

@@ -12,36 +12,6 @@ type Svc struct {
 
 func New(radosConn RadosConnInterface) (*Svc, error) {
 	return &Svc{conn: radosConn}, nil
-	// conn, err := rados.NewConnWithUser(conf.User)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if conf.MonHost == "" || conf.UserKeyring == "" || conf.RadosTimeout == 0 {
-	// 	err = conn.ReadDefaultConfigFile()
-	// } else {
-	// 	err = conn.ParseCmdLineArgs([]string{"--mon-host", conf.MonHost, "--key", conf.UserKeyring, "--client_mount_timeout", "3"})
-	// }
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// timeout := strconv.FormatFloat(conf.RadosTimeout.Seconds(), 'f', -1, 64)
-
-	// err = conn.SetConfigOption("rados_osd_op_timeout", timeout)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// err = conn.SetConfigOption("rados_mon_op_timeout", timeout)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// err = conn.Connect()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return &Svc{conn: conn}, nil
 }
 
 func (s *Svc) ExecMon(ctx context.Context, cmd string) ([]byte, error) {

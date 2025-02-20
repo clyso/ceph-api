@@ -40,7 +40,6 @@ services:
       CFG_APP_CREATEADMIN: "true"
       CFG_APP_ADMINUSERNAME: "admin"
       CFG_APP_ADMINPASSWORD: "yoursecretpass"
-      CFG_RADOS_USEMOCK: false
 
 volumes:
   # volume to share ceph creds between services
