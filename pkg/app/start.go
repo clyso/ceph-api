@@ -21,14 +21,14 @@ import (
 func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	logger := log.GetLogger(conf.Log)
 	// Determine the connection type message
-	connectionType := "production RADOS connection"
+	connectionType := ""
 	if IsMock {
-		connectionType = "mock RADOS connection"
+		connectionType = " with MOCK Ceph connection"
 	}
 	logger.Info().
 		Str("version", build.Version).
 		Str("commit", build.Commit).
-		Msg("app starting with " + connectionType)
+		Msg("app starting" + connectionType)
 
 	shutdown, tp, err := trace.NewTracerProvider(ctx, conf.Trace, build.Version)
 	if err != nil {
