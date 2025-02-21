@@ -26,7 +26,7 @@ auth:
   clientID: ceph-api # OAuth 2.0 clientID
   issuer: ceph-api # OAuth 2.0 issuer name
 app:
-  createAdmin: true
-  adminUsername: "admin"
-  adminPassword: "yoursecretpass"
+  createAdmin: false
+  adminUsername: ""
+  adminPassword: ""
   bcryptPwdCost: 10 # User password bcrypt cost. Min 4, default 10, greater value means more security and more CPU usage
