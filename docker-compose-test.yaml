@@ -40,11 +40,11 @@ services:
 volumes:
   # volume to share ceph creds between services
   ceph-conf:
-    # driver: local
-    # driver_opts:
-    #   o: "size=128m,uid=1000"
-    #   device: tmpfs
-    #   type: tmpfs
+    driver: local
+    driver_opts:
+      o: "size=128m,uid=1000,mode=777"
+      device: tmpfs
+      type: tmpfs
 networks:
   ceph-net-tst:
     ipam:

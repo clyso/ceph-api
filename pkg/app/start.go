@@ -20,10 +20,15 @@ import (
 
 func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	logger := log.GetLogger(conf.Log)
+	// Determine the connection type message
+	connectionType := ""
+	if IsMock {
+		connectionType = " with MOCK Ceph connection"
+	}
 	logger.Info().
 		Str("version", build.Version).
 		Str("commit", build.Commit).
-		Msg("app starting...")
+		Msg("app starting" + connectionType)
 
 	shutdown, tp, err := trace.NewTracerProvider(ctx, conf.Trace, build.Version)
 	if err != nil {
@@ -31,7 +36,15 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	}
 	defer shutdown(context.Background())
 
-	radosSvc, err := rados.New(conf.Rados)
+	// get rados connection
+	radosConn, err := getRadosConnection(conf.Rados)
+
+	if err != nil {
+		return err
+	}
+
+	radosSvc, err := rados.New(radosConn)
+
 	if err != nil {
 		return err
 	}

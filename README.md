@@ -89,6 +89,14 @@ API config uses the following precedence order:
 3. YAML file provided in `-config-override`
 4. Envars
 
+## Mock Mode
+
+To run Ceph API in mock mode without a real Ceph cluster:
+
+```shell
+CFG_APP_CREATEADMIN=true CFG_APP_ADMINUSERNAME=admin CFG_APP_ADMINPASSWORD=yoursecretpass go run -tags=mock ./cmd/ceph-api/main.go
+```
+
 ## Security
 
 Ceph API implements Fine-Grained permissions. Permission model was taken from original Ceph API.
