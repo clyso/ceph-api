@@ -139,6 +139,39 @@ helm install myrelease oci://ghcr.io/clyso/ceph-api/charts/ceph-api --version 0.
 
 The script above will deploy Ceph API with user `admin` and password `password`.
 
+### Deploy on a Cephadm or Ansible Ceph Cluster
+
+The example below command is running the ceph-api on an admin node. The ceph-api can run anywhere as long as it has access to the mon host and provided the ceph.client.admin.keyring 
+
+The ceph-api uses the client.admin.keyring and ceph.conf located in /etc/ceph.
+```
+docker run -p 9969:9969 \
+  -v /etc/ceph:/etc/ceph:ro \
+  -e CFG_APP_CREATEADMIN=true \
+  -e CFG_APP_ADMINUSERNAME=admin \
+  -e CFG_APP_ADMINPASSWORD=yoursecretpass \
+  ghcr.io/clyso/ceph-api:latest
+```
+or specify the ceph.client.admin.keyring file and IP of the Ceph Mon seperately with the arguments below
+
+```
+docker run -p 9969:9969 \
+  -e CFG_APP_CREATEADMIN=true \
+  -e CFG_APP_ADMINUSERNAME=admin \
+  -e CFG_APP_ADMINPASSWORD=yoursecretpass \
+  -e CFG_RADOS_USERKEYRING=<your-rados-keyring> \
+  -e CFG_RADOS_MONHOST=<your-mon-host> \
+  ghcr.io/clyso/ceph-api:latest
+```
+
+Once the ceph-api is deployed, you can create a user and get an access token.
+
+```
+curl -X POST -u "ceph-api:yoursecretpass" \
+-d "grant_type=password&username=admin&password=yoursecretpass" \
+http://localhost:9969/api/oauth/token
+```
+
 ## Test
 
 Along with unit test project contains e2e test to run against real Ceph cluster.
