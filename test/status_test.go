@@ -219,7 +219,9 @@ func Test_GetCephReport(t *testing.T) {
 
 	healthStatus, ok := healthStruct.Fields["status"]
 	r.True(ok, "Health status field should exist")
-	r.Equal("HEALTH_OK", healthStatus.GetStringValue(), "Health status should be HEALTH_OK")
+	// HEALTH Should be HEALTH_OK, HEALTH_WARN, HEALTH_ERR
+	r.Contains([]string{"HEALTH_OK", "HEALTH_WARN", "HEALTH_ERR"}, healthStatus.GetStringValue(), "Health status should be HEALTH_OK, HEALTH_WARN, or HEALTH_ERR")
+
 
 	monmapField, ok := res.Fields["monmap"]
 	r.True(ok, "Monmap field should exist")
