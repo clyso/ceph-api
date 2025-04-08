@@ -90,3 +90,6 @@ http:
     - selector: ceph.Status.GetCephReport
       get: /api/status/report
       response_body: "*"
+    - selector: ceph.Status.GetCephMgrDump
+      get: /api/status/mgr_dump
+      response_body: "*"
