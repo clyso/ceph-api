@@ -147,6 +147,32 @@ func (s *statusAPI) GetCephPgDump(ctx context.Context, body *emptypb.Empty) (*pb
 	return response, nil
 }
 
+func (s *statusAPI) GetCephMgrDump(ctx context.Context, body *emptypb.Empty) (*structpb.Struct, error) {
+	if err := user.HasPermissions(ctx, user.ScopeManager, user.PermRead); err != nil {
+		return nil, err
+	}
+
+	const cmdTempl = `{"prefix": "mgr dump", "format": "json"}`
+	res, err := s.radosSvc.ExecMgr(ctx, cmdTempl)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the JSON response into a generic interface
+	var mgrDump map[string]interface{}
+	if err := json.Unmarshal(res, &mgrDump); err != nil {
+		return nil, err
+	}
+
+	// Convert the map to a structpb.Struct
+	structData, err := structpb.NewStruct(mgrDump)
+	if err != nil {
+		return nil, err
+	}
+
+	return structData, nil
+}
+
 func convertToPbGetCephOsdDumpResponse(osdDump types.CephOsdDumpResponse) *pb.GetCephOsdDumpResponse {
 	// Convert pools
 	var osdDumpPools []*pb.OsdDumpPool

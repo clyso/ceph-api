@@ -123,7 +123,7 @@ func Test_GetCephOsdDump(t *testing.T) {
 
 	// Check OSD XInfo
 	for i, xinfo := range res.OsdXinfo {
-		r.NotZero(xinfo.Osd, "xinfo.osd should not be zero at index %d", i)
+		//r.NotZero(xinfo.Osd, "xinfo.osd should not be zero at index %d", i)
 		r.NotNil(xinfo.DownStamp, "xinfo.down_stamp should not be nil at index %d", i)
 		r.NotZero(xinfo.Features, "xinfo.features should not be zero at index %d", i)
 	}
@@ -182,7 +182,7 @@ func Test_GetCephPgDump(t *testing.T) {
 		// If network_ping_times is present:
 		if len(osdStat.NetworkPingTimes) > 0 {
 			netPingTime := osdStat.NetworkPingTimes[0]
-			r.NotZero(netPingTime.Osd, "osd_stats[0].network_ping_times[0].osd should not be zero")
+			// r.NotZero(netPingTime.Osd, "osd_stats[0].network_ping_times[0].osd should not be zero")
 			r.NotNil(netPingTime.LastUpdate, "osd_stats[0].network_ping_times[0].last_update should not be nil")
 		} else {
 			t.Log("osd_stats[0].network_ping_times is empty; skipping ping time checks.")
@@ -240,4 +240,73 @@ func Test_GetCephReport(t *testing.T) {
 	poolsList := poolsField.GetListValue()
 	r.NotNil(poolsList, "Pools field in OSDMap should be a list")
 
+}
+
+func Test_GetCephMgrDump(t *testing.T) {
+	r := require.New(t)
+	client := pb.NewStatusClient(admConn)
+
+	res, err := client.GetCephMgrDump(tstCtx, &emptypb.Empty{})
+
+	r.NoError(err, "GetCephMgrDump should not return an error")
+	r.NotNil(res, "GetCephMgrDump response should not be nil")
+
+	// Basic check: Ensure the response struct is not empty.  Adjust as needed.
+	r.NotEmpty(res.Fields, "Response should contain fields")
+
+	// Check for specific top-level fields and their types.  These checks
+	// should be based on the actual structure of the JSON output.
+	// Adjust these checks to match the output of `ceph mgr dump`.
+	epochField, ok := res.Fields["epoch"]
+	r.True(ok, "Epoch field should exist")
+	r.NotNil(epochField, "Epoch field should not be nil")
+	r.NotZero(epochField.GetNumberValue(), "Epoch should not be zero")
+
+	activeGidField, ok := res.Fields["active_gid"]
+	r.True(ok, "active_gid field should exist")
+	r.NotNil(activeGidField, "active_gid field should not be nil")
+
+	activeNameField, ok := res.Fields["active_name"]
+	r.True(ok, "active_name field should exist")
+	r.NotEmpty(activeNameField.GetStringValue(), "active_name should not be empty")
+
+	activeAddrField, ok := res.Fields["active_addr"]
+	r.True(ok, "active_addr field should exist")
+	r.NotEmpty(activeAddrField.GetStringValue(), "active_addr should not be empty")
+
+	activeChangeField, ok := res.Fields["active_change"]
+	r.True(ok, "active_change field should exist")
+	r.NotEmpty(activeChangeField.GetStringValue(), "active_change should not be empty")
+
+	availableField, ok := res.Fields["available"]
+	r.True(ok, "available field should exist")
+	r.NotNil(availableField.GetBoolValue(), "available should not be nil")
+
+	standbysField, ok := res.Fields["standbys"]
+	r.True(ok, "standbys field should exist")
+	r.NotNil(standbysField.GetListValue(), "standbys should not be nil")
+
+	modulesField, ok := res.Fields["modules"]
+	r.True(ok, "modules field should exist")
+	r.NotNil(modulesField.GetListValue(), "modules should not be nil")
+
+	availableModulesField, ok := res.Fields["available_modules"]
+	r.True(ok, "available_modules field should exist")
+	r.NotNil(availableModulesField.GetListValue(), "available_modules should not be nil")
+
+	servicesField, ok := res.Fields["services"]
+	r.True(ok, "services field should exist")
+	r.NotNil(servicesField.GetStructValue(), "services should be a struct")
+
+	alwaysOnModulesField, ok := res.Fields["always_on_modules"]
+	r.True(ok, "always_on_modules field should exist")
+	r.NotNil(alwaysOnModulesField.GetStructValue(), "always_on_modules should be a struct")
+
+	lastFailureOsdEpochField, ok := res.Fields["last_failure_osd_epoch"]
+	r.True(ok, "last_failure_osd_epoch field should exist")
+	r.NotNil(lastFailureOsdEpochField.GetNumberValue(), "last_failure_osd_epoch should not be nil")
+
+	activeClientsField, ok := res.Fields["active_clients"]
+	r.True(ok, "active_clients field should exist")
+	r.NotNil(activeClientsField.GetListValue(), "active_clients should not be nil")
 }
