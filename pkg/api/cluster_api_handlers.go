@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
+	"github.com/clyso/ceph-api/pkg/cephconfig"
 	"github.com/clyso/ceph-api/pkg/rados"
 	"github.com/clyso/ceph-api/pkg/types"
 	"github.com/clyso/ceph-api/pkg/user"
@@ -18,13 +19,19 @@ import (
 )
 
 func NewClusterAPI(radosSvc *rados.Svc) pb.ClusterServer {
+	configSvc, err := cephconfig.NewConfig()
+	if err != nil {
+		zerolog.Logger{}.Error().Err(err).Msg("failed to initialize config service")
+	}
 	return &clusterAPI{
-		radosSvc: radosSvc,
+		radosSvc:  radosSvc,
+		configSvc: configSvc,
 	}
 }
 
 type clusterAPI struct {
-	radosSvc *rados.Svc
+	radosSvc  *rados.Svc
+	configSvc *cephconfig.Config
 }
 
 func (c *clusterAPI) DeleteUser(ctx context.Context, req *pb.DeleteClusterUserReq) (*emptypb.Empty, error) {
@@ -160,4 +167,96 @@ func (c *clusterAPI) UpdateStatus(ctx context.Context, req *pb.ClusterStatus) (*
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigRequest) (*pb.SearchConfigResponse, error) {
+	if err := user.HasPermissions(ctx, user.ScopeConfigOpt, user.PermRead); err != nil {
+		return nil, err
+	}
+
+	if c.configSvc == nil {
+		return nil, errors.New("config service is not initialized")
+	}
+
+	query := cephconfig.QueryParams{
+		Name:     req.Name,
+		FullText: req.FullText,
+	}
+
+	switch req.Service {
+	case pb.SearchConfigRequest_SERVICE_MON:
+		query.Service = cephconfig.ServiceMon
+	case pb.SearchConfigRequest_SERVICE_OSD:
+		query.Service = cephconfig.ServiceOSD
+	case pb.SearchConfigRequest_SERVICE_MDS:
+		query.Service = cephconfig.ServiceMDS
+	case pb.SearchConfigRequest_SERVICE_RGW:
+		query.Service = cephconfig.ServiceRGW
+	case pb.SearchConfigRequest_SERVICE_MGR:
+		query.Service = cephconfig.ServiceMgr
+	case pb.SearchConfigRequest_SERVICE_COMMON:
+		query.Service = cephconfig.ServiceCommon
+	case pb.SearchConfigRequest_SERVICE_CLIENT:
+		query.Service = cephconfig.ServiceClient
+	}
+
+	switch req.Level {
+	case pb.SearchConfigRequest_LEVEL_BASIC:
+		query.Level = cephconfig.LevelBasic
+	case pb.SearchConfigRequest_LEVEL_ADVANCED:
+		query.Level = cephconfig.LevelAdvanced
+	case pb.SearchConfigRequest_LEVEL_DEVELOPER:
+		query.Level = cephconfig.LevelDeveloper
+	case pb.SearchConfigRequest_LEVEL_EXPERIMENTAL:
+		query.Level = cephconfig.LevelExperimental
+	}
+
+	switch req.Sort {
+	case pb.SearchConfigRequest_SORT_NAME:
+		query.Sort = cephconfig.SortFieldName
+	case pb.SearchConfigRequest_SORT_TYPE:
+		query.Sort = cephconfig.SortFieldType
+	case pb.SearchConfigRequest_SORT_SERVICE:
+		query.Sort = cephconfig.SortFieldService
+	case pb.SearchConfigRequest_SORT_LEVEL:
+		query.Sort = cephconfig.SortFieldLevel
+	default:
+		query.Sort = cephconfig.SortFieldName
+	}
+
+	switch req.Order {
+	case pb.SearchConfigRequest_SORT_ASC:
+		query.Order = cephconfig.SortOrderAsc
+	case pb.SearchConfigRequest_SORT_DESC:
+		query.Order = cephconfig.SortOrderDesc
+	default:
+		query.Order = cephconfig.SortOrderAsc
+	}
+
+	params := c.configSvc.Search(query)
+
+	respParams := make([]*pb.ConfigParam, len(params))
+	for i, param := range params {
+		respParams[i] = &pb.ConfigParam{
+			Name:               param.Name,
+			Type:               param.Type,
+			Level:              string(param.Level),
+			Desc:               param.Desc,
+			LongDesc:           param.LongDesc,
+			DefaultValue:       param.Default,
+			DaemonDefault:      param.DaemonDefault,
+			Tags:               param.Tags,
+			Services:           param.Services,
+			SeeAlso:            param.SeeAlso,
+			EnumValues:         param.EnumValues,
+			Min:                param.Min,
+			Max:                param.Max,
+			CanUpdateAtRuntime: param.CanUpdateAtRuntime,
+			Flags:              param.Flags,
+		}
+	}
+
+	return &pb.SearchConfigResponse{
+		Params: respParams,
+	}, nil
 }

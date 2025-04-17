@@ -19,6 +19,7 @@ service Cluster {
     rpc CreateUser (CreateClusterUserReq) returns (google.protobuf.Empty);
     rpc ExportUser (ExportClusterUserReq) returns (ExportClusterUserResp);
     rpc DeleteUser (DeleteClusterUserReq) returns (google.protobuf.Empty);
+    rpc SearchConfig (SearchConfigRequest) returns (SearchConfigResponse);
 }
 
 message ClusterStatus{
@@ -69,4 +70,67 @@ message DeleteClusterUserReq{
 message ExportClusterUserResp{
     // User key and capabilities in Ceph config file format
     bytes data = 1;
+}
+
+// Config Param Search 
+message SearchConfigRequest {
+    enum ServiceType {
+        SERVICE_UNKNOWN = 0;
+        SERVICE_MON = 1;
+        SERVICE_OSD = 2;
+        SERVICE_MDS = 3;
+        SERVICE_RGW = 4;
+        SERVICE_MGR = 5;
+        SERVICE_COMMON = 6;
+        SERVICE_CLIENT = 7;
+    }
+    
+    enum ConfigLevel {
+        LEVEL_UNKNOWN = 0;
+        LEVEL_BASIC = 1;
+        LEVEL_ADVANCED = 2;
+        LEVEL_DEVELOPER = 3;
+        LEVEL_EXPERIMENTAL = 4;
+    }
+    
+    enum SortField {
+        SORT_NAME = 0;
+        SORT_TYPE = 1;
+        SORT_SERVICE = 2;
+        SORT_LEVEL = 3;
+    }
+    
+    enum SortOrder {
+        SORT_ASC = 0;
+        SORT_DESC = 1;
+    }
+    
+    ServiceType service = 1;
+    string name = 2;
+    string full_text = 3;
+    ConfigLevel level = 4;
+    SortField sort = 5;
+    SortOrder order = 6;
+}
+
+message ConfigParam {
+    string name = 1;
+    string type = 2;
+    string level = 3;
+    string desc = 4;
+    string long_desc = 5;
+    string default_value = 6;
+    string daemon_default = 7;
+    repeated string tags = 8;
+    repeated string services = 9;
+    repeated string see_also = 10;
+    repeated string enum_values = 11;
+    string min = 12;
+    string max = 13;
+    bool can_update_at_runtime = 14;
+    repeated string flags = 15;
+}
+
+message SearchConfigResponse {
+    repeated ConfigParam params = 1;
 }

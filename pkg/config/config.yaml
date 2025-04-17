@@ -21,7 +21,7 @@ rados: # RADOS connection credentials
   monHost: "" # if no monhost provided then keyring and monHost from this config will be ignored and app will try to look up default config file in /etc/ceph directory
   radosTimeout: 10s # timeout for rados operations
 auth:
-  accessTokenLifespan: 1m
+  accessTokenLifespan: 24h
   refreshTokenLifespan: 1h
   clientID: ceph-api # OAuth 2.0 clientID
   issuer: ceph-api # OAuth 2.0 issuer name

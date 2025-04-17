@@ -1,0 +1,401 @@
+package cephconfig
+
+import (
+	"embed"
+	"encoding/json"
+	"fmt"
+	"io"
+	"path/filepath"
+	"strings"
+)
+
+//go:embed config-index.json
+var configIndexFile embed.FS
+
+// ServiceType represents a Ceph service type
+type ServiceType string
+
+const (
+	ServiceMon     ServiceType = "mon"
+	ServiceOSD     ServiceType = "osd"
+	ServiceMDS     ServiceType = "mds"
+	ServiceRGW     ServiceType = "rgw"
+	ServiceMgr     ServiceType = "mgr"
+	ServiceCommon  ServiceType = "common"
+	ServiceClient  ServiceType = "client"
+	ServiceUnknown ServiceType = "unknown"
+)
+
+// ConfigParamLevel represents the configuration parameter level
+type ConfigParamLevel string
+
+const (
+	LevelBasic        ConfigParamLevel = "basic"
+	LevelAdvanced     ConfigParamLevel = "advanced"
+	LevelDeveloper    ConfigParamLevel = "developer"
+	LevelExperimental ConfigParamLevel = "experimental"
+	LevelUnknown      ConfigParamLevel = "unknown"
+)
+
+// SortOrder represents the sort order
+type SortOrder string
+
+const (
+	SortOrderAsc  SortOrder = "asc"
+	SortOrderDesc SortOrder = "desc"
+)
+
+// SortField represents the field to sort by
+type SortField string
+
+const (
+	SortFieldName    SortField = "name"
+	SortFieldType    SortField = "type"
+	SortFieldService SortField = "service"
+	SortFieldLevel   SortField = "level"
+)
+
+// ConfigParamInfo represents the help data for a Ceph configuration parameter
+type ConfigParamInfo struct {
+	Name               string           `json:"name"`
+	Type               string           `json:"type"`
+	Level              ConfigParamLevel `json:"level"`
+	Desc               string           `json:"desc"`
+	LongDesc           string           `json:"long_desc"`
+	Default            string           `json:"default"`
+	DaemonDefault      string           `json:"daemon_default"`
+	Tags               []string         `json:"tags"`
+	Services           []string         `json:"services"`
+	SeeAlso            []string         `json:"see_also"`
+	EnumValues         []string         `json:"enum_values"`
+	Min                string           `json:"min"`
+	Max                string           `json:"max"`
+	CanUpdateAtRuntime bool             `json:"can_update_at_runtime"`
+	Flags              []string         `json:"flags"`
+}
+
+// QueryParams contains the parameters for config search
+type QueryParams struct {
+	Service  ServiceType      `json:"service"`
+	Name     string           `json:"name"`
+	FullText string           `json:"full_text"`
+	Level    ConfigParamLevel `json:"level"`
+	Sort     SortField        `json:"sort"`
+	Order    SortOrder        `json:"order"`
+}
+
+// ConfigParams is a map of parameter names to their information
+type ConfigParams map[string]ConfigParamInfo
+
+// Config manages Ceph configuration parameters
+type Config struct {
+	params ConfigParams
+}
+
+// NewConfig creates a new Config instance
+func NewConfig() (*Config, error) {
+	params, err := loadConfigParams()
+	if err != nil {
+		return nil, err
+	}
+	return &Config{params: params}, nil
+}
+
+// Search searches for configuration parameters according to the query parameters
+func (c *Config) Search(query QueryParams) []ConfigParamInfo {
+	result := []ConfigParamInfo{}
+
+	// Default sort
+	if query.Sort == "" {
+		query.Sort = SortFieldName
+	}
+
+	// Default order
+	if query.Order == "" {
+		query.Order = SortOrderAsc
+	}
+
+	// Filter parameters
+	for _, info := range c.params {
+		// If service filter is set, check if the parameter belongs to this service
+		if query.Service != "" {
+			serviceMatch := false
+			for _, svc := range info.Services {
+				if ServiceType(svc) == query.Service {
+					serviceMatch = true
+					break
+				}
+			}
+			if !serviceMatch {
+				continue
+			}
+		}
+
+		// If name filter is set, check if the parameter name matches the pattern
+		if query.Name != "" {
+			if !matchWildcard(info.Name, query.Name) {
+				continue
+			}
+		}
+
+		// If level filter is set, check if the parameter has this level
+		if query.Level != "" {
+			if info.Level != query.Level {
+				continue
+			}
+		}
+
+		// If full-text search is set, check if any field contains this text
+		if query.FullText != "" {
+			fullTextLower := strings.ToLower(query.FullText)
+			found := false
+
+			// Check in all text fields
+			if strings.Contains(strings.ToLower(info.Name), fullTextLower) ||
+				strings.Contains(strings.ToLower(info.Type), fullTextLower) ||
+				strings.Contains(strings.ToLower(string(info.Level)), fullTextLower) ||
+				strings.Contains(strings.ToLower(info.Desc), fullTextLower) ||
+				strings.Contains(strings.ToLower(info.LongDesc), fullTextLower) ||
+				strings.Contains(strings.ToLower(info.Default), fullTextLower) ||
+				strings.Contains(strings.ToLower(info.DaemonDefault), fullTextLower) {
+				found = true
+			}
+
+			// Check in arrays
+			if !found {
+				for _, tag := range info.Tags {
+					if strings.Contains(strings.ToLower(tag), fullTextLower) {
+						found = true
+						break
+					}
+				}
+			}
+			if !found {
+				for _, svc := range info.Services {
+					if strings.Contains(strings.ToLower(svc), fullTextLower) {
+						found = true
+						break
+					}
+				}
+			}
+
+			if !found {
+				continue
+			}
+		}
+
+		// Add to results
+		result = append(result, info)
+	}
+
+	// Sort results
+	sortConfigParams(result, query.Sort, query.Order)
+
+	return result
+}
+
+// matchWildcard checks if a string matches a wildcard pattern
+func matchWildcard(s, pattern string) bool {
+	return filepath.Match(pattern, s) == nil
+}
+
+// sortConfigParams sorts configuration parameters by the specified field and order
+func sortConfigParams(params []ConfigParamInfo, field SortField, order SortOrder) {
+	// Sort by field
+	switch field {
+	case SortFieldName:
+		if order == SortOrderAsc {
+			// Sort by name ascending
+			for i := 0; i < len(params); i++ {
+				for j := i + 1; j < len(params); j++ {
+					if params[i].Name > params[j].Name {
+						params[i], params[j] = params[j], params[i]
+					}
+				}
+			}
+		} else {
+			// Sort by name descending
+			for i := 0; i < len(params); i++ {
+				for j := i + 1; j < len(params); j++ {
+					if params[i].Name < params[j].Name {
+						params[i], params[j] = params[j], params[i]
+					}
+				}
+			}
+		}
+	case SortFieldType:
+		if order == SortOrderAsc {
+			// Sort by type ascending
+			for i := 0; i < len(params); i++ {
+				for j := i + 1; j < len(params); j++ {
+					if params[i].Type > params[j].Type {
+						params[i], params[j] = params[j], params[i]
+					}
+				}
+			}
+		} else {
+			// Sort by type descending
+			for i := 0; i < len(params); i++ {
+				for j := i + 1; j < len(params); j++ {
+					if params[i].Type < params[j].Type {
+						params[i], params[j] = params[j], params[i]
+					}
+				}
+			}
+		}
+	case SortFieldLevel:
+		if order == SortOrderAsc {
+			// Sort by level ascending
+			for i := 0; i < len(params); i++ {
+				for j := i + 1; j < len(params); j++ {
+					if string(params[i].Level) > string(params[j].Level) {
+						params[i], params[j] = params[j], params[i]
+					}
+				}
+			}
+		} else {
+			// Sort by level descending
+			for i := 0; i < len(params); i++ {
+				for j := i + 1; j < len(params); j++ {
+					if string(params[i].Level) < string(params[j].Level) {
+						params[i], params[j] = params[j], params[i]
+					}
+				}
+			}
+		}
+	case SortFieldService:
+		// Sort by first service in the list
+		if order == SortOrderAsc {
+			// Sort by service ascending
+			for i := 0; i < len(params); i++ {
+				for j := i + 1; j < len(params); j++ {
+					iService := ""
+					jService := ""
+					if len(params[i].Services) > 0 {
+						iService = params[i].Services[0]
+					}
+					if len(params[j].Services) > 0 {
+						jService = params[j].Services[0]
+					}
+					if iService > jService {
+						params[i], params[j] = params[j], params[i]
+					}
+				}
+			}
+		} else {
+			// Sort by service descending
+			for i := 0; i < len(params); i++ {
+				for j := i + 1; j < len(params); j++ {
+					iService := ""
+					jService := ""
+					if len(params[i].Services) > 0 {
+						iService = params[i].Services[0]
+					}
+					if len(params[j].Services) > 0 {
+						jService = params[j].Services[0]
+					}
+					if iService < jService {
+						params[i], params[j] = params[j], params[i]
+					}
+				}
+			}
+		}
+	}
+}
+
+// loadConfigParams loads all Ceph configuration parameters from the embedded JSON file
+func loadConfigParams() (ConfigParams, error) {
+	// Open the embedded config index file
+	data, err := configIndexFile.Open("config-index.json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read embedded config-index.json: %w", err)
+	}
+	defer data.Close()
+
+	// Read all contents
+	content, err := io.ReadAll(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config index file content: %w", err)
+	}
+
+	// Parse the JSON structure (array of objects with single key)
+	var jsonArray []map[string]ConfigParamInfo
+	err = json.Unmarshal(content, &jsonArray)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config index JSON: %w", err)
+	}
+
+	// Convert to our ConfigParams map format
+	configParams := make(ConfigParams)
+	for _, item := range jsonArray {
+		for name, info := range item {
+			configParams[name] = info
+		}
+	}
+
+	return configParams, nil
+}
+
+// GetParamInfo retrieves information about a specific configuration parameter
+func GetParamInfo(name string, params ConfigParams) (ConfigParamInfo, bool) {
+	info, ok := params[name]
+	return info, ok
+}
+
+// FilterParamsByService returns parameters that apply to a specific service
+func FilterParamsByService(service string, params ConfigParams) ConfigParams {
+	result := make(ConfigParams)
+
+	for name, info := range params {
+		for _, svc := range info.Services {
+			if svc == service {
+				result[name] = info
+				break
+			}
+		}
+	}
+
+	return result
+}
+
+// FilterParamsByTag returns parameters that have a specific tag
+func FilterParamsByTag(tag string, params ConfigParams) ConfigParams {
+	result := make(ConfigParams)
+
+	for name, info := range params {
+		for _, t := range info.Tags {
+			if t == tag {
+				result[name] = info
+				break
+			}
+		}
+	}
+
+	return result
+}
+
+// FilterParamsByLevel returns parameters of a specific level
+func FilterParamsByLevel(level string, params ConfigParams) ConfigParams {
+	result := make(ConfigParams)
+
+	for name, info := range params {
+		if info.Level == level {
+			result[name] = info
+		}
+	}
+
+	return result
+}
+
+// GetRuntimeConfigurableParams returns all parameters that can be updated at runtime
+func GetRuntimeConfigurableParams(params ConfigParams) ConfigParams {
+	result := make(ConfigParams)
+
+	for name, info := range params {
+		if info.CanUpdateAtRuntime {
+			result[name] = info
+		}
+	}
+
+	return result
+}
