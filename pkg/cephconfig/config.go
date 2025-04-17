@@ -196,7 +196,8 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 
 // matchWildcard checks if a string matches a wildcard pattern
 func matchWildcard(s, pattern string) bool {
-	return filepath.Match(pattern, s) == nil
+	matched, _ := filepath.Match(pattern, s)
+	return matched
 }
 
 // sortConfigParams sorts configuration parameters by the specified field and order
@@ -377,9 +378,8 @@ func FilterParamsByTag(tag string, params ConfigParams) ConfigParams {
 // FilterParamsByLevel returns parameters of a specific level
 func FilterParamsByLevel(level string, params ConfigParams) ConfigParams {
 	result := make(ConfigParams)
-
 	for name, info := range params {
-		if info.Level == level {
+		if string(info.Level) == level {
 			result[name] = info
 		}
 	}

@@ -21,7 +21,7 @@ import (
 func NewClusterAPI(radosSvc *rados.Svc) pb.ClusterServer {
 	configSvc, err := cephconfig.NewConfig()
 	if err != nil {
-		zerolog.Logger{}.Error().Err(err).Msg("failed to initialize config service")
+		zerolog.Ctx(context.Background()).Err(err).Msg("failed to create config service")
 	}
 	return &clusterAPI{
 		radosSvc:  radosSvc,
