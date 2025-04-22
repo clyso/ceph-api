@@ -29,3 +29,9 @@ fa-notes.md
 
 changes.patch
 logs.txt
+
+#Temporary Dev files. To be Removed
+.air.toml
+dev.sh
+docker-compose.dev.yaml
+Dockerfile.dev

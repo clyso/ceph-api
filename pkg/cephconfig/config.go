@@ -4,9 +4,10 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"io"
 	"path/filepath"
 	"strings"
+
+	"github.com/rs/zerolog"
 )
 
 //go:embed config-index.json
@@ -62,14 +63,14 @@ type ConfigParamInfo struct {
 	Level              ConfigParamLevel `json:"level"`
 	Desc               string           `json:"desc"`
 	LongDesc           string           `json:"long_desc"`
-	Default            string           `json:"default"`
-	DaemonDefault      string           `json:"daemon_default"`
+	Default            interface{}      `json:"default"`
+	DaemonDefault      interface{}      `json:"daemon_default"`
 	Tags               []string         `json:"tags"`
 	Services           []string         `json:"services"`
 	SeeAlso            []string         `json:"see_also"`
 	EnumValues         []string         `json:"enum_values"`
-	Min                string           `json:"min"`
-	Max                string           `json:"max"`
+	Min                interface{}      `json:"min"`
+	Max                interface{}      `json:"max"`
 	CanUpdateAtRuntime bool             `json:"can_update_at_runtime"`
 	Flags              []string         `json:"flags"`
 }
@@ -156,8 +157,8 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 				strings.Contains(strings.ToLower(string(info.Level)), fullTextLower) ||
 				strings.Contains(strings.ToLower(info.Desc), fullTextLower) ||
 				strings.Contains(strings.ToLower(info.LongDesc), fullTextLower) ||
-				strings.Contains(strings.ToLower(info.Default), fullTextLower) ||
-				strings.Contains(strings.ToLower(info.DaemonDefault), fullTextLower) {
+				strings.Contains(strings.ToLower(fmt.Sprint(info.Default)), fullTextLower) ||
+				strings.Contains(strings.ToLower(fmt.Sprint(info.DaemonDefault)), fullTextLower) {
 				found = true
 			}
 
@@ -307,23 +308,32 @@ func sortConfigParams(params []ConfigParamInfo, field SortField, order SortOrder
 // loadConfigParams loads all Ceph configuration parameters from the embedded JSON file
 func loadConfigParams() (ConfigParams, error) {
 	// Open the embedded config index file
-	data, err := configIndexFile.Open("config-index.json")
+	logger := zerolog.DefaultContextLogger.Info()
+	logger.Msg("EMBED : Loading Ceph configuration parameters from embedded JSON file AIR mode")
+
+	// Read the file data
+	data, err := configIndexFile.ReadFile("config-index.json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read embedded config-index.json: %w", err)
 	}
-	defer data.Close()
 
-	// Read all contents
-	content, err := io.ReadAll(data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read config index file content: %w", err)
+	// Log the first part of the data for debugging purposes
+	if logger.Enabled() {
+		fileContent := string(data)
+		previewLen := 500
+		if len(fileContent) > previewLen {
+			fileContent = fileContent[:previewLen] + "..."
+		}
+		logger.Str("preview", fileContent).Msg("Preview of config-index.json")
 	}
 
 	// Parse the JSON structure (array of objects with single key)
 	var jsonArray []map[string]ConfigParamInfo
-	err = json.Unmarshal(content, &jsonArray)
+	err = json.Unmarshal(data, &jsonArray)
 	if err != nil {
+		logger.Msg("EMBED : FAILED UNMARSHALING CONFIG INDEX JSON")
 		return nil, fmt.Errorf("failed to unmarshal config index JSON: %w", err)
+
 	}
 
 	// Convert to our ConfigParams map format
