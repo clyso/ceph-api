@@ -23,6 +23,13 @@ func NewClusterAPI(radosSvc *rados.Svc) pb.ClusterServer {
 	if err != nil {
 		zerolog.Ctx(context.Background()).Err(err).Msg("failed to create config service")
 	}
+
+	// Initialize the background update of config parameters from the cluster
+	if configSvc != nil {
+		ctx := context.Background()
+		configSvc.UpdateConfigFromCluster(ctx, radosSvc)
+	}
+
 	return &clusterAPI{
 		radosSvc:  radosSvc,
 		configSvc: configSvc,

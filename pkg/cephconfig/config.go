@@ -1,12 +1,15 @@
 package cephconfig
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
+	"sync"
 
+	"github.com/clyso/ceph-api/pkg/rados"
 	"github.com/rs/zerolog"
 )
 
@@ -90,7 +93,51 @@ type ConfigParams map[string]ConfigParamInfo
 
 // Config manages Ceph configuration parameters
 type Config struct {
-	params ConfigParams
+	params     ConfigParams
+	mu         sync.RWMutex
+	isUpdating bool
+}
+
+// loadConfigParams loads all Ceph configuration parameters from the embedded JSON file
+func loadConfigParams() (ConfigParams, error) {
+	// Open the embedded config index file
+	logger := zerolog.DefaultContextLogger.Info()
+	logger.Msg("EMBED : Loading Ceph configuration parameters from embedded JSON file AIR mode")
+
+	// Read the file data
+	data, err := configIndexFile.ReadFile("config-index.json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read embedded config-index.json: %w", err)
+	}
+
+	// Log the first part of the data for debugging purposes
+	if logger.Enabled() {
+		fileContent := string(data)
+		previewLen := 500
+		if len(fileContent) > previewLen {
+			fileContent = fileContent[:previewLen] + "..."
+		}
+		logger.Str("preview", fileContent).Msg("Preview of config-index.json")
+	}
+
+	// Parse the JSON structure (array of objects with single key)
+	var jsonArray []map[string]ConfigParamInfo
+	err = json.Unmarshal(data, &jsonArray)
+	if err != nil {
+		logger.Msg("EMBED : FAILED UNMARSHALING CONFIG INDEX JSON")
+		return nil, fmt.Errorf("failed to unmarshal config index JSON: %w", err)
+
+	}
+
+	// Convert to our ConfigParams map format
+	configParams := make(ConfigParams)
+	for _, item := range jsonArray {
+		for name, info := range item {
+			configParams[name] = info
+		}
+	}
+
+	return configParams, nil
 }
 
 // NewConfig creates a new Config instance
@@ -99,11 +146,105 @@ func NewConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Config{params: params}, nil
+	return &Config{
+		params:     params,
+		isUpdating: false,
+	}, nil
+}
+
+// UpdateConfigFromCluster updates the configuration parameters by querying the Ceph cluster
+// This is done in the background to avoid slowing down the initialization process
+func (c *Config) UpdateConfigFromCluster(ctx context.Context, radosSvc *rados.Svc) {
+	// If already updating, don't start again
+	if c.isUpdating {
+		return
+	}
+
+	c.isUpdating = true
+
+	go func() {
+		defer func() { c.isUpdating = false }()
+
+		logger := zerolog.Ctx(ctx)
+		logger.Info().Msg("Starting background update of Ceph configuration parameters from cluster")
+
+		// Execute 'ceph config ls' command to get current configuration
+		const monCmd = `{"prefix": "config ls", "format": "json"}`
+		cmdRes, err := radosSvc.ExecMon(ctx, monCmd)
+		if err != nil {
+			logger.Err(err).Msg("Failed to execute 'config ls' command")
+			return
+		}
+
+		// Parse the result - it's an array of parameter names
+		var clusterParams []string
+		err = json.Unmarshal(cmdRes, &clusterParams)
+		if err != nil {
+			logger.Err(err).Msg("Failed to unmarshal config ls response")
+			return
+		}
+
+		// Create a map for quick lookup of parameter names
+		clusterParamsMap := make(map[string]bool)
+		for _, param := range clusterParams {
+			clusterParamsMap[param] = true
+		}
+
+		// Lock for writing
+		c.mu.Lock()
+		defer c.mu.Unlock()
+
+		// Get the current parameter names
+		currentParamsMap := make(map[string]bool)
+		for name := range c.params {
+			currentParamsMap[name] = true
+		}
+
+		// Find parameters to add (present in cluster but not in our map)
+		var paramsToAdd []string
+		for name := range clusterParamsMap {
+			if !currentParamsMap[name] {
+				paramsToAdd = append(paramsToAdd, name)
+			}
+		}
+
+		// Find parameters to remove (present in our map but not in cluster)
+		var paramsToRemove []string
+		for name := range currentParamsMap {
+			if !clusterParamsMap[name] {
+				paramsToRemove = append(paramsToRemove, name)
+			}
+		}
+
+		// Add new parameters with minimal info (they will need full info from 'config help' later)
+		for _, name := range paramsToAdd {
+			c.params[name] = ConfigParamInfo{
+				Name:     name,
+				Level:    LevelUnknown,
+				Type:     "unknown",
+				Services: []string{"unknown"},
+			}
+		}
+
+		// Remove parameters that don't exist in the cluster
+		for _, name := range paramsToRemove {
+			delete(c.params, name)
+		}
+
+		logger.Info().
+			Int("total_params", len(c.params)).
+			Int("added", len(paramsToAdd)).
+			Int("removed", len(paramsToRemove)).
+			Msg("Updated Ceph configuration parameters from cluster")
+	}()
 }
 
 // Search searches for configuration parameters according to the query parameters
 func (c *Config) Search(query QueryParams) []ConfigParamInfo {
+	// Acquire read lock
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	result := []ConfigParamInfo{}
 
 	// Default sort
@@ -303,48 +444,6 @@ func sortConfigParams(params []ConfigParamInfo, field SortField, order SortOrder
 			}
 		}
 	}
-}
-
-// loadConfigParams loads all Ceph configuration parameters from the embedded JSON file
-func loadConfigParams() (ConfigParams, error) {
-	// Open the embedded config index file
-	logger := zerolog.DefaultContextLogger.Info()
-	logger.Msg("EMBED : Loading Ceph configuration parameters from embedded JSON file AIR mode")
-
-	// Read the file data
-	data, err := configIndexFile.ReadFile("config-index.json")
-	if err != nil {
-		return nil, fmt.Errorf("failed to read embedded config-index.json: %w", err)
-	}
-
-	// Log the first part of the data for debugging purposes
-	if logger.Enabled() {
-		fileContent := string(data)
-		previewLen := 500
-		if len(fileContent) > previewLen {
-			fileContent = fileContent[:previewLen] + "..."
-		}
-		logger.Str("preview", fileContent).Msg("Preview of config-index.json")
-	}
-
-	// Parse the JSON structure (array of objects with single key)
-	var jsonArray []map[string]ConfigParamInfo
-	err = json.Unmarshal(data, &jsonArray)
-	if err != nil {
-		logger.Msg("EMBED : FAILED UNMARSHALING CONFIG INDEX JSON")
-		return nil, fmt.Errorf("failed to unmarshal config index JSON: %w", err)
-
-	}
-
-	// Convert to our ConfigParams map format
-	configParams := make(ConfigParams)
-	for _, item := range jsonArray {
-		for name, info := range item {
-			configParams[name] = info
-		}
-	}
-
-	return configParams, nil
 }
 
 // GetParamInfo retrieves information about a specific configuration parameter
