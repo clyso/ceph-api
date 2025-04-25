@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
@@ -125,4 +126,182 @@ func Test_ClusterUsers(t *testing.T) {
 		}
 	}
 	r.NotNil(created, "user is back after import")
+}
+
+func Test_SearchConfig(t *testing.T) {
+	r := require.New(t)
+	client := pb.NewClusterClient(admConn)
+
+	// Test 1: Basic query with no filters
+	resp, err := client.SearchConfig(tstCtx, &pb.SearchConfigRequest{})
+	r.NoError(err, "should not error with empty search request")
+	r.NotNil(resp, "response should not be nil")
+	r.Greater(len(resp.Params), 0, "should return at least some parameters")
+
+	// Test 2: Filter by service type
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		Service: pb.SearchConfigRequest_SERVICE_MON,
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+	if len(resp.Params) > 0 {
+		// Verify that all returned params have the MON service
+		for _, param := range resp.Params {
+			hasMonService := false
+			for _, svc := range param.Services {
+				if svc == "mon" {
+					hasMonService = true
+					break
+				}
+			}
+			r.True(hasMonService, "parameter '%s' should have 'mon' service", param.Name)
+		}
+	}
+
+	// Test 3: Filter by name with wildcard
+	// Find a common parameter prefix first to ensure we get results
+	commonParamPrefix := "mon_"
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		Name: commonParamPrefix + "*",
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+	if len(resp.Params) > 0 {
+		// Verify that all returned params start with the prefix
+		for _, param := range resp.Params {
+			r.True(strings.HasPrefix(param.Name, commonParamPrefix),
+				"parameter '%s' should start with '%s'", param.Name, commonParamPrefix)
+		}
+	}
+
+	// Test 4: Filter by level
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		Level: pb.SearchConfigRequest_LEVEL_BASIC,
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+	if len(resp.Params) > 0 {
+		// Verify that all returned params have the BASIC level
+		for _, param := range resp.Params {
+			r.Equal("basic", param.Level, "parameter '%s' should have 'basic' level", param.Name)
+		}
+	}
+
+	// Test 5: Full text search
+	searchTerm := "timeout"
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		FullText: searchTerm,
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+
+	// We cannot guarantee that results contain the term in a specific field,
+	// as the full text search checks multiple fields
+
+	// Test 6: Sorting by name ascending (default)
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		Sort:  pb.SearchConfigRequest_SORT_NAME,
+		Order: pb.SearchConfigRequest_SORT_ASC,
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+	if len(resp.Params) > 1 {
+		// Verify that parameters are sorted by name in ascending order
+		for i := 0; i < len(resp.Params)-1; i++ {
+			r.LessOrEqual(resp.Params[i].Name, resp.Params[i+1].Name,
+				"parameters should be sorted by name in ascending order")
+		}
+	}
+
+	// Test 7: Sorting by name descending
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		Sort:  pb.SearchConfigRequest_SORT_NAME,
+		Order: pb.SearchConfigRequest_SORT_DESC,
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+	if len(resp.Params) > 1 {
+		// Verify that parameters are sorted by name in descending order
+		for i := 0; i < len(resp.Params)-1; i++ {
+			r.GreaterOrEqual(resp.Params[i].Name, resp.Params[i+1].Name,
+				"parameters should be sorted by name in descending order")
+		}
+	}
+
+	// Test 8: Combined filters - service and level
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		Service: pb.SearchConfigRequest_SERVICE_OSD,
+		Level:   pb.SearchConfigRequest_LEVEL_ADVANCED,
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+	if len(resp.Params) > 0 {
+		// Verify that all returned params have the OSD service and ADVANCED level
+		for _, param := range resp.Params {
+			hasOsdService := false
+			for _, svc := range param.Services {
+				if svc == "osd" {
+					hasOsdService = true
+					break
+				}
+			}
+			r.True(hasOsdService, "parameter '%s' should have 'osd' service", param.Name)
+			r.Equal("advanced", param.Level, "parameter '%s' should have 'advanced' level", param.Name)
+		}
+	}
+
+	// Test 9: Check that parameter fields are properly populated
+	// This test checks that the conversion from internal config param to protobuf message works
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		// Limit to 1 parameter for simplicity
+		Name: "mon_max_pg_per_osd",
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+	if len(resp.Params) > 0 {
+		param := resp.Params[0]
+		r.NotEmpty(param.Name, "name should not be empty")
+		r.NotEmpty(param.Type, "type should not be empty")
+		r.NotEmpty(param.Level, "level should not be empty")
+		// Description might be empty for some parameters, so we don't check it
+	}
+
+	// Test 10: Test with invalid service type
+	// The handler should not return an error but rather return no results
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		Service: pb.SearchConfigRequest_SERVICE_UNKNOWN,
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+}
+
+func Test_SearchConfig_CombinedFilters(t *testing.T) {
+	r := require.New(t)
+	client := pb.NewClusterClient(admConn)
+
+	// Test combining name wildcard with service filter
+	resp, err := client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		Name:    "osd_*",
+		Service: pb.SearchConfigRequest_SERVICE_OSD,
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+
+	if len(resp.Params) > 0 {
+		for _, param := range resp.Params {
+			// Verify name starts with "osd_"
+			r.True(strings.HasPrefix(param.Name, "osd_"),
+				"parameter '%s' should start with 'osd_'", param.Name)
+
+			// Verify it has OSD service
+			hasOsdService := false
+			for _, svc := range param.Services {
+				if svc == "osd" {
+					hasOsdService = true
+					break
+				}
+			}
+			r.True(hasOsdService, "parameter '%s' should have 'osd' service", param.Name)
+		}
+	}
 }
