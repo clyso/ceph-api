@@ -110,16 +110,6 @@ func loadConfigParams() (ConfigParams, error) {
 		return nil, fmt.Errorf("failed to read embedded config-index.json: %w", err)
 	}
 
-	// Log the first part of the data for debugging purposes
-	if logger.Enabled() {
-		fileContent := string(data)
-		previewLen := 500
-		if len(fileContent) > previewLen {
-			fileContent = fileContent[:previewLen] + "..."
-		}
-		logger.Str("preview", fileContent).Msg("Preview of config-index.json")
-	}
-
 	// Parse the JSON structure (array of objects with single key)
 	var jsonArray []map[string]ConfigParamInfo
 	err = json.Unmarshal(data, &jsonArray)
@@ -231,12 +221,117 @@ func (c *Config) UpdateConfigFromCluster(ctx context.Context, radosSvc *rados.Sv
 			delete(c.params, name)
 		}
 
+		// Populate details for new parameters
+		if len(paramsToAdd) > 0 {
+			c.populateParamsDetails(ctx, radosSvc, paramsToAdd, logger)
+		}
+
 		logger.Info().
 			Int("total_params", len(c.params)).
 			Int("added", len(paramsToAdd)).
 			Int("removed", len(paramsToRemove)).
 			Msg("Updated Ceph configuration parameters from cluster")
 	}()
+}
+
+// populateParamsDetails fetches detailed information for parameters from the Ceph cluster
+func (c *Config) populateParamsDetails(ctx context.Context, radosSvc *rados.Svc, params []string, logger *zerolog.Logger) {
+	for _, name := range params {
+		paramInfo, err := fetchParamDetailFromCluster(ctx, radosSvc, name)
+		if err != nil {
+			logger.Err(err).Str("param", name).Msg("Failed to fetch parameter details")
+			continue
+		}
+
+		// Update the parameter info in our map
+		c.params[name] = paramInfo
+	}
+}
+
+// fetchParamDetailFromCluster fetches detailed information for a single parameter from the Ceph cluster
+func fetchParamDetailFromCluster(ctx context.Context, radosSvc *rados.Svc, paramName string) (ConfigParamInfo, error) {
+	// Execute 'ceph config help' command for this parameter
+	monCmd := fmt.Sprintf(`{"prefix": "config help", "key": "%s", "format": "json"}`, paramName)
+	cmdRes, err := radosSvc.ExecMon(ctx, monCmd)
+	if err != nil {
+		return ConfigParamInfo{}, fmt.Errorf("failed to execute 'config help' command: %w", err)
+	}
+
+	// Parse the result into our ConfigParamInfo structure
+	paramInfo, err := parseConfigHelpResponse(cmdRes, paramName)
+	if err != nil {
+		return ConfigParamInfo{}, fmt.Errorf("failed to parse config help response: %w", err)
+	}
+
+	return paramInfo, nil
+}
+
+// parseConfigHelpResponse parses the JSON response from 'ceph config help' command
+func parseConfigHelpResponse(jsonResponse []byte, paramName string) (ConfigParamInfo, error) {
+	// Define a temporary struct to match the JSON response format
+	type ConfigHelpResponse struct {
+		Name               string      `json:"name"`
+		Type               string      `json:"type"`
+		Level              string      `json:"level"`
+		Desc               string      `json:"desc"`
+		LongDesc           string      `json:"long_desc"`
+		Default            interface{} `json:"default"`
+		DaemonDefault      interface{} `json:"daemon_default"`
+		Tags               []string    `json:"tags"`
+		Services           []string    `json:"services"`
+		SeeAlso            []string    `json:"see_also"`
+		EnumValues         []string    `json:"enum_values"`
+		Min                interface{} `json:"min"`
+		Max                interface{} `json:"max"`
+		CanUpdateAtRuntime bool        `json:"can_update_at_runtime"`
+		Flags              []string    `json:"flags"`
+	}
+
+	var response ConfigHelpResponse
+	err := json.Unmarshal(jsonResponse, &response)
+	if err != nil {
+		return ConfigParamInfo{}, fmt.Errorf("failed to unmarshal JSON response: %w", err)
+	}
+
+	// Convert level string to ConfigParamLevel
+	level := mapStringToConfigParamLevel(response.Level)
+
+	// Convert the response to our ConfigParamInfo structure
+	paramInfo := ConfigParamInfo{
+		Name:               response.Name,
+		Type:               response.Type,
+		Level:              level,
+		Desc:               response.Desc,
+		LongDesc:           response.LongDesc,
+		Default:            response.Default,
+		DaemonDefault:      response.DaemonDefault,
+		Tags:               response.Tags,
+		Services:           response.Services,
+		SeeAlso:            response.SeeAlso,
+		EnumValues:         response.EnumValues,
+		Min:                response.Min,
+		Max:                response.Max,
+		CanUpdateAtRuntime: response.CanUpdateAtRuntime,
+		Flags:              response.Flags,
+	}
+
+	return paramInfo, nil
+}
+
+// mapStringToConfigParamLevel maps a string level to ConfigParamLevel enum
+func mapStringToConfigParamLevel(level string) ConfigParamLevel {
+	switch strings.ToLower(level) {
+	case "basic":
+		return LevelBasic
+	case "advanced":
+		return LevelAdvanced
+	case "developer":
+		return LevelDeveloper
+	case "experimental":
+		return LevelExperimental
+	default:
+		return LevelUnknown
+	}
 }
 
 // Search searches for configuration parameters according to the query parameters
