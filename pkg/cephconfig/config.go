@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
 	"github.com/clyso/ceph-api/pkg/rados"
 	"github.com/rs/zerolog"
 )
@@ -90,6 +91,51 @@ type QueryParams struct {
 
 // ConfigParams is a map of parameter names to their information
 type ConfigParams map[string]ConfigParamInfo
+
+// ServiceFromProto converts gRPC service type to internal service type
+func ServiceFromProto(service pb.SearchConfigRequest_ServiceType) ServiceType {
+	serviceMap := map[pb.SearchConfigRequest_ServiceType]ServiceType{
+		pb.SearchConfigRequest_SERVICE_MON:    ServiceMon,
+		pb.SearchConfigRequest_SERVICE_OSD:    ServiceOSD,
+		pb.SearchConfigRequest_SERVICE_MDS:    ServiceMDS,
+		pb.SearchConfigRequest_SERVICE_RGW:    ServiceRGW,
+		pb.SearchConfigRequest_SERVICE_MGR:    ServiceMgr,
+		pb.SearchConfigRequest_SERVICE_COMMON: ServiceCommon,
+		pb.SearchConfigRequest_SERVICE_CLIENT: ServiceClient,
+	}
+	return serviceMap[service]
+}
+
+// LevelFromProto converts gRPC level type to internal level type
+func LevelFromProto(level pb.SearchConfigRequest_ConfigLevel) ConfigParamLevel {
+	levelMap := map[pb.SearchConfigRequest_ConfigLevel]ConfigParamLevel{
+		pb.SearchConfigRequest_LEVEL_BASIC:        LevelBasic,
+		pb.SearchConfigRequest_LEVEL_ADVANCED:     LevelAdvanced,
+		pb.SearchConfigRequest_LEVEL_DEVELOPER:    LevelDeveloper,
+		pb.SearchConfigRequest_LEVEL_EXPERIMENTAL: LevelExperimental,
+	}
+	return levelMap[level]
+}
+
+// SortFromProto converts gRPC sort type to internal sort type
+func SortFromProto(sort pb.SearchConfigRequest_SortField) SortField {
+	sortMap := map[pb.SearchConfigRequest_SortField]SortField{
+		pb.SearchConfigRequest_SORT_NAME:    SortFieldName,
+		pb.SearchConfigRequest_SORT_TYPE:    SortFieldType,
+		pb.SearchConfigRequest_SORT_SERVICE: SortFieldService,
+		pb.SearchConfigRequest_SORT_LEVEL:   SortFieldLevel,
+	}
+	return sortMap[sort]
+}
+
+// OrderFromProto converts gRPC order type to internal order type
+func OrderFromProto(order pb.SearchConfigRequest_SortOrder) SortOrder {
+	orderMap := map[pb.SearchConfigRequest_SortOrder]SortOrder{
+		pb.SearchConfigRequest_SORT_ASC:  SortOrderAsc,
+		pb.SearchConfigRequest_SORT_DESC: SortOrderDesc,
+	}
+	return orderMap[order]
+}
 
 // Config manages Ceph configuration parameters
 type Config struct {
@@ -287,10 +333,11 @@ func parseConfigHelpResponse(jsonResponse []byte, paramName string) (ConfigParam
 		Flags              []string    `json:"flags"`
 	}
 
+	// Unmarshal the JSON response into the temporary struct
 	var response ConfigHelpResponse
 	err := json.Unmarshal(jsonResponse, &response)
 	if err != nil {
-		return ConfigParamInfo{}, fmt.Errorf("failed to unmarshal JSON response: %w", err)
+		return ConfigParamInfo{}, fmt.Errorf("failed to unmarshal config help response: %w", err)
 	}
 
 	// Convert level string to ConfigParamLevel
@@ -539,67 +586,4 @@ func sortConfigParams(params []ConfigParamInfo, field SortField, order SortOrder
 			}
 		}
 	}
-}
-
-// GetParamInfo retrieves information about a specific configuration parameter
-func GetParamInfo(name string, params ConfigParams) (ConfigParamInfo, bool) {
-	info, ok := params[name]
-	return info, ok
-}
-
-// FilterParamsByService returns parameters that apply to a specific service
-func FilterParamsByService(service string, params ConfigParams) ConfigParams {
-	result := make(ConfigParams)
-
-	for name, info := range params {
-		for _, svc := range info.Services {
-			if svc == service {
-				result[name] = info
-				break
-			}
-		}
-	}
-
-	return result
-}
-
-// FilterParamsByTag returns parameters that have a specific tag
-func FilterParamsByTag(tag string, params ConfigParams) ConfigParams {
-	result := make(ConfigParams)
-
-	for name, info := range params {
-		for _, t := range info.Tags {
-			if t == tag {
-				result[name] = info
-				break
-			}
-		}
-	}
-
-	return result
-}
-
-// FilterParamsByLevel returns parameters of a specific level
-func FilterParamsByLevel(level string, params ConfigParams) ConfigParams {
-	result := make(ConfigParams)
-	for name, info := range params {
-		if string(info.Level) == level {
-			result[name] = info
-		}
-	}
-
-	return result
-}
-
-// GetRuntimeConfigurableParams returns all parameters that can be updated at runtime
-func GetRuntimeConfigurableParams(params ConfigParams) ConfigParams {
-	result := make(ConfigParams)
-
-	for name, info := range params {
-		if info.CanUpdateAtRuntime {
-			result[name] = info
-		}
-	}
-
-	return result
 }

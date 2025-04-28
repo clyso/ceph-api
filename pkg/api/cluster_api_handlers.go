@@ -188,56 +188,10 @@ func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigReque
 	query := cephconfig.QueryParams{
 		Name:     req.Name,
 		FullText: req.FullText,
-	}
-
-	switch req.Service {
-	case pb.SearchConfigRequest_SERVICE_MON:
-		query.Service = cephconfig.ServiceMon
-	case pb.SearchConfigRequest_SERVICE_OSD:
-		query.Service = cephconfig.ServiceOSD
-	case pb.SearchConfigRequest_SERVICE_MDS:
-		query.Service = cephconfig.ServiceMDS
-	case pb.SearchConfigRequest_SERVICE_RGW:
-		query.Service = cephconfig.ServiceRGW
-	case pb.SearchConfigRequest_SERVICE_MGR:
-		query.Service = cephconfig.ServiceMgr
-	case pb.SearchConfigRequest_SERVICE_COMMON:
-		query.Service = cephconfig.ServiceCommon
-	case pb.SearchConfigRequest_SERVICE_CLIENT:
-		query.Service = cephconfig.ServiceClient
-	}
-
-	switch req.Level {
-	case pb.SearchConfigRequest_LEVEL_BASIC:
-		query.Level = cephconfig.LevelBasic
-	case pb.SearchConfigRequest_LEVEL_ADVANCED:
-		query.Level = cephconfig.LevelAdvanced
-	case pb.SearchConfigRequest_LEVEL_DEVELOPER:
-		query.Level = cephconfig.LevelDeveloper
-	case pb.SearchConfigRequest_LEVEL_EXPERIMENTAL:
-		query.Level = cephconfig.LevelExperimental
-	}
-
-	switch req.Sort {
-	case pb.SearchConfigRequest_SORT_NAME:
-		query.Sort = cephconfig.SortFieldName
-	case pb.SearchConfigRequest_SORT_TYPE:
-		query.Sort = cephconfig.SortFieldType
-	case pb.SearchConfigRequest_SORT_SERVICE:
-		query.Sort = cephconfig.SortFieldService
-	case pb.SearchConfigRequest_SORT_LEVEL:
-		query.Sort = cephconfig.SortFieldLevel
-	default:
-		query.Sort = cephconfig.SortFieldName
-	}
-
-	switch req.Order {
-	case pb.SearchConfigRequest_SORT_ASC:
-		query.Order = cephconfig.SortOrderAsc
-	case pb.SearchConfigRequest_SORT_DESC:
-		query.Order = cephconfig.SortOrderDesc
-	default:
-		query.Order = cephconfig.SortOrderAsc
+		Service:  cephconfig.ServiceFromProto(req.Service),
+		Level:    cephconfig.LevelFromProto(req.Level),
+		Sort:     cephconfig.SortFromProto(req.Sort),
+		Order:    cephconfig.OrderFromProto(req.Order),
 	}
 
 	params := c.configSvc.Search(query)
