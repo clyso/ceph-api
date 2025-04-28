@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -387,203 +388,152 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	result := []ConfigParamInfo{}
-
-	// Default sort
+	// Set default values
 	if query.Sort == "" {
 		query.Sort = SortFieldName
 	}
-
-	// Default order
 	if query.Order == "" {
 		query.Order = SortOrderAsc
 	}
 
+	// Pre-allocate result slice with a small initial capacity
+	result := make([]ConfigParamInfo, 0, 16) // Start with a small capacity that will grow as needed
+
+	// Convert full text to lowercase once if needed
+	var fullTextLower string
+	if query.FullText != "" {
+		fullTextLower = strings.ToLower(query.FullText)
+	}
+
 	// Filter parameters
 	for _, info := range c.params {
-		// If service filter is set, check if the parameter belongs to this service
-		if query.Service != "" {
-			serviceMatch := false
-			for _, svc := range info.Services {
-				if ServiceType(svc) == query.Service {
-					serviceMatch = true
-					break
-				}
-			}
-			if !serviceMatch {
-				continue
-			}
+		if !c.matchesService(info, query.Service) {
+			continue
 		}
-
-		// If name filter is set, check if the parameter name matches the pattern
-		if query.Name != "" {
-			if !matchWildcard(info.Name, query.Name) {
-				continue
-			}
+		if !c.matchesName(info, query.Name) {
+			continue
 		}
-
-		// If level filter is set, check if the parameter has this level
-		if query.Level != "" {
-			if info.Level != query.Level {
-				continue
-			}
+		if !c.matchesLevel(info, query.Level) {
+			continue
 		}
-
-		// If full-text search is set, check if any field contains this text
-		if query.FullText != "" {
-			fullTextLower := strings.ToLower(query.FullText)
-			found := false
-
-			// Check in all text fields
-			if strings.Contains(strings.ToLower(info.Name), fullTextLower) ||
-				strings.Contains(strings.ToLower(info.Type), fullTextLower) ||
-				strings.Contains(strings.ToLower(string(info.Level)), fullTextLower) ||
-				strings.Contains(strings.ToLower(info.Desc), fullTextLower) ||
-				strings.Contains(strings.ToLower(info.LongDesc), fullTextLower) ||
-				strings.Contains(strings.ToLower(fmt.Sprint(info.Default)), fullTextLower) ||
-				strings.Contains(strings.ToLower(fmt.Sprint(info.DaemonDefault)), fullTextLower) {
-				found = true
-			}
-
-			// Check in arrays
-			if !found {
-				for _, tag := range info.Tags {
-					if strings.Contains(strings.ToLower(tag), fullTextLower) {
-						found = true
-						break
-					}
-				}
-			}
-			if !found {
-				for _, svc := range info.Services {
-					if strings.Contains(strings.ToLower(svc), fullTextLower) {
-						found = true
-						break
-					}
-				}
-			}
-
-			if !found {
-				continue
-			}
+		if !c.matchesFullText(info, fullTextLower) {
+			continue
 		}
-
-		// Add to results
 		result = append(result, info)
 	}
 
-	// Sort results
-	sortConfigParams(result, query.Sort, query.Order)
+	// Sort results using Go's built-in sort
+	c.sortResults(result, query.Sort, query.Order)
 
 	return result
+}
+
+// matchesService checks if the parameter matches the service filter
+func (c *Config) matchesService(info ConfigParamInfo, service ServiceType) bool {
+	if service == "" {
+		return true
+	}
+	for _, svc := range info.Services {
+		if ServiceType(svc) == service {
+			return true
+		}
+	}
+	return false
+}
+
+// matchesName checks if the parameter matches the name filter
+func (c *Config) matchesName(info ConfigParamInfo, name string) bool {
+	if name == "" {
+		return true
+	}
+	return matchWildcard(info.Name, name)
+}
+
+// matchesLevel checks if the parameter matches the level filter
+func (c *Config) matchesLevel(info ConfigParamInfo, level ConfigParamLevel) bool {
+	if level == "" {
+		return true
+	}
+	return info.Level == level
+}
+
+// matchesFullText checks if the parameter matches the full-text search
+func (c *Config) matchesFullText(info ConfigParamInfo, fullTextLower string) bool {
+	if fullTextLower == "" {
+		return true
+	}
+
+	// Check text fields
+	if strings.Contains(strings.ToLower(info.Name), fullTextLower) ||
+		strings.Contains(strings.ToLower(info.Type), fullTextLower) ||
+		strings.Contains(strings.ToLower(string(info.Level)), fullTextLower) ||
+		strings.Contains(strings.ToLower(info.Desc), fullTextLower) ||
+		strings.Contains(strings.ToLower(info.LongDesc), fullTextLower) ||
+		strings.Contains(strings.ToLower(fmt.Sprint(info.Default)), fullTextLower) ||
+		strings.Contains(strings.ToLower(fmt.Sprint(info.DaemonDefault)), fullTextLower) {
+		return true
+	}
+
+	// Check arrays
+	for _, tag := range info.Tags {
+		if strings.Contains(strings.ToLower(tag), fullTextLower) {
+			return true
+		}
+	}
+	for _, svc := range info.Services {
+		if strings.Contains(strings.ToLower(svc), fullTextLower) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// sortResults sorts the results using Go's built-in sort
+func (c *Config) sortResults(results []ConfigParamInfo, field SortField, order SortOrder) {
+	if len(results) <= 1 {
+		return
+	}
+
+	// Create a sort.Interface implementation
+	sort.Slice(results, func(i, j int) bool {
+		switch field {
+		case SortFieldName:
+			if order == SortOrderAsc {
+				return results[i].Name < results[j].Name
+			}
+			return results[i].Name > results[j].Name
+		case SortFieldType:
+			if order == SortOrderAsc {
+				return results[i].Type < results[j].Type
+			}
+			return results[i].Type > results[j].Type
+		case SortFieldLevel:
+			if order == SortOrderAsc {
+				return string(results[i].Level) < string(results[j].Level)
+			}
+			return string(results[i].Level) > string(results[j].Level)
+		case SortFieldService:
+			iService := ""
+			jService := ""
+			if len(results[i].Services) > 0 {
+				iService = results[i].Services[0]
+			}
+			if len(results[j].Services) > 0 {
+				jService = results[j].Services[0]
+			}
+			if order == SortOrderAsc {
+				return iService < jService
+			}
+			return iService > jService
+		default:
+			return false
+		}
+	})
 }
 
 // matchWildcard checks if a string matches a wildcard pattern
 func matchWildcard(s, pattern string) bool {
 	matched, _ := filepath.Match(pattern, s)
 	return matched
-}
-
-// sortConfigParams sorts configuration parameters by the specified field and order
-func sortConfigParams(params []ConfigParamInfo, field SortField, order SortOrder) {
-	// Sort by field
-	switch field {
-	case SortFieldName:
-		if order == SortOrderAsc {
-			// Sort by name ascending
-			for i := 0; i < len(params); i++ {
-				for j := i + 1; j < len(params); j++ {
-					if params[i].Name > params[j].Name {
-						params[i], params[j] = params[j], params[i]
-					}
-				}
-			}
-		} else {
-			// Sort by name descending
-			for i := 0; i < len(params); i++ {
-				for j := i + 1; j < len(params); j++ {
-					if params[i].Name < params[j].Name {
-						params[i], params[j] = params[j], params[i]
-					}
-				}
-			}
-		}
-	case SortFieldType:
-		if order == SortOrderAsc {
-			// Sort by type ascending
-			for i := 0; i < len(params); i++ {
-				for j := i + 1; j < len(params); j++ {
-					if params[i].Type > params[j].Type {
-						params[i], params[j] = params[j], params[i]
-					}
-				}
-			}
-		} else {
-			// Sort by type descending
-			for i := 0; i < len(params); i++ {
-				for j := i + 1; j < len(params); j++ {
-					if params[i].Type < params[j].Type {
-						params[i], params[j] = params[j], params[i]
-					}
-				}
-			}
-		}
-	case SortFieldLevel:
-		if order == SortOrderAsc {
-			// Sort by level ascending
-			for i := 0; i < len(params); i++ {
-				for j := i + 1; j < len(params); j++ {
-					if string(params[i].Level) > string(params[j].Level) {
-						params[i], params[j] = params[j], params[i]
-					}
-				}
-			}
-		} else {
-			// Sort by level descending
-			for i := 0; i < len(params); i++ {
-				for j := i + 1; j < len(params); j++ {
-					if string(params[i].Level) < string(params[j].Level) {
-						params[i], params[j] = params[j], params[i]
-					}
-				}
-			}
-		}
-	case SortFieldService:
-		// Sort by first service in the list
-		if order == SortOrderAsc {
-			// Sort by service ascending
-			for i := 0; i < len(params); i++ {
-				for j := i + 1; j < len(params); j++ {
-					iService := ""
-					jService := ""
-					if len(params[i].Services) > 0 {
-						iService = params[i].Services[0]
-					}
-					if len(params[j].Services) > 0 {
-						jService = params[j].Services[0]
-					}
-					if iService > jService {
-						params[i], params[j] = params[j], params[i]
-					}
-				}
-			}
-		} else {
-			// Sort by service descending
-			for i := 0; i < len(params); i++ {
-				for j := i + 1; j < len(params); j++ {
-					iService := ""
-					jService := ""
-					if len(params[i].Services) > 0 {
-						iService = params[i].Services[0]
-					}
-					if len(params[j].Services) > 0 {
-						jService = params[j].Services[0]
-					}
-					if iService < jService {
-						params[i], params[j] = params[j], params[i]
-					}
-				}
-			}
-		}
-	}
 }
