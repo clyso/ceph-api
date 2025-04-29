@@ -43,6 +43,16 @@ const (
 	LevelUnknown      ConfigParamLevel = "unknown"
 )
 
+// UnmarshalJSON implements json.Unmarshaler interface for ConfigParamLevel
+func (l *ConfigParamLevel) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	*l = mapStringToConfigParamLevel(s)
+	return nil
+}
+
 // SortOrder represents the sort order
 type SortOrder string
 
@@ -149,7 +159,7 @@ type Config struct {
 func loadConfigParams() (ConfigParams, error) {
 	// Open the embedded config index file
 	logger := zerolog.DefaultContextLogger.Info()
-	logger.Msg("EMBED : Loading Ceph configuration parameters from embedded JSON file AIR mode")
+	logger.Msg("EMBED : Loading Ceph configuration parameters from embedded JSON file")
 
 	// Read the file data
 	data, err := configIndexFile.ReadFile("config-index.json")
@@ -161,9 +171,7 @@ func loadConfigParams() (ConfigParams, error) {
 	var jsonArray []map[string]ConfigParamInfo
 	err = json.Unmarshal(data, &jsonArray)
 	if err != nil {
-		logger.Msg("EMBED : FAILED UNMARSHALING CONFIG INDEX JSON")
 		return nil, fmt.Errorf("failed to unmarshal config index JSON: %w", err)
-
 	}
 
 	// Convert to our ConfigParams map format
@@ -298,6 +306,7 @@ func (c *Config) populateParamsDetails(ctx context.Context, radosSvc *rados.Svc,
 // fetchParamDetailFromCluster fetches detailed information for a single parameter from the Ceph cluster
 func fetchParamDetailFromCluster(ctx context.Context, radosSvc *rados.Svc, paramName string) (ConfigParamInfo, error) {
 	// Execute 'ceph config help' command for this parameter
+	// Note: The cmd string for 'config help' uses 'key' and not 'name'
 	monCmd := fmt.Sprintf(`{"prefix": "config help", "key": "%s", "format": "json"}`, paramName)
 	cmdRes, err := radosSvc.ExecMon(ctx, monCmd)
 	if err != nil {
@@ -315,54 +324,11 @@ func fetchParamDetailFromCluster(ctx context.Context, radosSvc *rados.Svc, param
 
 // parseConfigHelpResponse parses the JSON response from 'ceph config help' command
 func parseConfigHelpResponse(jsonResponse []byte, paramName string) (ConfigParamInfo, error) {
-	// Define a temporary struct to match the JSON response format
-	type ConfigHelpResponse struct {
-		Name               string      `json:"name"`
-		Type               string      `json:"type"`
-		Level              string      `json:"level"`
-		Desc               string      `json:"desc"`
-		LongDesc           string      `json:"long_desc"`
-		Default            interface{} `json:"default"`
-		DaemonDefault      interface{} `json:"daemon_default"`
-		Tags               []string    `json:"tags"`
-		Services           []string    `json:"services"`
-		SeeAlso            []string    `json:"see_also"`
-		EnumValues         []string    `json:"enum_values"`
-		Min                interface{} `json:"min"`
-		Max                interface{} `json:"max"`
-		CanUpdateAtRuntime bool        `json:"can_update_at_runtime"`
-		Flags              []string    `json:"flags"`
-	}
-
-	// Unmarshal the JSON response into the temporary struct
-	var response ConfigHelpResponse
-	err := json.Unmarshal(jsonResponse, &response)
+	var paramInfo ConfigParamInfo
+	err := json.Unmarshal(jsonResponse, &paramInfo)
 	if err != nil {
 		return ConfigParamInfo{}, fmt.Errorf("failed to unmarshal config help response: %w", err)
 	}
-
-	// Convert level string to ConfigParamLevel
-	level := mapStringToConfigParamLevel(response.Level)
-
-	// Convert the response to our ConfigParamInfo structure
-	paramInfo := ConfigParamInfo{
-		Name:               response.Name,
-		Type:               response.Type,
-		Level:              level,
-		Desc:               response.Desc,
-		LongDesc:           response.LongDesc,
-		Default:            response.Default,
-		DaemonDefault:      response.DaemonDefault,
-		Tags:               response.Tags,
-		Services:           response.Services,
-		SeeAlso:            response.SeeAlso,
-		EnumValues:         response.EnumValues,
-		Min:                response.Min,
-		Max:                response.Max,
-		CanUpdateAtRuntime: response.CanUpdateAtRuntime,
-		Flags:              response.Flags,
-	}
-
 	return paramInfo, nil
 }
 
