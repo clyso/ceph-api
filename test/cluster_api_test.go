@@ -187,16 +187,28 @@ func Test_SearchConfig(t *testing.T) {
 		}
 	}
 
-	// Test 5: Full text search
-	searchTerm := "timeout"
+	// Test 5: Full text search for a very common term
+	searchTerm := "mon"
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
 		FullText: searchTerm,
 	})
 	r.NoError(err)
 	r.NotNil(resp)
+	r.Greater(len(resp.Params), 0, "should return at least some parameters for common term")
 
-	// We cannot guarantee that results contain the term in a specific field,
-	// as the full text search checks multiple fields
+	// Check first few responses for the search term
+	foundMatch := false
+	checkCount := min(5, len(resp.Params))
+	for i := 0; i < checkCount; i++ {
+		param := resp.Params[i]
+		if strings.Contains(strings.ToLower(param.Name), searchTerm) ||
+			strings.Contains(strings.ToLower(param.Desc), searchTerm) ||
+			strings.Contains(strings.ToLower(param.LongDesc), searchTerm) {
+			foundMatch = true
+			break
+		}
+	}
+	r.True(foundMatch, "should find at least one parameter matching the search term in first %d results", checkCount)
 
 	// Test 6: Sorting by name ascending (default)
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
@@ -253,7 +265,7 @@ func Test_SearchConfig(t *testing.T) {
 	// Test 9: Check that parameter fields are properly populated
 	// This test checks that the conversion from internal config param to protobuf message works
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
-		// Limit to 1 parameter for simplicity
+		// Checking with a very common parameter name
 		Name: "mon_max_pg_per_osd",
 	})
 	r.NoError(err)
@@ -263,7 +275,6 @@ func Test_SearchConfig(t *testing.T) {
 		r.NotEmpty(param.Name, "name should not be empty")
 		r.NotEmpty(param.Type, "type should not be empty")
 		r.NotEmpty(param.Level, "level should not be empty")
-		// Description might be empty for some parameters, so we don't check it
 	}
 
 	// Test 10: Test with invalid service type
@@ -273,14 +284,9 @@ func Test_SearchConfig(t *testing.T) {
 	})
 	r.NoError(err)
 	r.NotNil(resp)
-}
 
-func Test_SearchConfig_CombinedFilters(t *testing.T) {
-	r := require.New(t)
-	client := pb.NewClusterClient(admConn)
-
-	// Test combining name wildcard with service filter
-	resp, err := client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+	// Test 11: Test combining name wildcard with service filter
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
 		Name:    "osd_*",
 		Service: pb.SearchConfigRequest_SERVICE_OSD,
 	})
