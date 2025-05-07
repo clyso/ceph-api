@@ -186,12 +186,12 @@ func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigReque
 	}
 
 	query := cephconfig.QueryParams{
-		Name:     req.Name,
-		FullText: req.FullText,
-		Service:  cephconfig.ServiceFromProto(req.Service),
-		Level:    cephconfig.LevelFromProto(req.Level),
-		Sort:     cephconfig.SortFromProto(req.Sort),
-		Order:    cephconfig.OrderFromProto(req.Order),
+		Name:     req.GetName(),
+		FullText: req.GetFullText(),
+		Service:  req.GetService(),
+		Level:    req.GetLevel(),
+		Sort:     req.GetSort(),
+		Order:    req.GetOrder(),
 	}
 
 	params := c.configSvc.Search(query)
@@ -201,7 +201,7 @@ func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigReque
 		respParams[i] = &pb.ConfigParam{
 			Name:               param.Name,
 			Type:               param.Type,
-			Level:              string(param.Level),
+			Level:              param.Level,
 			Desc:               param.Desc,
 			LongDesc:           param.LongDesc,
 			DefaultValue:       fmt.Sprint(param.Default),

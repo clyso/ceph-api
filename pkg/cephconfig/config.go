@@ -18,135 +18,37 @@ import (
 //go:embed config-index.json
 var configIndexFile embed.FS
 
-// ServiceType represents a Ceph service type
-type ServiceType string
-
-const (
-	ServiceMon     ServiceType = "mon"
-	ServiceOSD     ServiceType = "osd"
-	ServiceMDS     ServiceType = "mds"
-	ServiceRGW     ServiceType = "rgw"
-	ServiceMgr     ServiceType = "mgr"
-	ServiceCommon  ServiceType = "common"
-	ServiceClient  ServiceType = "client"
-	ServiceUnknown ServiceType = "unknown"
-)
-
-// ConfigParamLevel represents the configuration parameter level
-type ConfigParamLevel string
-
-const (
-	LevelBasic        ConfigParamLevel = "basic"
-	LevelAdvanced     ConfigParamLevel = "advanced"
-	LevelDeveloper    ConfigParamLevel = "developer"
-	LevelExperimental ConfigParamLevel = "experimental"
-	LevelUnknown      ConfigParamLevel = "unknown"
-)
-
-// UnmarshalJSON implements json.Unmarshaler interface for ConfigParamLevel
-func (l *ConfigParamLevel) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-	*l = mapStringToConfigParamLevel(s)
-	return nil
-}
-
-// SortOrder represents the sort order
-type SortOrder string
-
-const (
-	SortOrderAsc  SortOrder = "asc"
-	SortOrderDesc SortOrder = "desc"
-)
-
-// SortField represents the field to sort by
-type SortField string
-
-const (
-	SortFieldName    SortField = "name"
-	SortFieldType    SortField = "type"
-	SortFieldService SortField = "service"
-	SortFieldLevel   SortField = "level"
-)
-
 // ConfigParamInfo represents the help data for a Ceph configuration parameter
 type ConfigParamInfo struct {
-	Name               string           `json:"name"`
-	Type               string           `json:"type"`
-	Level              ConfigParamLevel `json:"level"`
-	Desc               string           `json:"desc"`
-	LongDesc           string           `json:"long_desc"`
-	Default            interface{}      `json:"default"`
-	DaemonDefault      interface{}      `json:"daemon_default"`
-	Tags               []string         `json:"tags"`
-	Services           []string         `json:"services"`
-	SeeAlso            []string         `json:"see_also"`
-	EnumValues         []string         `json:"enum_values"`
-	Min                interface{}      `json:"min"`
-	Max                interface{}      `json:"max"`
-	CanUpdateAtRuntime bool             `json:"can_update_at_runtime"`
-	Flags              []string         `json:"flags"`
+	Name               string      `json:"name"`
+	Type               string      `json:"type"`
+	Level              string      `json:"level"`
+	Desc               string      `json:"desc"`
+	LongDesc           string      `json:"long_desc"`
+	Default            interface{} `json:"default"`
+	DaemonDefault      interface{} `json:"daemon_default"`
+	Tags               []string    `json:"tags"`
+	Services           []string    `json:"services"`
+	SeeAlso            []string    `json:"see_also"`
+	EnumValues         []string    `json:"enum_values"`
+	Min                interface{} `json:"min"`
+	Max                interface{} `json:"max"`
+	CanUpdateAtRuntime bool        `json:"can_update_at_runtime"`
+	Flags              []string    `json:"flags"`
 }
 
 // QueryParams contains the parameters for config search
 type QueryParams struct {
-	Service  ServiceType      `json:"service"`
-	Name     string           `json:"name"`
-	FullText string           `json:"full_text"`
-	Level    ConfigParamLevel `json:"level"`
-	Sort     SortField        `json:"sort"`
-	Order    SortOrder        `json:"order"`
+	Service  pb.SearchConfigRequest_ServiceType
+	Name     string
+	FullText string
+	Level    pb.SearchConfigRequest_ConfigLevel
+	Sort     pb.SearchConfigRequest_SortField
+	Order    pb.SearchConfigRequest_SortOrder
 }
 
 // ConfigParams is a map of parameter names to their information
 type ConfigParams map[string]ConfigParamInfo
-
-// ServiceFromProto converts gRPC service type to internal service type
-func ServiceFromProto(service pb.SearchConfigRequest_ServiceType) ServiceType {
-	serviceMap := map[pb.SearchConfigRequest_ServiceType]ServiceType{
-		pb.SearchConfigRequest_SERVICE_MON:    ServiceMon,
-		pb.SearchConfigRequest_SERVICE_OSD:    ServiceOSD,
-		pb.SearchConfigRequest_SERVICE_MDS:    ServiceMDS,
-		pb.SearchConfigRequest_SERVICE_RGW:    ServiceRGW,
-		pb.SearchConfigRequest_SERVICE_MGR:    ServiceMgr,
-		pb.SearchConfigRequest_SERVICE_COMMON: ServiceCommon,
-		pb.SearchConfigRequest_SERVICE_CLIENT: ServiceClient,
-	}
-	return serviceMap[service]
-}
-
-// LevelFromProto converts gRPC level type to internal level type
-func LevelFromProto(level pb.SearchConfigRequest_ConfigLevel) ConfigParamLevel {
-	levelMap := map[pb.SearchConfigRequest_ConfigLevel]ConfigParamLevel{
-		pb.SearchConfigRequest_LEVEL_BASIC:        LevelBasic,
-		pb.SearchConfigRequest_LEVEL_ADVANCED:     LevelAdvanced,
-		pb.SearchConfigRequest_LEVEL_DEVELOPER:    LevelDeveloper,
-		pb.SearchConfigRequest_LEVEL_EXPERIMENTAL: LevelExperimental,
-	}
-	return levelMap[level]
-}
-
-// SortFromProto converts gRPC sort type to internal sort type
-func SortFromProto(sort pb.SearchConfigRequest_SortField) SortField {
-	sortMap := map[pb.SearchConfigRequest_SortField]SortField{
-		pb.SearchConfigRequest_SORT_NAME:    SortFieldName,
-		pb.SearchConfigRequest_SORT_TYPE:    SortFieldType,
-		pb.SearchConfigRequest_SORT_SERVICE: SortFieldService,
-		pb.SearchConfigRequest_SORT_LEVEL:   SortFieldLevel,
-	}
-	return sortMap[sort]
-}
-
-// OrderFromProto converts gRPC order type to internal order type
-func OrderFromProto(order pb.SearchConfigRequest_SortOrder) SortOrder {
-	orderMap := map[pb.SearchConfigRequest_SortOrder]SortOrder{
-		pb.SearchConfigRequest_SORT_ASC:  SortOrderAsc,
-		pb.SearchConfigRequest_SORT_DESC: SortOrderDesc,
-	}
-	return orderMap[order]
-}
 
 // Config manages Ceph configuration parameters
 type Config struct {
@@ -263,9 +165,9 @@ func (c *Config) UpdateConfigFromCluster(ctx context.Context, radosSvc *rados.Sv
 		for _, name := range paramsToAdd {
 			c.params[name] = ConfigParamInfo{
 				Name:     name,
-				Level:    LevelUnknown,
-				Type:     "unknown",
-				Services: []string{"unknown"},
+				Level:    "",
+				Type:     "",
+				Services: []string{""},
 			}
 		}
 
@@ -330,22 +232,6 @@ func parseConfigHelpResponse(jsonResponse []byte, paramName string) (ConfigParam
 	return paramInfo, nil
 }
 
-// mapStringToConfigParamLevel maps a string level to ConfigParamLevel enum
-func mapStringToConfigParamLevel(level string) ConfigParamLevel {
-	switch strings.ToLower(level) {
-	case "basic":
-		return LevelBasic
-	case "advanced":
-		return LevelAdvanced
-	case "developer":
-		return LevelDeveloper
-	case "experimental":
-		return LevelExperimental
-	default:
-		return LevelUnknown
-	}
-}
-
 // Search searches for configuration parameters according to the query parameters
 func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 	// Acquire read lock
@@ -353,11 +239,11 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 	defer c.mu.RUnlock()
 
 	// Set default values
-	if query.Sort == "" {
-		query.Sort = SortFieldName
+	if query.Sort == 0 {
+		query.Sort = pb.SearchConfigRequest_NAME
 	}
-	if query.Order == "" {
-		query.Order = SortOrderAsc
+	if query.Order == 0 {
+		query.Order = pb.SearchConfigRequest_ASC
 	}
 
 	// Pre-allocate result slice with a small initial capacity
@@ -393,12 +279,13 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 }
 
 // matchesService checks if the parameter matches the service filter
-func (c *Config) matchesService(info ConfigParamInfo, service ServiceType) bool {
-	if service == "" {
+func (c *Config) matchesService(info ConfigParamInfo, service pb.SearchConfigRequest_ServiceType) bool {
+	if service == 0 {
 		return true
 	}
+	serviceStr := service.String()
 	for _, svc := range info.Services {
-		if ServiceType(svc) == service {
+		if strings.EqualFold(svc, serviceStr) {
 			return true
 		}
 	}
@@ -414,11 +301,11 @@ func (c *Config) matchesName(info ConfigParamInfo, name string) bool {
 }
 
 // matchesLevel checks if the parameter matches the level filter
-func (c *Config) matchesLevel(info ConfigParamInfo, level ConfigParamLevel) bool {
-	if level == "" {
+func (c *Config) matchesLevel(info ConfigParamInfo, level pb.SearchConfigRequest_ConfigLevel) bool {
+	if level == 0 {
 		return true
 	}
-	return info.Level == level
+	return strings.EqualFold(info.Level, level.String())
 }
 
 // matchesFullText checks if the parameter matches the full-text search
@@ -430,7 +317,7 @@ func (c *Config) matchesFullText(info ConfigParamInfo, fullTextLower string) boo
 	// Check text fields
 	if strings.Contains(strings.ToLower(info.Name), fullTextLower) ||
 		strings.Contains(strings.ToLower(info.Type), fullTextLower) ||
-		strings.Contains(strings.ToLower(string(info.Level)), fullTextLower) ||
+		strings.Contains(strings.ToLower(info.Level), fullTextLower) ||
 		strings.Contains(strings.ToLower(info.Desc), fullTextLower) ||
 		strings.Contains(strings.ToLower(info.LongDesc), fullTextLower) ||
 		strings.Contains(strings.ToLower(fmt.Sprint(info.Default)), fullTextLower) ||
@@ -454,7 +341,7 @@ func (c *Config) matchesFullText(info ConfigParamInfo, fullTextLower string) boo
 }
 
 // sortResults sorts the results using Go's built-in sort
-func (c *Config) sortResults(results []ConfigParamInfo, field SortField, order SortOrder) {
+func (c *Config) sortResults(results []ConfigParamInfo, field pb.SearchConfigRequest_SortField, order pb.SearchConfigRequest_SortOrder) {
 	if len(results) <= 1 {
 		return
 	}
@@ -462,22 +349,22 @@ func (c *Config) sortResults(results []ConfigParamInfo, field SortField, order S
 	// Create a sort.Interface implementation
 	sort.Slice(results, func(i, j int) bool {
 		switch field {
-		case SortFieldName:
-			if order == SortOrderAsc {
+		case pb.SearchConfigRequest_NAME:
+			if order == pb.SearchConfigRequest_ASC {
 				return results[i].Name < results[j].Name
 			}
 			return results[i].Name > results[j].Name
-		case SortFieldType:
-			if order == SortOrderAsc {
+		case pb.SearchConfigRequest_TYPE:
+			if order == pb.SearchConfigRequest_ASC {
 				return results[i].Type < results[j].Type
 			}
 			return results[i].Type > results[j].Type
-		case SortFieldLevel:
-			if order == SortOrderAsc {
-				return string(results[i].Level) < string(results[j].Level)
+		case pb.SearchConfigRequest_LEVEL:
+			if order == pb.SearchConfigRequest_ASC {
+				return results[i].Level < results[j].Level
 			}
-			return string(results[i].Level) > string(results[j].Level)
-		case SortFieldService:
+			return results[i].Level > results[j].Level
+		case pb.SearchConfigRequest_SERVICE:
 			iService := ""
 			jService := ""
 			if len(results[i].Services) > 0 {
@@ -486,7 +373,7 @@ func (c *Config) sortResults(results []ConfigParamInfo, field SortField, order S
 			if len(results[j].Services) > 0 {
 				jService = results[j].Services[0]
 			}
-			if order == SortOrderAsc {
+			if order == pb.SearchConfigRequest_ASC {
 				return iService < jService
 			}
 			return iService > jService
