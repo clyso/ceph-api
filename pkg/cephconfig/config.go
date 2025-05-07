@@ -167,8 +167,8 @@ func loadConfigParams() (ConfigParams, error) {
 		return nil, fmt.Errorf("failed to read embedded config-index.json: %w", err)
 	}
 
-	// Parse the JSON structure (array of objects with single key)
-	var jsonArray []map[string]ConfigParamInfo
+	// Parse the JSON structure (array of ConfigParamInfo objects)
+	var jsonArray []ConfigParamInfo
 	err = json.Unmarshal(data, &jsonArray)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config index JSON: %w", err)
@@ -176,10 +176,8 @@ func loadConfigParams() (ConfigParams, error) {
 
 	// Convert to our ConfigParams map format
 	configParams := make(ConfigParams)
-	for _, item := range jsonArray {
-		for name, info := range item {
-			configParams[name] = info
-		}
+	for _, info := range jsonArray {
+		configParams[info.Name] = info
 	}
 
 	return configParams, nil
