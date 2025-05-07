@@ -217,16 +217,15 @@
             "required": false,
             "type": "string",
             "enum": [
-              "SERVICE_UNKNOWN",
-              "SERVICE_MON",
-              "SERVICE_OSD",
-              "SERVICE_MDS",
-              "SERVICE_RGW",
-              "SERVICE_MGR",
-              "SERVICE_COMMON",
-              "SERVICE_CLIENT"
+              "MON",
+              "OSD",
+              "MDS",
+              "RGW",
+              "MGR",
+              "COMMON",
+              "CLIENT"
             ],
-            "default": "SERVICE_UNKNOWN"
+            "default": "MON"
           },
           {
             "name": "name",
@@ -246,13 +245,12 @@
             "required": false,
             "type": "string",
             "enum": [
-              "LEVEL_UNKNOWN",
-              "LEVEL_BASIC",
-              "LEVEL_ADVANCED",
-              "LEVEL_DEVELOPER",
-              "LEVEL_EXPERIMENTAL"
+              "BASIC",
+              "ADVANCED",
+              "DEVELOPER",
+              "EXPERIMENTAL"
             ],
-            "default": "LEVEL_UNKNOWN"
+            "default": "BASIC"
           },
           {
             "name": "sort",
@@ -260,12 +258,12 @@
             "required": false,
             "type": "string",
             "enum": [
-              "SORT_NAME",
-              "SORT_TYPE",
-              "SORT_SERVICE",
-              "SORT_LEVEL"
+              "NAME",
+              "TYPE",
+              "SERVICE",
+              "LEVEL"
             ],
-            "default": "SORT_NAME"
+            "default": "NAME"
           },
           {
             "name": "order",
@@ -273,10 +271,10 @@
             "required": false,
             "type": "string",
             "enum": [
-              "SORT_ASC",
-              "SORT_DESC"
+              "ASC",
+              "DESC"
             ],
-            "default": "SORT_ASC"
+            "default": "ASC"
           }
         ],
         "tags": [
@@ -1826,45 +1824,43 @@
     "SearchConfigRequestConfigLevel": {
       "type": "string",
       "enum": [
-        "LEVEL_UNKNOWN",
-        "LEVEL_BASIC",
-        "LEVEL_ADVANCED",
-        "LEVEL_DEVELOPER",
-        "LEVEL_EXPERIMENTAL"
+        "BASIC",
+        "ADVANCED",
+        "DEVELOPER",
+        "EXPERIMENTAL"
       ],
-      "default": "LEVEL_UNKNOWN"
+      "default": "BASIC"
     },
     "SearchConfigRequestServiceType": {
       "type": "string",
       "enum": [
-        "SERVICE_UNKNOWN",
-        "SERVICE_MON",
-        "SERVICE_OSD",
-        "SERVICE_MDS",
-        "SERVICE_RGW",
-        "SERVICE_MGR",
-        "SERVICE_COMMON",
-        "SERVICE_CLIENT"
+        "MON",
+        "OSD",
+        "MDS",
+        "RGW",
+        "MGR",
+        "COMMON",
+        "CLIENT"
       ],
-      "default": "SERVICE_UNKNOWN"
+      "default": "MON"
     },
     "SearchConfigRequestSortField": {
       "type": "string",
       "enum": [
-        "SORT_NAME",
-        "SORT_TYPE",
-        "SORT_SERVICE",
-        "SORT_LEVEL"
+        "NAME",
+        "TYPE",
+        "SERVICE",
+        "LEVEL"
       ],
-      "default": "SORT_NAME"
+      "default": "NAME"
     },
     "SearchConfigRequestSortOrder": {
       "type": "string",
       "enum": [
-        "SORT_ASC",
-        "SORT_DESC"
+        "ASC",
+        "DESC"
       ],
-      "default": "SORT_ASC"
+      "default": "ASC"
     },
     "UsersUpdateRoleBody": {
       "type": "object",

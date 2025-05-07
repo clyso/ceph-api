@@ -75,42 +75,40 @@ message ExportClusterUserResp{
 // Config Param Search 
 message SearchConfigRequest {
     enum ServiceType {
-        SERVICE_UNKNOWN = 0;
-        SERVICE_MON = 1;
-        SERVICE_OSD = 2;
-        SERVICE_MDS = 3;
-        SERVICE_RGW = 4;
-        SERVICE_MGR = 5;
-        SERVICE_COMMON = 6;
-        SERVICE_CLIENT = 7;
+        MON = 0;
+        OSD = 1;
+        MDS = 2;
+        RGW = 3;
+        MGR = 4;
+        COMMON = 5;
+        CLIENT = 6;
     }
     
     enum ConfigLevel {
-        LEVEL_UNKNOWN = 0;
-        LEVEL_BASIC = 1;
-        LEVEL_ADVANCED = 2;
-        LEVEL_DEVELOPER = 3;
-        LEVEL_EXPERIMENTAL = 4;
+        BASIC = 0;
+        ADVANCED = 1;
+        DEVELOPER = 2;
+        EXPERIMENTAL = 3;
     }
     
     enum SortField {
-        SORT_NAME = 0;
-        SORT_TYPE = 1;
-        SORT_SERVICE = 2;
-        SORT_LEVEL = 3;
+        NAME = 0;
+        TYPE = 1;
+        SERVICE = 2;
+        LEVEL = 3;
     }
     
     enum SortOrder {
-        SORT_ASC = 0;
-        SORT_DESC = 1;
+        ASC = 0;
+        DESC = 1;
     }
     
-    ServiceType service = 1;
-    string name = 2;
-    string full_text = 3;
-    ConfigLevel level = 4;
-    SortField sort = 5;
-    SortOrder order = 6;
+    optional ServiceType service = 1;
+    optional string name = 2;
+    optional string full_text = 3;
+    optional ConfigLevel level = 4;
+    optional SortField sort = 5;
+    optional SortOrder order = 6;
 }
 
 message ConfigParam {
