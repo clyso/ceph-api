@@ -139,8 +139,9 @@ func Test_SearchConfig(t *testing.T) {
 	r.Greater(len(resp.Params), 0, "should return at least some parameters")
 
 	// Test 2: Filter by service type
+	serviceMon := pb.SearchConfigRequest_MON
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
-		Service: pb.SearchConfigRequest_SERVICE_MON,
+		Service: &serviceMon,
 	})
 	r.NoError(err)
 	r.NotNil(resp)
@@ -161,8 +162,9 @@ func Test_SearchConfig(t *testing.T) {
 	// Test 3: Filter by name with wildcard
 	// Find a common parameter prefix first to ensure we get results
 	commonParamPrefix := "mon_"
+	namePattern := commonParamPrefix + "*"
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
-		Name: commonParamPrefix + "*",
+		Name: &namePattern,
 	})
 	r.NoError(err)
 	r.NotNil(resp)
@@ -175,8 +177,9 @@ func Test_SearchConfig(t *testing.T) {
 	}
 
 	// Test 4: Filter by level
+	levelBasic := pb.SearchConfigRequest_BASIC
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
-		Level: pb.SearchConfigRequest_LEVEL_BASIC,
+		Level: &levelBasic,
 	})
 	r.NoError(err)
 	r.NotNil(resp)
@@ -190,7 +193,7 @@ func Test_SearchConfig(t *testing.T) {
 	// Test 5: Full text search for a very common term
 	searchTerm := "mon"
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
-		FullText: searchTerm,
+		FullText: &searchTerm,
 	})
 	r.NoError(err)
 	r.NotNil(resp)
@@ -211,9 +214,11 @@ func Test_SearchConfig(t *testing.T) {
 	r.True(foundMatch, "should find at least one parameter matching the search term in first %d results", checkCount)
 
 	// Test 6: Sorting by name ascending (default)
+	sortName := pb.SearchConfigRequest_NAME
+	sortAsc := pb.SearchConfigRequest_ASC
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
-		Sort:  pb.SearchConfigRequest_SORT_NAME,
-		Order: pb.SearchConfigRequest_SORT_ASC,
+		Sort:  &sortName,
+		Order: &sortAsc,
 	})
 	r.NoError(err)
 	r.NotNil(resp)
@@ -226,9 +231,10 @@ func Test_SearchConfig(t *testing.T) {
 	}
 
 	// Test 7: Sorting by name descending
+	sortDesc := pb.SearchConfigRequest_DESC
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
-		Sort:  pb.SearchConfigRequest_SORT_NAME,
-		Order: pb.SearchConfigRequest_SORT_DESC,
+		Sort:  &sortName,
+		Order: &sortDesc,
 	})
 	r.NoError(err)
 	r.NotNil(resp)
@@ -241,9 +247,11 @@ func Test_SearchConfig(t *testing.T) {
 	}
 
 	// Test 8: Combined filters - service and level
+	serviceOsd := pb.SearchConfigRequest_OSD
+	levelAdvanced := pb.SearchConfigRequest_ADVANCED
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
-		Service: pb.SearchConfigRequest_SERVICE_OSD,
-		Level:   pb.SearchConfigRequest_LEVEL_ADVANCED,
+		Service: &serviceOsd,
+		Level:   &levelAdvanced,
 	})
 	r.NoError(err)
 	r.NotNil(resp)
@@ -264,9 +272,10 @@ func Test_SearchConfig(t *testing.T) {
 
 	// Test 9: Check that parameter fields are properly populated
 	// This test checks that the conversion from internal config param to protobuf message works
+	paramName := "mon_max_pg_per_osd"
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
 		// Checking with a very common parameter name
-		Name: "mon_max_pg_per_osd",
+		Name: &paramName,
 	})
 	r.NoError(err)
 	r.NotNil(resp)
@@ -279,16 +288,18 @@ func Test_SearchConfig(t *testing.T) {
 
 	// Test 10: Test with invalid service type
 	// The handler should not return an error but rather return no results
+	serviceCommon := pb.SearchConfigRequest_COMMON
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
-		Service: pb.SearchConfigRequest_SERVICE_UNKNOWN,
+		Service: &serviceCommon,
 	})
 	r.NoError(err)
 	r.NotNil(resp)
 
 	// Test 11: Test combining name wildcard with service filter
+	namePattern = "osd_*"
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
-		Name:    "osd_*",
-		Service: pb.SearchConfigRequest_SERVICE_OSD,
+		Name:    &namePattern,
+		Service: &serviceOsd,
 	})
 	r.NoError(err)
 	r.NotNil(resp)
