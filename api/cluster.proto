@@ -75,13 +75,18 @@ message ExportClusterUserResp{
 // Config Param Search 
 message SearchConfigRequest {
     enum ServiceType {
-        MON = 0;
-        OSD = 1;
+        COMMON = 0;
+        MON = 1;
         MDS = 2;
-        RGW = 3;
+        OSD = 3;
         MGR = 4;
-        COMMON = 5;
-        CLIENT = 6;
+        RGW = 5;
+        RBD = 6;
+        RBD_MIRROR = 7;
+        IMMUTABLE_OBJECT_CACHE = 8;
+        MDS_CLIENT = 9;
+        CEPHFS_MIRROR = 10;
+        CEPH_EXPORTER = 11;
     }
     
     enum ConfigLevel {
