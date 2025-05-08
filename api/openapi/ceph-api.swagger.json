@@ -217,15 +217,20 @@
             "required": false,
             "type": "string",
             "enum": [
-              "MON",
-              "OSD",
-              "MDS",
-              "RGW",
-              "MGR",
               "COMMON",
-              "CLIENT"
+              "MON",
+              "MDS",
+              "OSD",
+              "MGR",
+              "RGW",
+              "RBD",
+              "RBD_MIRROR",
+              "IMMUTABLE_OBJECT_CACHE",
+              "MDS_CLIENT",
+              "CEPHFS_MIRROR",
+              "CEPH_EXPORTER"
             ],
-            "default": "MON"
+            "default": "COMMON"
           },
           {
             "name": "name",
@@ -1834,15 +1839,20 @@
     "SearchConfigRequestServiceType": {
       "type": "string",
       "enum": [
-        "MON",
-        "OSD",
-        "MDS",
-        "RGW",
-        "MGR",
         "COMMON",
-        "CLIENT"
+        "MON",
+        "MDS",
+        "OSD",
+        "MGR",
+        "RGW",
+        "RBD",
+        "RBD_MIRROR",
+        "IMMUTABLE_OBJECT_CACHE",
+        "MDS_CLIENT",
+        "CEPHFS_MIRROR",
+        "CEPH_EXPORTER"
       ],
-      "default": "MON"
+      "default": "COMMON"
     },
     "SearchConfigRequestSortField": {
       "type": "string",
