@@ -114,13 +114,17 @@ func loadConfigParams() (ConfigParams, error) {
 }
 
 // NewConfig creates a new Config instance and updates parameters from the cluster synchronously
-func NewConfig(ctx context.Context, radosSvc *rados.Svc) (*Config, error) {
+func NewConfig(ctx context.Context, radosSvc *rados.Svc, skipUpdate bool) (*Config, error) {
 	params, err := loadConfigParams()
 	if err != nil {
 		return nil, err
 	}
 	cfg := &Config{
 		params: params,
+	}
+
+	if skipUpdate {
+		return cfg, nil
 	}
 
 	logger := zerolog.Ctx(ctx)
