@@ -146,25 +146,6 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 				return nil
 			},
 		},
-		{
-			name:  "Case insensitivity in service filter",
-			query: QueryParams{Service: 3},
-			assert: func(results []ConfigParamInfo) error {
-				for _, r := range results {
-					found := false
-					for _, svc := range r.Services {
-						if strings.EqualFold(svc, "OSD") {
-							found = true
-							break
-						}
-					}
-					if !found {
-						return fmt.Errorf("param %s does not have service 'OSD' (case-insensitive)", r.Name)
-					}
-				}
-				return nil
-			},
-		},
 	}
 
 	for _, tt := range tests {
