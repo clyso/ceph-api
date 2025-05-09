@@ -280,10 +280,41 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 
 // matchesService checks if the parameter matches the service filter
 func (c *Config) matchesService(info ConfigParamInfo, service pb.SearchConfigRequest_ServiceType) bool {
-	if service == 0 {
+	if service == pb.SearchConfigRequest_COMMON {
 		return true
 	}
-	serviceStr := service.String()
+
+	// Map enum to canonical string representation
+	var serviceStr string
+	switch service {
+	case pb.SearchConfigRequest_COMMON:
+		serviceStr = "common"
+	case pb.SearchConfigRequest_MON:
+		serviceStr = "mon"
+	case pb.SearchConfigRequest_MDS:
+		serviceStr = "mds"
+	case pb.SearchConfigRequest_OSD:
+		serviceStr = "osd"
+	case pb.SearchConfigRequest_MGR:
+		serviceStr = "mgr"
+	case pb.SearchConfigRequest_RGW:
+		serviceStr = "rgw"
+	case pb.SearchConfigRequest_RBD:
+		serviceStr = "rbd"
+	case pb.SearchConfigRequest_RBD_MIRROR:
+		serviceStr = "rbd-mirror"
+	case pb.SearchConfigRequest_IMMUTABLE_OBJECT_CACHE:
+		serviceStr = "immutable-object-cache"
+	case pb.SearchConfigRequest_MDS_CLIENT:
+		serviceStr = "mds_client"
+	case pb.SearchConfigRequest_CEPHFS_MIRROR:
+		serviceStr = "cephfs-mirror"
+	case pb.SearchConfigRequest_CEPH_EXPORTER:
+		serviceStr = "ceph-exporter"
+	default:
+		serviceStr = service.String()
+	}
+
 	for _, svc := range info.Services {
 		if strings.EqualFold(svc, serviceStr) {
 			return true
@@ -302,10 +333,16 @@ func (c *Config) matchesName(info ConfigParamInfo, name string) bool {
 
 // matchesLevel checks if the parameter matches the level filter
 func (c *Config) matchesLevel(info ConfigParamInfo, level pb.SearchConfigRequest_ConfigLevel) bool {
-	if level == 0 {
-		return true
+	if level == pb.SearchConfigRequest_BASIC {
+		return strings.EqualFold(info.Level, "basic")
 	}
-	return strings.EqualFold(info.Level, level.String())
+	if level == pb.SearchConfigRequest_ADVANCED {
+		return strings.EqualFold(info.Level, "advanced")
+	}
+	if level == pb.SearchConfigRequest_DEV {
+		return strings.EqualFold(info.Level, "dev")
+	}
+	return true
 }
 
 // matchesFullText checks if the parameter matches the full-text search

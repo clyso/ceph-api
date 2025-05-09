@@ -92,8 +92,7 @@ message SearchConfigRequest {
     enum ConfigLevel {
         BASIC = 0;
         ADVANCED = 1;
-        DEVELOPER = 2;
-        EXPERIMENTAL = 3;
+        DEV = 2;
     }
     
     enum SortField {

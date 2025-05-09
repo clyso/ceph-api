@@ -252,8 +252,7 @@
             "enum": [
               "BASIC",
               "ADVANCED",
-              "DEVELOPER",
-              "EXPERIMENTAL"
+              "DEV"
             ],
             "default": "BASIC"
           },
@@ -1831,8 +1830,7 @@
       "enum": [
         "BASIC",
         "ADVANCED",
-        "DEVELOPER",
-        "EXPERIMENTAL"
+        "DEV"
       ],
       "default": "BASIC"
     },
