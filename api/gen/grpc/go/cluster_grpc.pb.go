@@ -8,7 +8,6 @@ package pb
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -28,6 +27,7 @@ const (
 	Cluster_CreateUser_FullMethodName   = "/ceph.Cluster/CreateUser"
 	Cluster_ExportUser_FullMethodName   = "/ceph.Cluster/ExportUser"
 	Cluster_DeleteUser_FullMethodName   = "/ceph.Cluster/DeleteUser"
+	Cluster_SearchConfig_FullMethodName = "/ceph.Cluster/SearchConfig"
 )
 
 // ClusterClient is the client API for Cluster service.
@@ -43,6 +43,7 @@ type ClusterClient interface {
 	CreateUser(ctx context.Context, in *CreateClusterUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ExportUser(ctx context.Context, in *ExportClusterUserReq, opts ...grpc.CallOption) (*ExportClusterUserResp, error)
 	DeleteUser(ctx context.Context, in *DeleteClusterUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	SearchConfig(ctx context.Context, in *SearchConfigRequest, opts ...grpc.CallOption) (*SearchConfigResponse, error)
 }
 
 type clusterClient struct {
@@ -123,6 +124,16 @@ func (c *clusterClient) DeleteUser(ctx context.Context, in *DeleteClusterUserReq
 	return out, nil
 }
 
+func (c *clusterClient) SearchConfig(ctx context.Context, in *SearchConfigRequest, opts ...grpc.CallOption) (*SearchConfigResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchConfigResponse)
+	err := c.cc.Invoke(ctx, Cluster_SearchConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ClusterServer is the server API for Cluster service.
 // All implementations should embed UnimplementedClusterServer
 // for forward compatibility.
@@ -136,6 +147,7 @@ type ClusterServer interface {
 	CreateUser(context.Context, *CreateClusterUserReq) (*emptypb.Empty, error)
 	ExportUser(context.Context, *ExportClusterUserReq) (*ExportClusterUserResp, error)
 	DeleteUser(context.Context, *DeleteClusterUserReq) (*emptypb.Empty, error)
+	SearchConfig(context.Context, *SearchConfigRequest) (*SearchConfigResponse, error)
 }
 
 // UnimplementedClusterServer should be embedded to have
@@ -165,6 +177,9 @@ func (UnimplementedClusterServer) ExportUser(context.Context, *ExportClusterUser
 }
 func (UnimplementedClusterServer) DeleteUser(context.Context, *DeleteClusterUserReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
+}
+func (UnimplementedClusterServer) SearchConfig(context.Context, *SearchConfigRequest) (*SearchConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchConfig not implemented")
 }
 func (UnimplementedClusterServer) testEmbeddedByValue() {}
 
@@ -312,6 +327,24 @@ func _Cluster_DeleteUser_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Cluster_SearchConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterServer).SearchConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Cluster_SearchConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterServer).SearchConfig(ctx, req.(*SearchConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Cluster_ServiceDesc is the grpc.ServiceDesc for Cluster service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -346,6 +379,10 @@ var Cluster_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteUser",
 			Handler:    _Cluster_DeleteUser_Handler,
+		},
+		{
+			MethodName: "SearchConfig",
+			Handler:    _Cluster_SearchConfig_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
