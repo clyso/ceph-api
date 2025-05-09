@@ -57,8 +57,8 @@ type Config struct {
 // loadConfigParams loads all Ceph configuration parameters from the embedded JSON file
 func loadConfigParams() (ConfigParams, error) {
 	// Open the embedded config index file
-	logger := zerolog.DefaultContextLogger.Info()
-	logger.Msg("EMBED : Loading Ceph configuration parameters from embedded JSON file")
+	logger := zerolog.DefaultContextLogger
+	logger.Info().Msg("Loading Ceph configuration parameters from embedded JSON file")
 
 	// Read the file data
 	data, err := configIndexFile.ReadFile("config-index.json")
@@ -221,8 +221,8 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 		query.Order = pb.SearchConfigRequest_ASC
 	}
 
-	// Pre-allocate result slice with a small initial capacity
-	result := make([]ConfigParamInfo, 0, 16) // Start with a small capacity that will grow as needed
+	// Remove pre-allocation optimization
+	var result []ConfigParamInfo
 
 	// Convert full text to lowercase once if needed
 	var fullTextLower string
