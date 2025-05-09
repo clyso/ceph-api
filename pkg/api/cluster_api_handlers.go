@@ -18,18 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func NewClusterAPI(radosSvc *rados.Svc) pb.ClusterServer {
-	configSvc, err := cephconfig.NewConfig()
-	if err != nil {
-		zerolog.Ctx(context.Background()).Err(err).Msg("failed to create config service")
-	}
-
-	// Initialize the background update of config parameters from the cluster
-	if configSvc != nil {
-		ctx := context.Background()
-		configSvc.UpdateConfigFromCluster(ctx, radosSvc)
-	}
-
+func NewClusterAPI(radosSvc *rados.Svc, configSvc *cephconfig.Config) pb.ClusterServer {
 	return &clusterAPI{
 		radosSvc:  radosSvc,
 		configSvc: configSvc,
@@ -179,10 +168,6 @@ func (c *clusterAPI) UpdateStatus(ctx context.Context, req *pb.ClusterStatus) (*
 func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigRequest) (*pb.SearchConfigResponse, error) {
 	if err := user.HasPermissions(ctx, user.ScopeConfigOpt, user.PermRead); err != nil {
 		return nil, err
-	}
-
-	if c.configSvc == nil {
-		return nil, errors.New("config service is not initialized")
 	}
 
 	query := cephconfig.QueryParams{

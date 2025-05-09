@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 
 	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
 	"github.com/clyso/ceph-api/pkg/rados"
@@ -52,9 +51,7 @@ type ConfigParams map[string]ConfigParamInfo
 
 // Config manages Ceph configuration parameters
 type Config struct {
-	params     ConfigParams
-	mu         sync.RWMutex
-	isUpdating bool
+	params ConfigParams
 }
 
 // loadConfigParams loads all Ceph configuration parameters from the embedded JSON file
@@ -85,108 +82,90 @@ func loadConfigParams() (ConfigParams, error) {
 	return configParams, nil
 }
 
-// NewConfig creates a new Config instance
-func NewConfig() (*Config, error) {
+// NewConfig creates a new Config instance and updates parameters from the cluster synchronously
+func NewConfig(ctx context.Context, radosSvc *rados.Svc) (*Config, error) {
 	params, err := loadConfigParams()
 	if err != nil {
 		return nil, err
 	}
-	return &Config{
-		params:     params,
-		isUpdating: false,
-	}, nil
-}
-
-// UpdateConfigFromCluster updates the configuration parameters by querying the Ceph cluster
-// This is done in the background to avoid slowing down the initialization process
-func (c *Config) UpdateConfigFromCluster(ctx context.Context, radosSvc *rados.Svc) {
-	// If already updating, don't start again
-	if c.isUpdating {
-		return
+	cfg := &Config{
+		params: params,
 	}
 
-	c.isUpdating = true
+	logger := zerolog.Ctx(ctx)
+	logger.Info().Msg("Updating Ceph configuration parameters from cluster")
 
-	go func() {
-		defer func() { c.isUpdating = false }()
+	// Execute 'ceph config ls' command to get current configuration
+	const monCmd = `{"prefix": "config ls", "format": "json"}`
+	cmdRes, err := radosSvc.ExecMon(ctx, monCmd)
+	if err != nil {
+		logger.Err(err).Msg("Failed to execute 'config ls' command")
+		return cfg, nil // Return with just embedded params
+	}
 
-		logger := zerolog.Ctx(ctx)
-		logger.Info().Msg("Starting background update of Ceph configuration parameters from cluster")
+	// Parse the result - it's an array of parameter names
+	var clusterParams []string
+	err = json.Unmarshal(cmdRes, &clusterParams)
+	if err != nil {
+		logger.Err(err).Msg("Failed to unmarshal config ls response")
+		return cfg, nil
+	}
 
-		// Execute 'ceph config ls' command to get current configuration
-		const monCmd = `{"prefix": "config ls", "format": "json"}`
-		cmdRes, err := radosSvc.ExecMon(ctx, monCmd)
-		if err != nil {
-			logger.Err(err).Msg("Failed to execute 'config ls' command")
-			return
+	// Create a map for quick lookup of parameter names
+	clusterParamsMap := make(map[string]bool)
+	for _, param := range clusterParams {
+		clusterParamsMap[param] = true
+	}
+
+	// Get the current parameter names
+	currentParamsMap := make(map[string]bool)
+	for name := range cfg.params {
+		currentParamsMap[name] = true
+	}
+
+	// Find parameters to add (present in cluster but not in our map)
+	var paramsToAdd []string
+	for name := range clusterParamsMap {
+		if !currentParamsMap[name] {
+			paramsToAdd = append(paramsToAdd, name)
 		}
+	}
 
-		// Parse the result - it's an array of parameter names
-		var clusterParams []string
-		err = json.Unmarshal(cmdRes, &clusterParams)
-		if err != nil {
-			logger.Err(err).Msg("Failed to unmarshal config ls response")
-			return
+	// Find parameters to remove (present in our map but not in cluster)
+	var paramsToRemove []string
+	for name := range currentParamsMap {
+		if !clusterParamsMap[name] {
+			paramsToRemove = append(paramsToRemove, name)
 		}
+	}
 
-		// Create a map for quick lookup of parameter names
-		clusterParamsMap := make(map[string]bool)
-		for _, param := range clusterParams {
-			clusterParamsMap[param] = true
+	// Add new parameters with minimal info (they will need full info from 'config help' later)
+	for _, name := range paramsToAdd {
+		cfg.params[name] = ConfigParamInfo{
+			Name:     name,
+			Level:    "",
+			Type:     "",
+			Services: []string{""},
 		}
+	}
 
-		// Lock for writing
-		c.mu.Lock()
-		defer c.mu.Unlock()
+	// Remove parameters that don't exist in the cluster
+	for _, name := range paramsToRemove {
+		delete(cfg.params, name)
+	}
 
-		// Get the current parameter names
-		currentParamsMap := make(map[string]bool)
-		for name := range c.params {
-			currentParamsMap[name] = true
-		}
+	// Populate details for new parameters
+	if len(paramsToAdd) > 0 {
+		cfg.populateParamsDetails(ctx, radosSvc, paramsToAdd, logger)
+	}
 
-		// Find parameters to add (present in cluster but not in our map)
-		var paramsToAdd []string
-		for name := range clusterParamsMap {
-			if !currentParamsMap[name] {
-				paramsToAdd = append(paramsToAdd, name)
-			}
-		}
+	logger.Info().
+		Int("total_params", len(cfg.params)).
+		Int("added", len(paramsToAdd)).
+		Int("removed", len(paramsToRemove)).
+		Msg("Updated Ceph configuration parameters from cluster")
 
-		// Find parameters to remove (present in our map but not in cluster)
-		var paramsToRemove []string
-		for name := range currentParamsMap {
-			if !clusterParamsMap[name] {
-				paramsToRemove = append(paramsToRemove, name)
-			}
-		}
-
-		// Add new parameters with minimal info (they will need full info from 'config help' later)
-		for _, name := range paramsToAdd {
-			c.params[name] = ConfigParamInfo{
-				Name:     name,
-				Level:    "",
-				Type:     "",
-				Services: []string{""},
-			}
-		}
-
-		// Remove parameters that don't exist in the cluster
-		for _, name := range paramsToRemove {
-			delete(c.params, name)
-		}
-
-		// Populate details for new parameters
-		if len(paramsToAdd) > 0 {
-			c.populateParamsDetails(ctx, radosSvc, paramsToAdd, logger)
-		}
-
-		logger.Info().
-			Int("total_params", len(c.params)).
-			Int("added", len(paramsToAdd)).
-			Int("removed", len(paramsToRemove)).
-			Msg("Updated Ceph configuration parameters from cluster")
-	}()
+	return cfg, nil
 }
 
 // populateParamsDetails fetches detailed information for parameters from the Ceph cluster
@@ -234,10 +213,6 @@ func parseConfigHelpResponse(jsonResponse []byte, paramName string) (ConfigParam
 
 // Search searches for configuration parameters according to the query parameters
 func (c *Config) Search(query QueryParams) []ConfigParamInfo {
-	// Acquire read lock
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	// Set default values
 	if query.Sort == 0 {
 		query.Sort = pb.SearchConfigRequest_NAME
