@@ -86,9 +86,9 @@ type Config struct {
 }
 
 // loadConfigParams loads all Ceph configuration parameters from the embedded JSON file
-func loadConfigParams() (ConfigParams, error) {
+func loadConfigParams(ctx context.Context) (ConfigParams, error) {
 	// Open the embedded config index file
-	logger := zerolog.DefaultContextLogger
+	logger := zerolog.Ctx(ctx)
 	logger.Info().Msg("Loading Ceph configuration parameters from embedded JSON file")
 
 	// Read the file data
@@ -115,7 +115,7 @@ func loadConfigParams() (ConfigParams, error) {
 
 // NewConfig creates a new Config instance and updates parameters from the cluster synchronously
 func NewConfig(ctx context.Context, radosSvc *rados.Svc, skipUpdate bool) (*Config, error) {
-	params, err := loadConfigParams()
+	params, err := loadConfigParams(ctx)
 	if err != nil {
 		return nil, err
 	}
