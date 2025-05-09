@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
@@ -30,10 +31,40 @@ type ConfigParamInfo struct {
 	Services           []string    `json:"services"`
 	SeeAlso            []string    `json:"see_also"`
 	EnumValues         []string    `json:"enum_values"`
-	Min                interface{} `json:"min"`
-	Max                interface{} `json:"max"`
+	Min                *MinMax     `json:"min"`
+	Max                *MinMax     `json:"max"`
 	CanUpdateAtRuntime bool        `json:"can_update_at_runtime"`
 	Flags              []string    `json:"flags"`
+}
+
+// MinMax is a float64 that can be unmarshaled from a JSON string or number
+// If the value is not present or not a valid number, the pointer will be nil
+type MinMax float64
+
+func (m *MinMax) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
+	// Try to unmarshal as number
+	var num float64
+	if err := json.Unmarshal(data, &num); err == nil {
+		*m = MinMax(num)
+		return nil
+	}
+	// Try to unmarshal as string, then parse as float
+	var str string
+	if err := json.Unmarshal(data, &str); err == nil {
+		if str == "" {
+			return nil
+		}
+		parsed, err := strconv.ParseFloat(str, 64)
+		if err != nil {
+			return err
+		}
+		*m = MinMax(parsed)
+		return nil
+	}
+	return nil // ignore if not a number or string
 }
 
 // QueryParams contains the parameters for config search
