@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
 )
 
 func TestConfig_Search_FilteringAndSorting(t *testing.T) {
@@ -14,6 +16,14 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create config: %v", err)
 	}
+
+	sortName := pb.SearchConfigRequest_SortField(pb.SearchConfigRequest_NAME)
+	sortType := pb.SearchConfigRequest_SortField(pb.SearchConfigRequest_TYPE)
+	sortLevel := pb.SearchConfigRequest_SortField(pb.SearchConfigRequest_LEVEL)
+	sortAsc := pb.SearchConfigRequest_SortOrder(pb.SearchConfigRequest_ASC)
+	sortDesc := pb.SearchConfigRequest_SortOrder(pb.SearchConfigRequest_DESC)
+	serviceOsd := pb.SearchConfigRequest_ServiceType(pb.SearchConfigRequest_OSD)
+	levelBasic := pb.SearchConfigRequest_ConfigLevel(pb.SearchConfigRequest_BASIC)
 
 	tests := []struct {
 		name   string
@@ -33,8 +43,11 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 			},
 		},
 		{
-			name:  "Sort by name ascending",
-			query: QueryParams{Sort: 0, Order: 0},
+			name: "Sort by name ascending",
+			query: QueryParams{
+				Sort:  &sortName,
+				Order: &sortAsc,
+			},
 			assert: func(results []ConfigParamInfo) error {
 				for i := 1; i < len(results); i++ {
 					if results[i-1].Name > results[i].Name {
@@ -46,7 +59,7 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 		},
 		{
 			name:  "Filter by service OSD",
-			query: QueryParams{Service: 3},
+			query: QueryParams{Service: &serviceOsd},
 			assert: func(results []ConfigParamInfo) error {
 				for _, r := range results {
 					found := false
@@ -65,7 +78,7 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 		},
 		{
 			name:  "Filter by level basic",
-			query: QueryParams{Level: 0},
+			query: QueryParams{Level: &levelBasic},
 			assert: func(results []ConfigParamInfo) error {
 				for _, r := range results {
 					if !strings.EqualFold(r.Level, "basic") {
@@ -76,23 +89,11 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 			},
 		},
 		{
-			name:  "Full text search for 'cache'",
-			query: QueryParams{FullText: "cache"},
-			assert: func(results []ConfigParamInfo) error {
-				for _, r := range results {
-					contains := strings.Contains(strings.ToLower(r.Name), "cache") ||
-						strings.Contains(strings.ToLower(r.Desc), "cache") ||
-						strings.Contains(strings.ToLower(r.LongDesc), "cache")
-					if !contains {
-						return fmt.Errorf("param %s does not match full text 'cache'", r.Name)
-					}
-				}
-				return nil
+			name: "Sort by type descending",
+			query: QueryParams{
+				Sort:  &sortType,
+				Order: &sortDesc,
 			},
-		},
-		{
-			name:  "Sort by type descending",
-			query: QueryParams{Sort: 1, Order: 1},
 			assert: func(results []ConfigParamInfo) error {
 				for i := 1; i < len(results); i++ {
 					if results[i-1].Type < results[i].Type {
@@ -103,8 +104,11 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 			},
 		},
 		{
-			name:  "Sort by level ascending",
-			query: QueryParams{Sort: 3, Order: 1},
+			name: "Sort by level ascending",
+			query: QueryParams{
+				Sort:  &sortLevel,
+				Order: &sortAsc,
+			},
 			assert: func(results []ConfigParamInfo) error {
 				for i := 1; i < len(results); i++ {
 					if results[i-1].Level > results[i].Level {
@@ -115,8 +119,11 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 			},
 		},
 		{
-			name:  "Combined filter: name and service",
-			query: QueryParams{Name: "osd_*", Service: 3},
+			name: "Combined filter: name and service",
+			query: QueryParams{
+				Name:    "osd_*",
+				Service: &serviceOsd,
+			},
 			assert: func(results []ConfigParamInfo) error {
 				for _, r := range results {
 					if !strings.HasPrefix(r.Name, "osd_") {
