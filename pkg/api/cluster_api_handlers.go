@@ -170,13 +170,14 @@ func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigReque
 		return nil, err
 	}
 
+	// Set defaults for all optional fields
 	query := cephconfig.QueryParams{
+		Service:  req.Service,
+		Level:    req.Level,
 		Name:     req.GetName(),
 		FullText: req.GetFullText(),
-		Service:  req.GetService(),
-		Level:    req.GetLevel(),
-		Sort:     req.GetSort(),
-		Order:    req.GetOrder(),
+		Sort:     req.Sort,
+		Order:    req.Order,
 	}
 
 	params := c.configSvc.Search(query)

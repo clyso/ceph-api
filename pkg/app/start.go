@@ -51,7 +51,7 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	}
 	defer radosSvc.Close()
 
-	configSvc, err := cephconfig.NewConfig(ctx, radosSvc, true)
+	configSvc, err := cephconfig.NewConfig(ctx, radosSvc, false)
 	if err != nil {
 		return err
 	}

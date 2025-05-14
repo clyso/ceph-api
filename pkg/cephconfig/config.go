@@ -69,24 +69,40 @@ func (m *MinMax) UnmarshalJSON(data []byte) error {
 
 // QueryParams contains the parameters for config search
 type QueryParams struct {
-	Service  pb.SearchConfigRequest_ServiceType
+	Service  *pb.SearchConfigRequest_ServiceType
+	Level    *pb.SearchConfigRequest_ConfigLevel
 	Name     string
 	FullText string
-	Level    pb.SearchConfigRequest_ConfigLevel
-	Sort     pb.SearchConfigRequest_SortField
-	Order    pb.SearchConfigRequest_SortOrder
+	Sort     *pb.SearchConfigRequest_SortField
+	Order    *pb.SearchConfigRequest_SortOrder
 }
 
-// ConfigParams is a map of parameter names to their information
-type ConfigParams map[string]ConfigParamInfo
+// ConfigParams is a slice of parameter information
+type ConfigParams []ConfigParamInfo
 
 // Config manages Ceph configuration parameters
 type Config struct {
 	params ConfigParams
 }
 
-// loadConfigParams loads all Ceph configuration parameters from the embedded JSON file
-func loadConfigParams(ctx context.Context) (ConfigParams, error) {
+// serviceTypeMap maps service enum values to their string representation
+var serviceTypeMap = map[pb.SearchConfigRequest_ServiceType]string{
+	pb.SearchConfigRequest_COMMON:                 "common",
+	pb.SearchConfigRequest_MON:                    "mon",
+	pb.SearchConfigRequest_MDS:                    "mds",
+	pb.SearchConfigRequest_OSD:                    "osd",
+	pb.SearchConfigRequest_MGR:                    "mgr",
+	pb.SearchConfigRequest_RGW:                    "rgw",
+	pb.SearchConfigRequest_RBD:                    "rbd",
+	pb.SearchConfigRequest_RBD_MIRROR:             "rbd-mirror",
+	pb.SearchConfigRequest_IMMUTABLE_OBJECT_CACHE: "immutable-object-cache",
+	pb.SearchConfigRequest_MDS_CLIENT:             "mds_client",
+	pb.SearchConfigRequest_CEPHFS_MIRROR:          "cephfs-mirror",
+	pb.SearchConfigRequest_CEPH_EXPORTER:          "ceph-exporter",
+}
+
+// loadParamsMap loads all Ceph configuration params from the embedded JSON file into a map
+func loadParamsMap(ctx context.Context) (map[string]ConfigParamInfo, error) {
 	// Open the embedded config index file
 	logger := zerolog.Ctx(ctx)
 	logger.Info().Msg("Loading Ceph configuration parameters from embedded JSON file")
@@ -105,7 +121,7 @@ func loadConfigParams(ctx context.Context) (ConfigParams, error) {
 	}
 
 	// Convert to our ConfigParams map format
-	configParams := make(ConfigParams)
+	configParams := make(map[string]ConfigParamInfo)
 	for _, info := range jsonArray {
 		configParams[info.Name] = info
 	}
@@ -115,106 +131,60 @@ func loadConfigParams(ctx context.Context) (ConfigParams, error) {
 
 // NewConfig creates a new Config instance and updates parameters from the cluster synchronously
 func NewConfig(ctx context.Context, radosSvc *rados.Svc, skipUpdate bool) (*Config, error) {
-	params, err := loadConfigParams(ctx)
+	logger := zerolog.Ctx(ctx)
+	paramMap, err := loadParamsMap(ctx)
+
 	if err != nil {
 		return nil, err
 	}
-	cfg := &Config{
-		params: params,
-	}
 
 	if skipUpdate {
-		return cfg, nil
+		return &Config{params: defaultSort(paramMap)}, nil
 	}
 
-	logger := zerolog.Ctx(ctx)
-	logger.Info().Msg("Updating Ceph configuration parameters from cluster")
-
-	// Execute 'ceph config ls' command to get current configuration
 	const monCmd = `{"prefix": "config ls", "format": "json"}`
 	cmdRes, err := radosSvc.ExecMon(ctx, monCmd)
 	if err != nil {
 		logger.Err(err).Msg("Failed to execute 'config ls' command")
-		return cfg, nil // Return with just embedded params
+		return nil, err
 	}
 
-	// Parse the result - it's an array of parameter names
 	var clusterParams []string
 	err = json.Unmarshal(cmdRes, &clusterParams)
 	if err != nil {
 		logger.Err(err).Msg("Failed to unmarshal config ls response")
-		return cfg, nil
+		return nil, err
 	}
 
-	// Create a map for quick lookup of parameter names
-	clusterParamsMap := make(map[string]bool)
-	for _, param := range clusterParams {
-		clusterParamsMap[param] = true
+	clusterParamsSet := make(map[string]struct{}, len(clusterParams))
+	for _, name := range clusterParams {
+		clusterParamsSet[name] = struct{}{}
 	}
 
-	// Get the current parameter names
-	currentParamsMap := make(map[string]bool)
-	for name := range cfg.params {
-		currentParamsMap[name] = true
+	// Remove params not in cluster
+	for name := range paramMap {
+		if _, found := clusterParamsSet[name]; !found {
+			delete(paramMap, name)
+		}
 	}
-
-	// Find parameters to add (present in cluster but not in our map)
-	var paramsToAdd []string
-	for name := range clusterParamsMap {
-		if !currentParamsMap[name] {
-			paramsToAdd = append(paramsToAdd, name)
+	// Add new params from cluster
+	for _, name := range clusterParams {
+		if _, found := paramMap[name]; !found {
+			paramInfo, err := fetchParamDetailFromCluster(ctx, radosSvc, name)
+			if err != nil {
+				logger.Err(err).Str("param", name).Msg("Failed to fetch parameter details")
+				return nil, err
+			}
+			paramMap[name] = paramInfo
 		}
 	}
 
-	// Find parameters to remove (present in our map but not in cluster)
-	var paramsToRemove []string
-	for name := range currentParamsMap {
-		if !clusterParamsMap[name] {
-			paramsToRemove = append(paramsToRemove, name)
-		}
-	}
-
-	// Add new parameters with minimal info (they will need full info from 'config help' later)
-	for _, name := range paramsToAdd {
-		cfg.params[name] = ConfigParamInfo{
-			Name:     name,
-			Level:    "",
-			Type:     "",
-			Services: []string{""},
-		}
-	}
-
-	// Remove parameters that don't exist in the cluster
-	for _, name := range paramsToRemove {
-		delete(cfg.params, name)
-	}
-
-	// Populate details for new parameters
-	if len(paramsToAdd) > 0 {
-		cfg.populateParamsDetails(ctx, radosSvc, paramsToAdd, logger)
-	}
-
+	params := defaultSort(paramMap)
 	logger.Info().
-		Int("total_params", len(cfg.params)).
-		Int("added", len(paramsToAdd)).
-		Int("removed", len(paramsToRemove)).
+		Int("total_params", len(params)).
 		Msg("Updated Ceph configuration parameters from cluster")
 
-	return cfg, nil
-}
-
-// populateParamsDetails fetches detailed information for parameters from the Ceph cluster
-func (c *Config) populateParamsDetails(ctx context.Context, radosSvc *rados.Svc, params []string, logger *zerolog.Logger) {
-	for _, name := range params {
-		paramInfo, err := fetchParamDetailFromCluster(ctx, radosSvc, name)
-		if err != nil {
-			logger.Err(err).Str("param", name).Msg("Failed to fetch parameter details")
-			continue
-		}
-
-		// Update the parameter info in our map
-		c.params[name] = paramInfo
-	}
+	return &Config{params: params}, nil
 }
 
 // fetchParamDetailFromCluster fetches detailed information for a single parameter from the Ceph cluster
@@ -227,8 +197,8 @@ func fetchParamDetailFromCluster(ctx context.Context, radosSvc *rados.Svc, param
 		return ConfigParamInfo{}, fmt.Errorf("failed to execute 'config help' command: %w", err)
 	}
 
-	// Parse the result into our ConfigParamInfo structure
-	paramInfo, err := parseConfigHelpResponse(cmdRes, paramName)
+	var paramInfo ConfigParamInfo
+	err = json.Unmarshal(cmdRes, &paramInfo)
 	if err != nil {
 		return ConfigParamInfo{}, fmt.Errorf("failed to parse config help response: %w", err)
 	}
@@ -236,27 +206,9 @@ func fetchParamDetailFromCluster(ctx context.Context, radosSvc *rados.Svc, param
 	return paramInfo, nil
 }
 
-// parseConfigHelpResponse parses the JSON response from 'ceph config help' command
-func parseConfigHelpResponse(jsonResponse []byte, paramName string) (ConfigParamInfo, error) {
-	var paramInfo ConfigParamInfo
-	err := json.Unmarshal(jsonResponse, &paramInfo)
-	if err != nil {
-		return ConfigParamInfo{}, fmt.Errorf("failed to unmarshal config help response: %w", err)
-	}
-	return paramInfo, nil
-}
-
 // Search searches for configuration parameters according to the query parameters
 func (c *Config) Search(query QueryParams) []ConfigParamInfo {
-	// Set default values
-	if query.Sort == 0 {
-		query.Sort = pb.SearchConfigRequest_NAME
-	}
-	if query.Order == 0 {
-		query.Order = pb.SearchConfigRequest_ASC
-	}
 
-	// Remove pre-allocation optimization
 	var result []ConfigParamInfo
 
 	// Convert full text to lowercase once if needed
@@ -267,61 +219,42 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 
 	// Filter parameters
 	for _, info := range c.params {
-		if !c.matchesService(info, query.Service) {
+		if !matchesService(info, query.Service) {
 			continue
 		}
-		if !c.matchesName(info, query.Name) {
+		if !matchesLevel(info, query.Level) {
 			continue
 		}
-		if !c.matchesLevel(info, query.Level) {
+		if !matchesName(info, query.Name) {
 			continue
 		}
-		if !c.matchesFullText(info, fullTextLower) {
+		if !matchesFullText(info, fullTextLower) {
 			continue
 		}
 		result = append(result, info)
 	}
 
-	// Sort results using Go's built-in sort
-	c.sortResults(result, query.Sort, query.Order)
+	field := pb.SearchConfigRequest_NAME
+	if query.Sort != nil {
+		field = *query.Sort
+	}
+	order := pb.SearchConfigRequest_ASC
+	if query.Order != nil {
+		order = *query.Order
+	}
+
+	sortResults(result, field, order)
 
 	return result
 }
 
 // matchesService checks if the parameter matches the service filter
-func (c *Config) matchesService(info ConfigParamInfo, service pb.SearchConfigRequest_ServiceType) bool {
-	if service == pb.SearchConfigRequest_COMMON {
+func matchesService(info ConfigParamInfo, service *pb.SearchConfigRequest_ServiceType) bool {
+	if service == nil {
 		return true
 	}
-
-	// Map enum to canonical string representation
-	var serviceStr string
-	switch service {
-	case pb.SearchConfigRequest_COMMON:
-		serviceStr = "common"
-	case pb.SearchConfigRequest_MON:
-		serviceStr = "mon"
-	case pb.SearchConfigRequest_MDS:
-		serviceStr = "mds"
-	case pb.SearchConfigRequest_OSD:
-		serviceStr = "osd"
-	case pb.SearchConfigRequest_MGR:
-		serviceStr = "mgr"
-	case pb.SearchConfigRequest_RGW:
-		serviceStr = "rgw"
-	case pb.SearchConfigRequest_RBD:
-		serviceStr = "rbd"
-	case pb.SearchConfigRequest_RBD_MIRROR:
-		serviceStr = "rbd-mirror"
-	case pb.SearchConfigRequest_IMMUTABLE_OBJECT_CACHE:
-		serviceStr = "immutable-object-cache"
-	case pb.SearchConfigRequest_MDS_CLIENT:
-		serviceStr = "mds_client"
-	case pb.SearchConfigRequest_CEPHFS_MIRROR:
-		serviceStr = "cephfs-mirror"
-	case pb.SearchConfigRequest_CEPH_EXPORTER:
-		serviceStr = "ceph-exporter"
-	default:
+	serviceStr, found := serviceTypeMap[*service]
+	if !found {
 		serviceStr = service.String()
 	}
 
@@ -333,30 +266,25 @@ func (c *Config) matchesService(info ConfigParamInfo, service pb.SearchConfigReq
 	return false
 }
 
+// matchesLevel checks if the parameter matches the level filter
+func matchesLevel(info ConfigParamInfo, level *pb.SearchConfigRequest_ConfigLevel) bool {
+	if level == nil {
+		return true
+	}
+
+	return strings.EqualFold(info.Level, level.String())
+}
+
 // matchesName checks if the parameter matches the name filter
-func (c *Config) matchesName(info ConfigParamInfo, name string) bool {
+func matchesName(info ConfigParamInfo, name string) bool {
 	if name == "" {
 		return true
 	}
 	return matchWildcard(info.Name, name)
 }
 
-// matchesLevel checks if the parameter matches the level filter
-func (c *Config) matchesLevel(info ConfigParamInfo, level pb.SearchConfigRequest_ConfigLevel) bool {
-	if level == pb.SearchConfigRequest_BASIC {
-		return strings.EqualFold(info.Level, "basic")
-	}
-	if level == pb.SearchConfigRequest_ADVANCED {
-		return strings.EqualFold(info.Level, "advanced")
-	}
-	if level == pb.SearchConfigRequest_DEV {
-		return strings.EqualFold(info.Level, "dev")
-	}
-	return true
-}
-
 // matchesFullText checks if the parameter matches the full-text search
-func (c *Config) matchesFullText(info ConfigParamInfo, fullTextLower string) bool {
+func matchesFullText(info ConfigParamInfo, fullTextLower string) bool {
 	if fullTextLower == "" {
 		return true
 	}
@@ -387,13 +315,18 @@ func (c *Config) matchesFullText(info ConfigParamInfo, fullTextLower string) boo
 	return false
 }
 
+// matchWildcard checks if a string matches a wildcard pattern
+func matchWildcard(s, pattern string) bool {
+	matched, _ := filepath.Match(pattern, s)
+	return matched
+}
+
 // sortResults sorts the results using Go's built-in sort
-func (c *Config) sortResults(results []ConfigParamInfo, field pb.SearchConfigRequest_SortField, order pb.SearchConfigRequest_SortOrder) {
+func sortResults(results []ConfigParamInfo, field pb.SearchConfigRequest_SortField, order pb.SearchConfigRequest_SortOrder) {
 	if len(results) <= 1 {
 		return
 	}
 
-	// Create a sort.Interface implementation
 	sort.Slice(results, func(i, j int) bool {
 		switch field {
 		case pb.SearchConfigRequest_NAME:
@@ -430,8 +363,11 @@ func (c *Config) sortResults(results []ConfigParamInfo, field pb.SearchConfigReq
 	})
 }
 
-// matchWildcard checks if a string matches a wildcard pattern
-func matchWildcard(s, pattern string) bool {
-	matched, _ := filepath.Match(pattern, s)
-	return matched
+func defaultSort(paramMap map[string]ConfigParamInfo) []ConfigParamInfo {
+	params := make([]ConfigParamInfo, 0, len(paramMap))
+	for _, v := range paramMap {
+		params = append(params, v)
+	}
+	sortResults(params, pb.SearchConfigRequest_NAME, pb.SearchConfigRequest_ASC)
+	return params
 }
