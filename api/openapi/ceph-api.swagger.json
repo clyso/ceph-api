@@ -2321,10 +2321,12 @@
           }
         },
         "min": {
-          "type": "string"
+          "type": "number",
+          "format": "double"
         },
         "max": {
-          "type": "string"
+          "type": "number",
+          "format": "double"
         },
         "canUpdateAtRuntime": {
           "type": "boolean"

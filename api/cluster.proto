@@ -127,8 +127,8 @@ message ConfigParam {
     repeated string services = 9;
     repeated string see_also = 10;
     repeated string enum_values = 11;
-    string min = 12;
-    string max = 13;
+    optional double min = 12;
+    optional double max = 13;
     bool can_update_at_runtime = 14;
     repeated string flags = 15;
 }
