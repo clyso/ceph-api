@@ -184,17 +184,8 @@ func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigReque
 
 	respParams := make([]*pb.ConfigParam, len(params))
 	for i, param := range params {
-		var minPtr, maxPtr *float64
-		if min, ok := param.Min.(string); ok && min != "" {
-			if f, err := strconv.ParseFloat(min, 64); err == nil {
-				minPtr = &f
-			}
-		}
-		if max, ok := param.Max.(string); ok && max != "" {
-			if f, err := strconv.ParseFloat(max, 64); err == nil {
-				maxPtr = &f
-			}
-		}
+		minPtr := cephconfig.ParseMinMax(param.Min)
+		maxPtr := cephconfig.ParseMinMax(param.Max)
 
 		respParams[i] = &pb.ConfigParam{
 			Name:               param.Name,

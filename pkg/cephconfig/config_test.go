@@ -538,3 +538,43 @@ func TestMatchesFullText(t *testing.T) {
 		})
 	}
 }
+
+func TestParseMinMax(t *testing.T) {
+	tests := []struct {
+		name string
+		in   interface{}
+		want *float64
+	}{
+		{"string zero ('0')", "0", floatPtr(0)},
+		{"empty string", "", nil},
+		{"float64 positive (1.1)", 1.1, floatPtr(1.1)},
+		{"float64 negative (-1.1)", -1.1, floatPtr(-1.1)},
+		{"string negative integer ('-1')", "-1", floatPtr(-1)},
+		{"string positive integer ('1')", "1", floatPtr(1)},
+		{"string positive float ('1.1')", "1.1", floatPtr(1.1)},
+		{"string negative float ('-1.1')", "-1.1", floatPtr(-1.1)},
+		{"nil value", nil, nil},
+		{"unsupported type (struct{})", struct{}{}, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ParseMinMax(tt.in)
+			if tt.want == nil {
+				if got != nil {
+					t.Errorf("expected nil, got %v", *got)
+				}
+			} else {
+				if got == nil {
+					t.Errorf("expected %v, got nil", *tt.want)
+				} else if *got != *tt.want {
+					t.Errorf("expected %v, got %v", *tt.want, *got)
+				}
+			}
+		})
+	}
+}
+
+func floatPtr(f float64) *float64 {
+	return &f
+}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
@@ -341,4 +342,25 @@ func defaultSort(paramMap map[string]ConfigParamInfo) []ConfigParamInfo {
 	}
 	sortResults(params, pb.SearchConfigRequest_NAME, pb.SearchConfigRequest_ASC)
 	return params
+}
+
+// Helper function to parse min/max values from interface{} to *float64 for the API response.
+// Needed to handle the case for empty strings, which implies undefined min & max.
+func ParseMinMax(val interface{}) *float64 {
+	if val == nil {
+		return nil
+	}
+	switch v := val.(type) {
+	case float64:
+		return &v
+	case string:
+		if v == "" {
+			return nil
+		}
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			return &f
+		}
+		return nil
+	}
+	return nil
 }
