@@ -193,6 +193,99 @@
         ]
       }
     },
+    "/api/cluster/config/search": {
+      "get": {
+        "operationId": "Cluster_SearchConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cephSearchConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "service",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "COMMON",
+              "MON",
+              "MDS",
+              "OSD",
+              "MGR",
+              "RGW",
+              "RBD",
+              "RBD_MIRROR",
+              "IMMUTABLE_OBJECT_CACHE",
+              "MDS_CLIENT",
+              "CEPHFS_MIRROR",
+              "CEPH_EXPORTER"
+            ],
+            "default": "COMMON"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fullText",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "BASIC",
+              "ADVANCED",
+              "DEV"
+            ],
+            "default": "BASIC"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "NAME",
+              "TYPE",
+              "SERVICE",
+              "LEVEL"
+            ],
+            "default": "NAME"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "ASC",
+              "DESC"
+            ],
+            "default": "ASC"
+          }
+        ],
+        "tags": [
+          "Cluster"
+        ]
+      }
+    },
     "/api/cluster/user": {
       "get": {
         "operationId": "Cluster_GetUsers",
@@ -1732,6 +1825,51 @@
         }
       }
     },
+    "SearchConfigRequestConfigLevel": {
+      "type": "string",
+      "enum": [
+        "BASIC",
+        "ADVANCED",
+        "DEV"
+      ],
+      "default": "BASIC"
+    },
+    "SearchConfigRequestServiceType": {
+      "type": "string",
+      "enum": [
+        "COMMON",
+        "MON",
+        "MDS",
+        "OSD",
+        "MGR",
+        "RGW",
+        "RBD",
+        "RBD_MIRROR",
+        "IMMUTABLE_OBJECT_CACHE",
+        "MDS_CLIENT",
+        "CEPHFS_MIRROR",
+        "CEPH_EXPORTER"
+      ],
+      "default": "COMMON"
+    },
+    "SearchConfigRequestSortField": {
+      "type": "string",
+      "enum": [
+        "NAME",
+        "TYPE",
+        "SERVICE",
+        "LEVEL"
+      ],
+      "default": "NAME"
+    },
+    "SearchConfigRequestSortOrder": {
+      "type": "string",
+      "enum": [
+        "ASC",
+        "DESC"
+      ],
+      "default": "ASC"
+    },
     "UsersUpdateRoleBody": {
       "type": "object",
       "properties": {
@@ -2130,6 +2268,73 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/cephClusterUser"
+          }
+        }
+      }
+    },
+    "cephConfigParam": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string"
+        },
+        "desc": {
+          "type": "string"
+        },
+        "longDesc": {
+          "type": "string"
+        },
+        "defaultValue": {
+          "type": "string"
+        },
+        "daemonDefault": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "seeAlso": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "enumValues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "min": {
+          "type": "number",
+          "format": "double"
+        },
+        "max": {
+          "type": "number",
+          "format": "double"
+        },
+        "canUpdateAtRuntime": {
+          "type": "boolean"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       }
@@ -4069,6 +4274,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/cephStep"
+          }
+        }
+      }
+    },
+    "cephSearchConfigResponse": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephConfigParam"
           }
         }
       }
