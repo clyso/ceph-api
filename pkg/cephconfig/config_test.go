@@ -185,3 +185,93 @@ func TestConfig_JSON_Count(t *testing.T) {
 		t.Errorf("item count mismatch: json=%d, params=%d", len(jsonArray), len(cfg.params))
 	}
 }
+
+func TestConfig_Enum_JSON_Consistency(t *testing.T) {
+	data, err := configIndexFile.ReadFile("config-index.json")
+	if err != nil {
+		t.Fatalf("failed to read embedded config-index.json: %v", err)
+	}
+
+	var jsonArray []ConfigParamInfo
+	if err := json.Unmarshal(data, &jsonArray); err != nil {
+		t.Fatalf("failed to unmarshal config index JSON: %v", err)
+	}
+
+	// --- Test 1: For every possible enum value, check there are non-empty search results in JSON ---
+	// This will mean that all declared enum values exist in json
+
+	serviceStrMap := make(map[pb.SearchConfigRequest_ServiceType]string)
+	for k, v := range serviceTypeMap {
+		serviceStrMap[k] = v
+	}
+	for enumVal, strVal := range serviceStrMap {
+		found := false
+		for _, param := range jsonArray {
+			for _, svc := range param.Services {
+				if strings.EqualFold(svc, strVal) {
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		if !found {
+			t.Errorf("No JSON config param found for service enum %v (string '%s')", enumVal, strVal)
+		}
+	}
+
+	levelEnums := []pb.SearchConfigRequest_ConfigLevel{
+		pb.SearchConfigRequest_BASIC,
+		pb.SearchConfigRequest_ADVANCED,
+		pb.SearchConfigRequest_DEV,
+	}
+	for _, enumVal := range levelEnums {
+		levelStr := strings.ToLower(enumVal.String())
+		found := false
+		for _, param := range jsonArray {
+			if strings.EqualFold(param.Level, levelStr) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("No JSON config param found for level enum %v (string '%s')", enumVal, levelStr)
+		}
+	}
+
+	// --- Test 2: For every enum value found in JSON, check it exists in Go enum ---
+
+	jsonServiceSet := make(map[string]struct{})
+	for _, param := range jsonArray {
+		for _, svc := range param.Services {
+			jsonServiceSet[strings.ToLower(svc)] = struct{}{}
+		}
+	}
+	serviceStrSet := make(map[string]struct{})
+	for _, v := range serviceStrMap {
+		serviceStrSet[strings.ToLower(v)] = struct{}{}
+	}
+	for svc := range jsonServiceSet {
+		if _, ok := serviceStrSet[svc]; !ok {
+			t.Errorf("Service '%s' found in JSON but not in Go enum", svc)
+		}
+	}
+
+	jsonLevelSet := make(map[string]struct{})
+	for _, param := range jsonArray {
+		if param.Level != "" {
+			jsonLevelSet[strings.ToLower(param.Level)] = struct{}{}
+		}
+	}
+	levelStrSet := make(map[string]struct{})
+	for _, enumVal := range levelEnums {
+		levelStrSet[strings.ToLower(enumVal.String())] = struct{}{}
+	}
+	for lvl := range jsonLevelSet {
+		if _, ok := levelStrSet[lvl]; !ok {
+			t.Errorf("Level '%s' found in JSON but not in Go enum", lvl)
+		}
+	}
+}
