@@ -275,3 +275,253 @@ func TestConfig_Enum_JSON_Consistency(t *testing.T) {
 		}
 	}
 }
+
+func TestMatchesService(t *testing.T) {
+	osdService := pb.SearchConfigRequest_OSD
+	unknownService := pb.SearchConfigRequest_ServiceType(999)
+
+	tests := []struct {
+		name     string
+		info     ConfigParamInfo
+		service  *pb.SearchConfigRequest_ServiceType
+		expected bool
+	}{
+		{
+			name: "nil service should match any",
+			info: ConfigParamInfo{
+				Services: []string{"osd"},
+			},
+			service:  nil,
+			expected: true,
+		},
+		{
+			name: "exact service match",
+			info: ConfigParamInfo{
+				Services: []string{"osd"},
+			},
+			service:  &osdService,
+			expected: true,
+		},
+		{
+			name: "case insensitive match",
+			info: ConfigParamInfo{
+				Services: []string{"OSD"},
+			},
+			service:  &osdService,
+			expected: true,
+		},
+		{
+			name: "no match",
+			info: ConfigParamInfo{
+				Services: []string{"mon"},
+			},
+			service:  &osdService,
+			expected: false,
+		},
+		{
+			name: "multiple services with match",
+			info: ConfigParamInfo{
+				Services: []string{"mon", "osd", "mgr"},
+			},
+			service:  &osdService,
+			expected: true,
+		},
+		{
+			name: "unknown service type",
+			info: ConfigParamInfo{
+				Services: []string{"custom"},
+			},
+			service:  &unknownService,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := matchesService(tt.info, tt.service)
+			if result != tt.expected {
+				t.Errorf("matchesService() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestMatchesName(t *testing.T) {
+	tests := []struct {
+		name     string
+		info     ConfigParamInfo
+		pattern  string
+		expected bool
+	}{
+		{
+			name: "empty pattern matches any",
+			info: ConfigParamInfo{
+				Name: "osd.0",
+			},
+			pattern:  "",
+			expected: true,
+		},
+		{
+			name: "exact match",
+			info: ConfigParamInfo{
+				Name: "osd.0",
+			},
+			pattern:  "osd.0",
+			expected: true,
+		},
+		{
+			name: "wildcard match prefix",
+			info: ConfigParamInfo{
+				Name: "osd.0",
+			},
+			pattern:  "osd*",
+			expected: true,
+		},
+		{
+			name: "wildcard match suffix",
+			info: ConfigParamInfo{
+				Name: "osd.0",
+			},
+			pattern:  "*.0",
+			expected: true,
+		},
+		{
+			name: "wildcard match middle",
+			info: ConfigParamInfo{
+				Name: "osd.0",
+			},
+			pattern:  "osd.*",
+			expected: true,
+		},
+		{
+			name: "no match",
+			info: ConfigParamInfo{
+				Name: "osd.0",
+			},
+			pattern:  "mon*",
+			expected: false,
+		},
+		{
+			name: "complex wildcard pattern",
+			info: ConfigParamInfo{
+				Name: "osd.0.cache",
+			},
+			pattern:  "osd.*.cache",
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := matchesName(tt.info, tt.pattern)
+			if result != tt.expected {
+				t.Errorf("matchesName() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestMatchesFullText(t *testing.T) {
+	tests := []struct {
+		name       string
+		info       ConfigParamInfo
+		searchText string
+		expected   bool
+	}{
+		{
+			name: "empty search text matches any",
+			info: ConfigParamInfo{
+				Name: "osd.0",
+			},
+			searchText: "",
+			expected:   true,
+		},
+		{
+			name: "match in name",
+			info: ConfigParamInfo{
+				Name: "osd.0",
+			},
+			searchText: "osd",
+			expected:   true,
+		},
+		{
+			name: "match in description",
+			info: ConfigParamInfo{
+				Name: "osd.0",
+				Desc: "OSD description",
+			},
+			searchText: "description",
+			expected:   true,
+		},
+		{
+			name: "match in long description",
+			info: ConfigParamInfo{
+				Name:     "osd.0",
+				LongDesc: "Detailed OSD description",
+			},
+			searchText: "detailed",
+			expected:   true,
+		},
+		{
+			name: "match in tags",
+			info: ConfigParamInfo{
+				Name: "osd.0",
+				Tags: []string{"performance", "cache"},
+			},
+			searchText: "cache",
+			expected:   true,
+		},
+		{
+			name: "match in services",
+			info: ConfigParamInfo{
+				Name:     "osd.0",
+				Services: []string{"osd", "mon"},
+			},
+			searchText: "mon",
+			expected:   true,
+		},
+		{
+			name: "match in default value",
+			info: ConfigParamInfo{
+				Name:    "osd.0",
+				Default: "cache_size=1G",
+			},
+			searchText: "cache",
+			expected:   true,
+		},
+		{
+			name: "match in daemon default",
+			info: ConfigParamInfo{
+				Name:          "osd.0",
+				DaemonDefault: "cache_size=1G",
+			},
+			searchText: "cache",
+			expected:   true,
+		},
+		{
+			name: "case insensitive match",
+			info: ConfigParamInfo{
+				Name: "OSD.0",
+			},
+			searchText: "osd",
+			expected:   true,
+		},
+		{
+			name: "no match",
+			info: ConfigParamInfo{
+				Name: "osd.0",
+			},
+			searchText: "mon",
+			expected:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := matchesFullText(tt.info, strings.ToLower(tt.searchText))
+			if result != tt.expected {
+				t.Errorf("matchesFullText() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
