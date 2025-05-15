@@ -153,6 +153,19 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 				return nil
 			},
 		},
+		{
+			name:  "Exact name match returns single result",
+			query: QueryParams{Name: "fsid"},
+			assert: func(results []ConfigParamInfo) error {
+				if len(results) != 1 {
+					return fmt.Errorf("expected 1 result, got %d", len(results))
+				}
+				if results[0].Name != "fsid" {
+					return fmt.Errorf("expected result with name 'fsid', got '%s'", results[0].Name)
+				}
+				return nil
+			},
+		},
 	}
 
 	for _, tt := range tests {

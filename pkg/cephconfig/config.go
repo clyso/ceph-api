@@ -177,16 +177,16 @@ func fetchParamDetailFromCluster(ctx context.Context, radosSvc *rados.Svc, param
 
 // Search searches for configuration parameters according to the query parameters
 func (c *Config) Search(query QueryParams) []ConfigParamInfo {
-
 	var result []ConfigParamInfo
 
-	// Convert full text to lowercase once if needed
 	var fullTextLower string
 	if query.FullText != "" {
 		fullTextLower = strings.ToLower(query.FullText)
 	}
 
-	// Filter parameters
+	// If Name is set and does not contain wildcards, return immediately after match
+	uniqueName := query.Name != "" && !strings.ContainsAny(query.Name, "*?[]")
+
 	for _, info := range c.params {
 		if !matchesService(info, query.Service) {
 			continue
@@ -201,6 +201,9 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 			continue
 		}
 		result = append(result, info)
+		if uniqueName {
+			break
+		}
 	}
 
 	field := pb.SearchConfigRequest_NAME
@@ -213,7 +216,6 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 	}
 
 	sortResults(result, field, order)
-
 	return result
 }
 
