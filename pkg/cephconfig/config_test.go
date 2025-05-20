@@ -8,14 +8,14 @@ import (
 	"testing"
 
 	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConfig_Search_FilteringAndSorting(t *testing.T) {
+	req := require.New(t)
 	ctx := context.Background()
 	cfg, err := NewConfig(ctx, nil, true) // skipUpdate: true for testing
-	if err != nil {
-		t.Fatalf("failed to create config: %v", err)
-	}
+	req.NoError(err, "failed to create config: %v", err)
 
 	sortName := pb.SearchConfigRequest_SortField(pb.SearchConfigRequest_NAME)
 	sortType := pb.SearchConfigRequest_SortField(pb.SearchConfigRequest_TYPE)
@@ -170,45 +170,36 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
 			results := cfg.Search(tt.query)
-			if err := tt.assert(results); err != nil {
-				t.Error(err)
-			}
+			err := tt.assert(results)
+			req.NoError(err)
 		})
 	}
 }
 
 func TestConfig_JSON_Count(t *testing.T) {
+	req := require.New(t)
 	// Load the JSON file
 	data, err := configIndexFile.ReadFile("config-index.json")
-	if err != nil {
-		t.Fatalf("failed to read embedded config-index.json: %v", err)
-	}
+	req.NoError(err, "failed to read embedded config-index.json: %v", err)
 
 	var jsonArray []ConfigParamInfo
-	if err := json.Unmarshal(data, &jsonArray); err != nil {
-		t.Fatalf("failed to unmarshal config index JSON: %v", err)
-	}
+	err = json.Unmarshal(data, &jsonArray)
+	req.NoError(err, "failed to unmarshal config index JSON: %v", err)
 
 	cfg, err := NewConfig(context.Background(), nil, true)
-	if err != nil {
-		t.Fatalf("failed to create config: %v", err)
-	}
-	if len(jsonArray) != len(cfg.params) {
-		t.Errorf("item count mismatch: json=%d, params=%d", len(jsonArray), len(cfg.params))
-	}
+	req.NoError(err, "failed to create config: %v", err)
+	req.Equal(len(jsonArray), len(cfg.params), "item count mismatch: json=%d, params=%d", len(jsonArray), len(cfg.params))
 }
 
 func TestConfig_Enum_JSON_Consistency(t *testing.T) {
+	req := require.New(t)
 	data, err := configIndexFile.ReadFile("config-index.json")
-	if err != nil {
-		t.Fatalf("failed to read embedded config-index.json: %v", err)
-	}
+	req.NoError(err, "failed to read embedded config-index.json: %v", err)
 
 	var jsonArray []ConfigParamInfo
-	if err := json.Unmarshal(data, &jsonArray); err != nil {
-		t.Fatalf("failed to unmarshal config index JSON: %v", err)
-	}
+	req.NoError(json.Unmarshal(data, &jsonArray), "failed to unmarshal config index JSON: %v", err)
 
 	// --- Test 1: For every possible enum value, check there are non-empty search results in JSON ---
 	// This will mean that all declared enum values exist in json
@@ -230,9 +221,7 @@ func TestConfig_Enum_JSON_Consistency(t *testing.T) {
 				break
 			}
 		}
-		if !found {
-			t.Errorf("No JSON config param found for service enum %v (string '%s')", enumVal, strVal)
-		}
+		req.True(found, "No JSON config param found for service enum %v (string '%s')", enumVal, strVal)
 	}
 
 	levelEnums := []pb.SearchConfigRequest_ConfigLevel{
@@ -249,9 +238,7 @@ func TestConfig_Enum_JSON_Consistency(t *testing.T) {
 				break
 			}
 		}
-		if !found {
-			t.Errorf("No JSON config param found for level enum %v (string '%s')", enumVal, levelStr)
-		}
+		req.True(found, "No JSON config param found for level enum %v (string '%s')", enumVal, levelStr)
 	}
 
 	// --- Test 2: For every enum value found in JSON, check it exists in Go enum ---
@@ -267,9 +254,7 @@ func TestConfig_Enum_JSON_Consistency(t *testing.T) {
 		serviceStrSet[strings.ToLower(v)] = struct{}{}
 	}
 	for svc := range jsonServiceSet {
-		if _, ok := serviceStrSet[svc]; !ok {
-			t.Errorf("Service '%s' found in JSON but not in Go enum", svc)
-		}
+		req.Contains(serviceStrSet, svc, "Service '%s' found in JSON but not in Go enum", svc)
 	}
 
 	jsonLevelSet := make(map[string]struct{})
@@ -283,13 +268,12 @@ func TestConfig_Enum_JSON_Consistency(t *testing.T) {
 		levelStrSet[strings.ToLower(enumVal.String())] = struct{}{}
 	}
 	for lvl := range jsonLevelSet {
-		if _, ok := levelStrSet[lvl]; !ok {
-			t.Errorf("Level '%s' found in JSON but not in Go enum", lvl)
-		}
+		req.Contains(levelStrSet, lvl, "Level '%s' found in JSON but not in Go enum", lvl)
 	}
 }
 
 func TestMatchesService(t *testing.T) {
+	req := require.New(t)
 	osdService := pb.SearchConfigRequest_OSD
 	unknownService := pb.SearchConfigRequest_ServiceType(999)
 
@@ -352,14 +336,13 @@ func TestMatchesService(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := matchesService(tt.info, tt.service)
-			if result != tt.expected {
-				t.Errorf("matchesService() = %v, want %v", result, tt.expected)
-			}
+			req.Equal(tt.expected, result)
 		})
 	}
 }
 
 func TestMatchesName(t *testing.T) {
+	req := require.New(t)
 	tests := []struct {
 		name     string
 		info     ConfigParamInfo
@@ -427,14 +410,13 @@ func TestMatchesName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := matchesName(tt.info, tt.pattern)
-			if result != tt.expected {
-				t.Errorf("matchesName() = %v, want %v", result, tt.expected)
-			}
+			req.Equal(tt.expected, result)
 		})
 	}
 }
 
 func TestMatchesFullText(t *testing.T) {
+	req := require.New(t)
 	tests := []struct {
 		name       string
 		info       ConfigParamInfo
@@ -532,14 +514,13 @@ func TestMatchesFullText(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := matchesFullText(tt.info, strings.ToLower(tt.searchText))
-			if result != tt.expected {
-				t.Errorf("matchesFullText() = %v, want %v", result, tt.expected)
-			}
+			req.Equal(tt.expected, result)
 		})
 	}
 }
 
 func TestParseMinMax(t *testing.T) {
+	req := require.New(t)
 	tests := []struct {
 		name string
 		in   interface{}
@@ -561,15 +542,10 @@ func TestParseMinMax(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := ParseMinMax(tt.in)
 			if tt.want == nil {
-				if got != nil {
-					t.Errorf("expected nil, got %v", *got)
-				}
+				req.Nil(got, "expected nil, got %v", got)
 			} else {
-				if got == nil {
-					t.Errorf("expected %v, got nil", *tt.want)
-				} else if *got != *tt.want {
-					t.Errorf("expected %v, got %v", *tt.want, *got)
-				}
+				req.NotNil(got, "expected %v, got nil", *tt.want)
+				req.Equal(*tt.want, *got, "expected %v, got %v", *tt.want, *got)
 			}
 		})
 	}
