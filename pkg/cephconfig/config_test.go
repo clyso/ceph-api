@@ -24,6 +24,8 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 	sortDesc := pb.SearchConfigRequest_SortOrder(pb.SearchConfigRequest_DESC)
 	serviceOsd := pb.SearchConfigRequest_ServiceType(pb.SearchConfigRequest_OSD)
 	levelBasic := pb.SearchConfigRequest_ConfigLevel(pb.SearchConfigRequest_BASIC)
+	typeStr := pb.SearchConfigRequest_ParamType(pb.SearchConfigRequest_STR)
+	typeInt := pb.SearchConfigRequest_ParamType(pb.SearchConfigRequest_INT)
 
 	tests := []struct {
 		name   string
@@ -113,6 +115,55 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 				for i := 1; i < len(results); i++ {
 					if results[i-1].Level > results[i].Level {
 						return fmt.Errorf("not sorted ascending: %s > %s", results[i-1].Level, results[i].Level)
+					}
+				}
+				return nil
+			},
+		},
+		{
+			name:  "Filter by type str",
+			query: QueryParams{Type: &typeStr},
+			assert: func(results []ConfigParamInfo) error {
+				for _, r := range results {
+					if !strings.EqualFold(r.Type, "str") {
+						return fmt.Errorf("param %s is not type 'str'", r.Name)
+					}
+				}
+				return nil
+			},
+		},
+		{
+			name:  "Filter by type int",
+			query: QueryParams{Type: &typeInt},
+			assert: func(results []ConfigParamInfo) error {
+				for _, r := range results {
+					if !strings.EqualFold(r.Type, "int") {
+						return fmt.Errorf("param %s is not type 'int'", r.Name)
+					}
+				}
+				return nil
+			},
+		},
+		{
+			name: "Combined filter: service and type",
+			query: QueryParams{
+				Service: &serviceOsd,
+				Type:    &typeInt,
+			},
+			assert: func(results []ConfigParamInfo) error {
+				for _, r := range results {
+					found := false
+					for _, svc := range r.Services {
+						if strings.EqualFold(svc, "osd") {
+							found = true
+							break
+						}
+					}
+					if !found {
+						return fmt.Errorf("param %s does not have service 'osd'", r.Name)
+					}
+					if !strings.EqualFold(r.Type, "int") {
+						return fmt.Errorf("param %s is not type 'int'", r.Name)
 					}
 				}
 				return nil
@@ -269,6 +320,51 @@ func TestConfig_Enum_JSON_Consistency(t *testing.T) {
 	}
 	for lvl := range jsonLevelSet {
 		req.Contains(levelStrSet, lvl, "Level '%s' found in JSON but not in Go enum", lvl)
+	}
+
+	// Test for ParamType enum values
+	typeEnums := []pb.SearchConfigRequest_ParamType{
+		pb.SearchConfigRequest_STR,
+		pb.SearchConfigRequest_UUID,
+		pb.SearchConfigRequest_ADDR,
+		pb.SearchConfigRequest_ADDRVEC,
+		pb.SearchConfigRequest_BOOL,
+		pb.SearchConfigRequest_INT,
+		pb.SearchConfigRequest_FLOAT,
+		pb.SearchConfigRequest_UINT,
+		pb.SearchConfigRequest_SIZE,
+		pb.SearchConfigRequest_SECS,
+		pb.SearchConfigRequest_MILLISECS,
+	}
+
+	for _, enumVal := range typeEnums {
+		typeStr := strings.ToLower(enumVal.String())
+		found := false
+		for _, param := range jsonArray {
+			if strings.EqualFold(param.Type, typeStr) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("No JSON config param found for type enum %v (string '%s')", enumVal, typeStr)
+		}
+	}
+
+	jsonTypeSet := make(map[string]struct{})
+	for _, param := range jsonArray {
+		if param.Type != "" {
+			jsonTypeSet[strings.ToLower(param.Type)] = struct{}{}
+		}
+	}
+	typeStrSet := make(map[string]struct{})
+	for _, enumVal := range typeEnums {
+		typeStrSet[strings.ToLower(enumVal.String())] = struct{}{}
+	}
+	for typ := range jsonTypeSet {
+		if _, ok := typeStrSet[typ]; !ok {
+			t.Errorf("Type '%s' found in JSON but not in Go enum", typ)
+		}
 	}
 }
 
@@ -515,6 +611,69 @@ func TestMatchesFullText(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := matchesFullText(tt.info, strings.ToLower(tt.searchText))
 			req.Equal(tt.expected, result)
+		})
+	}
+}
+
+func TestMatchesType(t *testing.T) {
+	strType := pb.SearchConfigRequest_STR
+	intType := pb.SearchConfigRequest_INT
+	unknownType := pb.SearchConfigRequest_ParamType(999)
+
+	tests := []struct {
+		name      string
+		info      ConfigParamInfo
+		paramType *pb.SearchConfigRequest_ParamType
+		expected  bool
+	}{
+		{
+			name: "nil type should match any",
+			info: ConfigParamInfo{
+				Type: "str",
+			},
+			paramType: nil,
+			expected:  true,
+		},
+		{
+			name: "matching type",
+			info: ConfigParamInfo{
+				Type: "str",
+			},
+			paramType: &strType,
+			expected:  true,
+		},
+		{
+			name: "case insensitive match",
+			info: ConfigParamInfo{
+				Type: "INT",
+			},
+			paramType: &intType,
+			expected:  true,
+		},
+		{
+			name: "non-matching type",
+			info: ConfigParamInfo{
+				Type: "bool",
+			},
+			paramType: &strType,
+			expected:  false,
+		},
+		{
+			name: "unknown enum type",
+			info: ConfigParamInfo{
+				Type: "unknown",
+			},
+			paramType: &unknownType,
+			expected:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := matchesType(tt.info, tt.paramType)
+			if result != tt.expected {
+				t.Errorf("matchesType() = %v, want %v", result, tt.expected)
+			}
 		})
 	}
 }

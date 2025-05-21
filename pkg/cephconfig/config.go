@@ -45,6 +45,7 @@ type QueryParams struct {
 	FullText string
 	Sort     *pb.SearchConfigRequest_SortField
 	Order    *pb.SearchConfigRequest_SortOrder
+	Type     *pb.SearchConfigRequest_ParamType
 }
 
 // ConfigParams is a slice of parameter information
@@ -198,6 +199,9 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 		if !matchesName(info, query.Name) {
 			continue
 		}
+		if !matchesType(info, query.Type) {
+			continue
+		}
 		if !matchesFullText(info, fullTextLower) {
 			continue
 		}
@@ -253,6 +257,15 @@ func matchesName(info ConfigParamInfo, name string) bool {
 		return true
 	}
 	return matchWildcard(info.Name, name)
+}
+
+// matchesType checks if the parameter matches the type filter
+func matchesType(info ConfigParamInfo, paramType *pb.SearchConfigRequest_ParamType) bool {
+	if paramType == nil {
+		return true
+	}
+
+	return strings.EqualFold(info.Type, strings.ToLower(paramType.String()))
 }
 
 // matchesFullText checks if the parameter matches the full-text search

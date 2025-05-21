@@ -263,7 +263,7 @@
             "type": "string",
             "enum": [
               "NAME",
-              "CONFIG_PARAM_TYPE",
+              "TYPE",
               "SERVICE",
               "LEVEL"
             ],
@@ -1893,7 +1893,7 @@
       "type": "string",
       "enum": [
         "NAME",
-        "CONFIG_PARAM_TYPE",
+        "TYPE",
         "SERVICE",
         "LEVEL"
       ],

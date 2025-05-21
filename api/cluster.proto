@@ -111,7 +111,7 @@ message SearchConfigRequest {
     
     enum SortField {
         NAME = 0;
-        CONFIG_PARAM_TYPE = 1;
+        TYPE = 1;
         SERVICE = 2;
         LEVEL = 3;
     }
