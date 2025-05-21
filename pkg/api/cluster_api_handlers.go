@@ -189,7 +189,7 @@ func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigReque
 
 		respParams[i] = &pb.ConfigParam{
 			Name:               param.Name,
-			Type:               pb.SearchConfigRequest_ParamType(pb.SearchConfigRequest_ParamType_value[param.Type]),
+			Type:               pb.SearchConfigRequest_ParamType(pb.SearchConfigRequest_ParamType_value[strings.ToUpper(param.Type)]),
 			Level:              param.Level,
 			Desc:               param.Desc,
 			LongDesc:           param.LongDesc,
