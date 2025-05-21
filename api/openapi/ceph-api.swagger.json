@@ -263,7 +263,7 @@
             "type": "string",
             "enum": [
               "NAME",
-              "TYPE",
+              "CONFIG_PARAM_TYPE",
               "SERVICE",
               "LEVEL"
             ],
@@ -279,6 +279,26 @@
               "DESC"
             ],
             "default": "ASC"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "STR",
+              "UUID",
+              "ADDR",
+              "ADDRVEC",
+              "BOOL",
+              "INT",
+              "FLOAT",
+              "UINT",
+              "SIZE",
+              "SECS",
+              "MILLISECS"
+            ],
+            "default": "STR"
           }
         ],
         "tags": [
@@ -1834,6 +1854,23 @@
       ],
       "default": "BASIC"
     },
+    "SearchConfigRequestParamType": {
+      "type": "string",
+      "enum": [
+        "STR",
+        "UUID",
+        "ADDR",
+        "ADDRVEC",
+        "BOOL",
+        "INT",
+        "FLOAT",
+        "UINT",
+        "SIZE",
+        "SECS",
+        "MILLISECS"
+      ],
+      "default": "STR"
+    },
     "SearchConfigRequestServiceType": {
       "type": "string",
       "enum": [
@@ -1856,7 +1893,7 @@
       "type": "string",
       "enum": [
         "NAME",
-        "TYPE",
+        "CONFIG_PARAM_TYPE",
         "SERVICE",
         "LEVEL"
       ],
@@ -2279,7 +2316,7 @@
           "type": "string"
         },
         "type": {
-          "type": "string"
+          "$ref": "#/definitions/SearchConfigRequestParamType"
         },
         "level": {
           "type": "string"

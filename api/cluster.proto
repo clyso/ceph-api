@@ -94,10 +94,24 @@ message SearchConfigRequest {
         ADVANCED = 1;
         DEV = 2;
     }
+
+    enum ParamType {
+        STR = 0;
+        UUID = 1;
+        ADDR = 2;
+        ADDRVEC = 3;
+        BOOL = 4;
+        INT = 5;
+        FLOAT = 6;
+        UINT = 7;
+        SIZE = 8;
+        SECS = 9;
+        MILLISECS = 10;
+    }
     
     enum SortField {
         NAME = 0;
-        TYPE = 1;
+        CONFIG_PARAM_TYPE = 1;
         SERVICE = 2;
         LEVEL = 3;
     }
@@ -113,11 +127,12 @@ message SearchConfigRequest {
     optional ConfigLevel level = 4;
     optional SortField sort = 5;
     optional SortOrder order = 6;
+    optional ParamType type = 7;
 }
 
 message ConfigParam {
     string name = 1;
-    string type = 2;
+    SearchConfigRequest.ParamType type = 2;
     string level = 3;
     string desc = 4;
     string long_desc = 5;
