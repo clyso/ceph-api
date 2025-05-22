@@ -74,40 +74,6 @@ message ExportClusterUserResp{
 
 // Config Param Search 
 message SearchConfigRequest {
-    enum ServiceType {
-        COMMON = 0;
-        MON = 1;
-        MDS = 2;
-        OSD = 3;
-        MGR = 4;
-        RGW = 5;
-        RBD = 6;
-        RBD_MIRROR = 7;
-        IMMUTABLE_OBJECT_CACHE = 8;
-        MDS_CLIENT = 9;
-        CEPHFS_MIRROR = 10;
-        CEPH_EXPORTER = 11;
-    }
-    
-    enum ConfigLevel {
-        BASIC = 0;
-        ADVANCED = 1;
-        DEV = 2;
-    }
-
-    enum ParamType {
-        STR = 0;
-        UUID = 1;
-        ADDR = 2;
-        ADDRVEC = 3;
-        BOOL = 4;
-        INT = 5;
-        FLOAT = 6;
-        UINT = 7;
-        SIZE = 8;
-        SECS = 9;
-        MILLISECS = 10;
-    }
     
     enum SortField {
         NAME = 0;
@@ -121,25 +87,61 @@ message SearchConfigRequest {
         DESC = 1;
     }
     
-    optional ServiceType service = 1;
+    optional ConfigParam.ServiceType service = 1;
     optional string name = 2;
     optional string full_text = 3;
-    optional ConfigLevel level = 4;
+    optional ConfigParam.ConfigLevel level = 4;
     optional SortField sort = 5;
     optional SortOrder order = 6;
-    optional ParamType type = 7;
+    optional ConfigParam.ParamType type = 7;
 }
 
 message ConfigParam {
+
+    enum ServiceType {
+        common = 0;
+        mon = 1;
+        mds = 2;
+        osd = 3;
+        mgr = 4;
+        rgw = 5;
+        rbd = 6;
+        rbd_mirror = 7;
+        immutable_object_cache = 8;
+        mds_client = 9;
+        cephfs_mirror = 10;
+        ceph_exporter = 11;
+    }
+
+    enum ConfigLevel {
+        basic = 0;
+        advanced = 1;
+        dev = 2;
+    }
+
+    enum ParamType {
+        str = 0;
+        uuid = 1;
+        addr = 2;
+        addrvec = 3;
+        bool = 4;
+        int = 5;
+        float = 6;
+        uint = 7;
+        size = 8;
+        secs = 9;
+        millisecs = 10;
+    }
+
     string name = 1;
-    SearchConfigRequest.ParamType type = 2;
-    SearchConfigRequest.ConfigLevel level = 3;
+    ParamType type = 2;
+    ConfigLevel level = 3;
     string desc = 4;
     string long_desc = 5;
     string default_value = 6;
     string daemon_default = 7;
     repeated string tags = 8;
-    repeated SearchConfigRequest.ServiceType services = 9;
+    repeated ServiceType services = 9;
     repeated string see_also = 10;
     repeated string enum_values = 11;
     optional double min = 12;

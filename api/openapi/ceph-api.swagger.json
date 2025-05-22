@@ -217,20 +217,20 @@
             "required": false,
             "type": "string",
             "enum": [
-              "COMMON",
-              "MON",
-              "MDS",
-              "OSD",
-              "MGR",
-              "RGW",
-              "RBD",
-              "RBD_MIRROR",
-              "IMMUTABLE_OBJECT_CACHE",
-              "MDS_CLIENT",
-              "CEPHFS_MIRROR",
-              "CEPH_EXPORTER"
+              "common",
+              "mon",
+              "mds",
+              "osd",
+              "mgr",
+              "rgw",
+              "rbd",
+              "rbd_mirror",
+              "immutable_object_cache",
+              "mds_client",
+              "cephfs_mirror",
+              "ceph_exporter"
             ],
-            "default": "COMMON"
+            "default": "common"
           },
           {
             "name": "name",
@@ -250,11 +250,11 @@
             "required": false,
             "type": "string",
             "enum": [
-              "BASIC",
-              "ADVANCED",
-              "DEV"
+              "basic",
+              "advanced",
+              "dev"
             ],
-            "default": "BASIC"
+            "default": "basic"
           },
           {
             "name": "sort",
@@ -286,19 +286,19 @@
             "required": false,
             "type": "string",
             "enum": [
-              "STR",
-              "UUID",
-              "ADDR",
-              "ADDRVEC",
-              "BOOL",
-              "INT",
-              "FLOAT",
-              "UINT",
-              "SIZE",
-              "SECS",
-              "MILLISECS"
+              "str",
+              "uuid",
+              "addr",
+              "addrvec",
+              "bool",
+              "int",
+              "float",
+              "uint",
+              "size",
+              "secs",
+              "millisecs"
             ],
-            "default": "STR"
+            "default": "str"
           }
         ],
         "tags": [
@@ -1050,6 +1050,50 @@
     }
   },
   "definitions": {
+    "ConfigParamConfigLevel": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "advanced",
+        "dev"
+      ],
+      "default": "basic"
+    },
+    "ConfigParamParamType": {
+      "type": "string",
+      "enum": [
+        "str",
+        "uuid",
+        "addr",
+        "addrvec",
+        "bool",
+        "int",
+        "float",
+        "uint",
+        "size",
+        "secs",
+        "millisecs"
+      ],
+      "default": "str"
+    },
+    "ConfigParamServiceType": {
+      "type": "string",
+      "enum": [
+        "common",
+        "mon",
+        "mds",
+        "osd",
+        "mgr",
+        "rgw",
+        "rbd",
+        "rbd_mirror",
+        "immutable_object_cache",
+        "mds_client",
+        "cephfs_mirror",
+        "ceph_exporter"
+      ],
+      "default": "common"
+    },
     "PGStatPGStat_StatSum": {
       "type": "object",
       "properties": {
@@ -1845,50 +1889,6 @@
         }
       }
     },
-    "SearchConfigRequestConfigLevel": {
-      "type": "string",
-      "enum": [
-        "BASIC",
-        "ADVANCED",
-        "DEV"
-      ],
-      "default": "BASIC"
-    },
-    "SearchConfigRequestParamType": {
-      "type": "string",
-      "enum": [
-        "STR",
-        "UUID",
-        "ADDR",
-        "ADDRVEC",
-        "BOOL",
-        "INT",
-        "FLOAT",
-        "UINT",
-        "SIZE",
-        "SECS",
-        "MILLISECS"
-      ],
-      "default": "STR"
-    },
-    "SearchConfigRequestServiceType": {
-      "type": "string",
-      "enum": [
-        "COMMON",
-        "MON",
-        "MDS",
-        "OSD",
-        "MGR",
-        "RGW",
-        "RBD",
-        "RBD_MIRROR",
-        "IMMUTABLE_OBJECT_CACHE",
-        "MDS_CLIENT",
-        "CEPHFS_MIRROR",
-        "CEPH_EXPORTER"
-      ],
-      "default": "COMMON"
-    },
     "SearchConfigRequestSortField": {
       "type": "string",
       "enum": [
@@ -2316,10 +2316,10 @@
           "type": "string"
         },
         "type": {
-          "$ref": "#/definitions/SearchConfigRequestParamType"
+          "$ref": "#/definitions/ConfigParamParamType"
         },
         "level": {
-          "$ref": "#/definitions/SearchConfigRequestConfigLevel"
+          "$ref": "#/definitions/ConfigParamConfigLevel"
         },
         "desc": {
           "type": "string"
@@ -2342,7 +2342,7 @@
         "services": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/SearchConfigRequestServiceType"
+            "$ref": "#/definitions/ConfigParamServiceType"
           }
         },
         "seeAlso": {
