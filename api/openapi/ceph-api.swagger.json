@@ -2319,7 +2319,7 @@
           "$ref": "#/definitions/SearchConfigRequestParamType"
         },
         "level": {
-          "type": "string"
+          "$ref": "#/definitions/SearchConfigRequestConfigLevel"
         },
         "desc": {
           "type": "string"
@@ -2342,7 +2342,7 @@
         "services": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/SearchConfigRequestServiceType"
           }
         },
         "seeAlso": {

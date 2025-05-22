@@ -133,13 +133,13 @@ message SearchConfigRequest {
 message ConfigParam {
     string name = 1;
     SearchConfigRequest.ParamType type = 2;
-    string level = 3;
+    SearchConfigRequest.ConfigLevel level = 3;
     string desc = 4;
     string long_desc = 5;
     string default_value = 6;
     string daemon_default = 7;
     repeated string tags = 8;
-    repeated string services = 9;
+    repeated SearchConfigRequest.ServiceType services = 9;
     repeated string see_also = 10;
     repeated string enum_values = 11;
     optional double min = 12;
