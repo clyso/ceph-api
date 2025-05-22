@@ -264,7 +264,6 @@
             "enum": [
               "NAME",
               "TYPE",
-              "SERVICE",
               "LEVEL"
             ],
             "default": "NAME"
@@ -1894,7 +1893,6 @@
       "enum": [
         "NAME",
         "TYPE",
-        "SERVICE",
         "LEVEL"
       ],
       "default": "NAME"
