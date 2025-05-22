@@ -338,19 +338,6 @@ func sortResults(results []ConfigParamInfo, field pb.SearchConfigRequest_SortFie
 				return results[i].Level < results[j].Level
 			}
 			return results[i].Level > results[j].Level
-		case pb.SearchConfigRequest_SERVICE:
-			iService := ""
-			jService := ""
-			if len(results[i].Services) > 0 {
-				iService = results[i].Services[0]
-			}
-			if len(results[j].Services) > 0 {
-				jService = results[j].Services[0]
-			}
-			if order == pb.SearchConfigRequest_ASC {
-				return iService < jService
-			}
-			return iService > jService
 		default:
 			return false
 		}
