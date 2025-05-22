@@ -34,7 +34,7 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 	}{
 		{
 			name:  "Filter by name wildcard",
-			query: QueryParams{Name: "mon_*"},
+			query: QueryParams{Name: stringPtr("mon_*")},
 			assert: func(results []ConfigParamInfo) error {
 				for _, r := range results {
 					if !strings.HasPrefix(r.Name, "mon_") {
@@ -172,7 +172,7 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 		{
 			name: "Combined filter: name and service",
 			query: QueryParams{
-				Name:    "osd_*",
+				Name:    stringPtr("osd_*"),
 				Service: &serviceOsd,
 			},
 			assert: func(results []ConfigParamInfo) error {
@@ -196,7 +196,7 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 		},
 		{
 			name:  "No results for unlikely filter",
-			query: QueryParams{Name: "this_param_does_not_exist"},
+			query: QueryParams{Name: stringPtr("this_param_does_not_exist")},
 			assert: func(results []ConfigParamInfo) error {
 				if len(results) != 0 {
 					return fmt.Errorf("expected no results, got %d", len(results))
@@ -206,7 +206,7 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 		},
 		{
 			name:  "Exact name match returns single result",
-			query: QueryParams{Name: "fsid"},
+			query: QueryParams{Name: stringPtr("fsid")},
 			assert: func(results []ConfigParamInfo) error {
 				if len(results) != 1 {
 					return fmt.Errorf("expected 1 result, got %d", len(results))
@@ -442,7 +442,7 @@ func TestMatchesName(t *testing.T) {
 	tests := []struct {
 		name     string
 		info     ConfigParamInfo
-		pattern  string
+		pattern  *string
 		expected bool
 	}{
 		{
@@ -450,7 +450,7 @@ func TestMatchesName(t *testing.T) {
 			info: ConfigParamInfo{
 				Name: "osd.0",
 			},
-			pattern:  "",
+			pattern:  nil,
 			expected: true,
 		},
 		{
@@ -458,7 +458,7 @@ func TestMatchesName(t *testing.T) {
 			info: ConfigParamInfo{
 				Name: "osd.0",
 			},
-			pattern:  "osd.0",
+			pattern:  stringPtr("osd.0"),
 			expected: true,
 		},
 		{
@@ -466,7 +466,7 @@ func TestMatchesName(t *testing.T) {
 			info: ConfigParamInfo{
 				Name: "osd.0",
 			},
-			pattern:  "osd*",
+			pattern:  stringPtr("osd*"),
 			expected: true,
 		},
 		{
@@ -474,7 +474,7 @@ func TestMatchesName(t *testing.T) {
 			info: ConfigParamInfo{
 				Name: "osd.0",
 			},
-			pattern:  "*.0",
+			pattern:  stringPtr("*.0"),
 			expected: true,
 		},
 		{
@@ -482,7 +482,7 @@ func TestMatchesName(t *testing.T) {
 			info: ConfigParamInfo{
 				Name: "osd.0",
 			},
-			pattern:  "osd.*",
+			pattern:  stringPtr("osd.*"),
 			expected: true,
 		},
 		{
@@ -490,7 +490,7 @@ func TestMatchesName(t *testing.T) {
 			info: ConfigParamInfo{
 				Name: "osd.0",
 			},
-			pattern:  "mon*",
+			pattern:  stringPtr("mon*"),
 			expected: false,
 		},
 		{
@@ -498,7 +498,7 @@ func TestMatchesName(t *testing.T) {
 			info: ConfigParamInfo{
 				Name: "osd.0.cache",
 			},
-			pattern:  "osd.*.cache",
+			pattern:  stringPtr("osd.*.cache"),
 			expected: true,
 		},
 	}
@@ -712,4 +712,8 @@ func TestParseMinMax(t *testing.T) {
 
 func floatPtr(f float64) *float64 {
 	return &f
+}
+
+func stringPtr(s string) *string {
+	return &s
 }

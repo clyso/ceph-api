@@ -174,8 +174,8 @@ func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigReque
 	query := cephconfig.QueryParams{
 		Service:  req.Service,
 		Level:    req.Level,
-		Name:     req.GetName(),
-		FullText: req.GetFullText(),
+		Name:     req.Name,
+		FullText: req.FullText,
 		Sort:     req.Sort,
 		Order:    req.Order,
 		Type:     req.Type,

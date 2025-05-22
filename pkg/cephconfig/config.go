@@ -41,8 +41,8 @@ type ConfigParamInfo struct {
 type QueryParams struct {
 	Service  *pb.SearchConfigRequest_ServiceType
 	Level    *pb.SearchConfigRequest_ConfigLevel
-	Name     string
-	FullText string
+	Name     *string
+	FullText *string
 	Sort     *pb.SearchConfigRequest_SortField
 	Order    *pb.SearchConfigRequest_SortOrder
 	Type     *pb.SearchConfigRequest_ParamType
@@ -182,12 +182,12 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 	var result []ConfigParamInfo
 
 	var fullTextLower string
-	if query.FullText != "" {
-		fullTextLower = strings.ToLower(query.FullText)
+	if query.FullText != nil && *query.FullText != "" {
+		fullTextLower = strings.ToLower(*query.FullText)
 	}
 
 	// If Name is set and does not contain wildcards, return immediately after match
-	uniqueName := query.Name != "" && !strings.ContainsAny(query.Name, "*?[]")
+	uniqueName := query.Name != nil && *query.Name != "" && !strings.ContainsAny(*query.Name, "*?[]")
 
 	for _, info := range c.params {
 		if !matchesService(info, query.Service) {
@@ -252,11 +252,11 @@ func matchesLevel(info ConfigParamInfo, level *pb.SearchConfigRequest_ConfigLeve
 }
 
 // matchesName checks if the parameter matches the name filter
-func matchesName(info ConfigParamInfo, name string) bool {
-	if name == "" {
+func matchesName(info ConfigParamInfo, name *string) bool {
+	if name == nil || *name == "" {
 		return true
 	}
-	return matchWildcard(info.Name, name)
+	return matchWildcard(info.Name, *name)
 }
 
 // matchesType checks if the parameter matches the type filter
