@@ -188,15 +188,15 @@ func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigReque
 		minPtr := cephconfig.ParseMinMax(param.Min)
 		maxPtr := cephconfig.ParseMinMax(param.Max)
 
-		servicesEnums := make([]pb.SearchConfigRequest_ServiceType, len(param.Services))
+		servicesEnums := make([]pb.ConfigParam_ServiceType, len(param.Services))
 		for i, s := range param.Services {
-			servicesEnums[i] = pb.SearchConfigRequest_ServiceType(pb.SearchConfigRequest_ServiceType_value[strings.ToUpper(s)])
+			servicesEnums[i] = pb.ConfigParam_ServiceType(pb.ConfigParam_ServiceType_value[s])
 		}
 
 		respParams[i] = &pb.ConfigParam{
 			Name:               param.Name,
-			Type:               pb.SearchConfigRequest_ParamType(pb.SearchConfigRequest_ParamType_value[strings.ToUpper(param.Type)]),
-			Level:              pb.SearchConfigRequest_ConfigLevel(pb.SearchConfigRequest_ConfigLevel_value[strings.ToUpper(param.Level)]),
+			Type:               pb.ConfigParam_ParamType(pb.ConfigParam_ParamType_value[param.Type]),
+			Level:              pb.ConfigParam_ConfigLevel(pb.ConfigParam_ConfigLevel_value[param.Level]),
 			Desc:               param.Desc,
 			LongDesc:           param.LongDesc,
 			DefaultValue:       fmt.Sprint(param.Default),

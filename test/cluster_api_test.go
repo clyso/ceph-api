@@ -139,7 +139,7 @@ func Test_SearchConfig(t *testing.T) {
 	r.Greater(len(resp.Params), 0, "should return at least some parameters")
 
 	// Test 2: Filter by service type
-	serviceMon := pb.SearchConfigRequest_MON
+	serviceMon := pb.ConfigParam_mon
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
 		Service: &serviceMon,
 	})
@@ -150,7 +150,7 @@ func Test_SearchConfig(t *testing.T) {
 		for _, param := range resp.Params {
 			hasMonService := false
 			for _, svc := range param.Services {
-				if svc == pb.SearchConfigRequest_MON {
+				if svc == pb.ConfigParam_mon {
 					hasMonService = true
 					break
 				}
@@ -177,7 +177,7 @@ func Test_SearchConfig(t *testing.T) {
 	}
 
 	// Test 4: Filter by level
-	levelBasic := pb.SearchConfigRequest_BASIC
+	levelBasic := pb.ConfigParam_basic
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
 		Level: &levelBasic,
 	})
@@ -186,7 +186,7 @@ func Test_SearchConfig(t *testing.T) {
 	if len(resp.Params) > 0 {
 		// Verify that all returned params have the BASIC level
 		for _, param := range resp.Params {
-			r.Equal(pb.SearchConfigRequest_BASIC, param.Level, "parameter '%s' should have 'basic' level", param.Name)
+			r.Equal(pb.ConfigParam_basic, param.Level, "parameter '%s' should have 'basic' level", param.Name)
 		}
 	}
 
@@ -247,8 +247,8 @@ func Test_SearchConfig(t *testing.T) {
 	}
 
 	// Test 8: Combined filters - service and level
-	serviceOsd := pb.SearchConfigRequest_OSD
-	levelAdvanced := pb.SearchConfigRequest_ADVANCED
+	serviceOsd := pb.ConfigParam_osd
+	levelAdvanced := pb.ConfigParam_advanced
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
 		Service: &serviceOsd,
 		Level:   &levelAdvanced,
@@ -260,13 +260,13 @@ func Test_SearchConfig(t *testing.T) {
 		for _, param := range resp.Params {
 			found := false
 			for _, svc := range param.Services {
-				if svc == pb.SearchConfigRequest_OSD {
+				if svc == pb.ConfigParam_osd {
 					found = true
 					break
 				}
 			}
 			r.True(found, "parameter '%s' should have 'osd' service", param.Name)
-			r.Equal(pb.SearchConfigRequest_ADVANCED, param.Level, "parameter '%s' should have 'advanced' level", param.Name)
+			r.Equal(pb.ConfigParam_advanced, param.Level, "parameter '%s' should have 'advanced' level", param.Name)
 		}
 	}
 
@@ -282,13 +282,13 @@ func Test_SearchConfig(t *testing.T) {
 	if len(resp.Params) > 0 {
 		param := resp.Params[0]
 		r.NotEmpty(param.Name, "name should not be empty")
-		r.NotEqual(pb.SearchConfigRequest_STR, param.Type, "type should not be default/empty")
-		r.NotEqual(pb.SearchConfigRequest_BASIC, param.Level, "level should not be default/empty")
+		r.NotEqual(pb.ConfigParam_str, param.Type, "type should not be default/empty")
+		r.NotEqual(pb.ConfigParam_basic, param.Level, "level should not be default/empty")
 	}
 
 	// Test 10: Test with invalid service type
 	// The handler should not return an error but rather return no results
-	serviceCommon := pb.SearchConfigRequest_COMMON
+	serviceCommon := pb.ConfigParam_common
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
 		Service: &serviceCommon,
 	})
@@ -313,7 +313,7 @@ func Test_SearchConfig(t *testing.T) {
 			// Verify it has OSD service
 			found := false
 			for _, svc := range param.Services {
-				if svc == pb.SearchConfigRequest_OSD {
+				if svc == pb.ConfigParam_osd {
 					found = true
 					break
 				}
@@ -323,9 +323,9 @@ func Test_SearchConfig(t *testing.T) {
 	}
 
 	// Test 12: Multiple filters
-	typeStr := pb.SearchConfigRequest_STR
-	levelAdvanced = pb.SearchConfigRequest_ADVANCED
-	serviceOsd = pb.SearchConfigRequest_OSD
+	typeStr := pb.ConfigParam_str
+	levelAdvanced = pb.ConfigParam_advanced
+	serviceOsd = pb.ConfigParam_osd
 	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
 		Type:    &typeStr,
 		Level:   &levelAdvanced,
@@ -335,11 +335,11 @@ func Test_SearchConfig(t *testing.T) {
 	r.NotNil(resp)
 	if len(resp.Params) > 0 {
 		for _, param := range resp.Params {
-			r.Equal(pb.SearchConfigRequest_STR, param.Type, "parameter '%s' should have type STR", param.Name)
-			r.Equal(pb.SearchConfigRequest_ADVANCED, param.Level, "parameter '%s' should have level ADVANCED", param.Name)
+			r.Equal(pb.ConfigParam_str, param.Type, "parameter '%s' should have type STR", param.Name)
+			r.Equal(pb.ConfigParam_advanced, param.Level, "parameter '%s' should have level ADVANCED", param.Name)
 			found := false
 			for _, svc := range param.Services {
-				if svc == pb.SearchConfigRequest_OSD {
+				if svc == pb.ConfigParam_osd {
 					found = true
 					break
 				}

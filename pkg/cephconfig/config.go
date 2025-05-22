@@ -39,13 +39,13 @@ type ConfigParamInfo struct {
 
 // QueryParams contains the parameters for config search
 type QueryParams struct {
-	Service  *pb.SearchConfigRequest_ServiceType
-	Level    *pb.SearchConfigRequest_ConfigLevel
+	Service  *pb.ConfigParam_ServiceType
+	Level    *pb.ConfigParam_ConfigLevel
 	Name     *string
 	FullText *string
 	Sort     *pb.SearchConfigRequest_SortField
 	Order    *pb.SearchConfigRequest_SortOrder
-	Type     *pb.SearchConfigRequest_ParamType
+	Type     *pb.ConfigParam_ParamType
 }
 
 // ConfigParams is a slice of parameter information
@@ -57,19 +57,19 @@ type Config struct {
 }
 
 // serviceTypeMap maps service enum values to their string representation
-var serviceTypeMap = map[pb.SearchConfigRequest_ServiceType]string{
-	pb.SearchConfigRequest_COMMON:                 "common",
-	pb.SearchConfigRequest_MON:                    "mon",
-	pb.SearchConfigRequest_MDS:                    "mds",
-	pb.SearchConfigRequest_OSD:                    "osd",
-	pb.SearchConfigRequest_MGR:                    "mgr",
-	pb.SearchConfigRequest_RGW:                    "rgw",
-	pb.SearchConfigRequest_RBD:                    "rbd",
-	pb.SearchConfigRequest_RBD_MIRROR:             "rbd-mirror",
-	pb.SearchConfigRequest_IMMUTABLE_OBJECT_CACHE: "immutable-object-cache",
-	pb.SearchConfigRequest_MDS_CLIENT:             "mds_client",
-	pb.SearchConfigRequest_CEPHFS_MIRROR:          "cephfs-mirror",
-	pb.SearchConfigRequest_CEPH_EXPORTER:          "ceph-exporter",
+var serviceTypeMap = map[pb.ConfigParam_ServiceType]string{
+	pb.ConfigParam_common:                 "common",
+	pb.ConfigParam_mon:                    "mon",
+	pb.ConfigParam_mds:                    "mds",
+	pb.ConfigParam_osd:                    "osd",
+	pb.ConfigParam_mgr:                    "mgr",
+	pb.ConfigParam_rgw:                    "rgw",
+	pb.ConfigParam_rbd:                    "rbd",
+	pb.ConfigParam_rbd_mirror:             "rbd-mirror",
+	pb.ConfigParam_immutable_object_cache: "immutable-object-cache",
+	pb.ConfigParam_mds_client:             "mds_client",
+	pb.ConfigParam_cephfs_mirror:          "cephfs-mirror",
+	pb.ConfigParam_ceph_exporter:          "ceph-exporter",
 }
 
 // loadParamsMap loads all Ceph configuration params from the embedded JSON file into a map
@@ -225,7 +225,7 @@ func (c *Config) Search(query QueryParams) []ConfigParamInfo {
 }
 
 // matchesService checks if the parameter matches the service filter
-func matchesService(info ConfigParamInfo, service *pb.SearchConfigRequest_ServiceType) bool {
+func matchesService(info ConfigParamInfo, service *pb.ConfigParam_ServiceType) bool {
 	if service == nil {
 		return true
 	}
@@ -243,7 +243,7 @@ func matchesService(info ConfigParamInfo, service *pb.SearchConfigRequest_Servic
 }
 
 // matchesLevel checks if the parameter matches the level filter
-func matchesLevel(info ConfigParamInfo, level *pb.SearchConfigRequest_ConfigLevel) bool {
+func matchesLevel(info ConfigParamInfo, level *pb.ConfigParam_ConfigLevel) bool {
 	if level == nil {
 		return true
 	}
@@ -260,7 +260,7 @@ func matchesName(info ConfigParamInfo, name *string) bool {
 }
 
 // matchesType checks if the parameter matches the type filter
-func matchesType(info ConfigParamInfo, paramType *pb.SearchConfigRequest_ParamType) bool {
+func matchesType(info ConfigParamInfo, paramType *pb.ConfigParam_ParamType) bool {
 	if paramType == nil {
 		return true
 	}

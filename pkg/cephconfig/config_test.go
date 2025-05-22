@@ -22,10 +22,10 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 	sortLevel := pb.SearchConfigRequest_SortField(pb.SearchConfigRequest_LEVEL)
 	sortAsc := pb.SearchConfigRequest_SortOrder(pb.SearchConfigRequest_ASC)
 	sortDesc := pb.SearchConfigRequest_SortOrder(pb.SearchConfigRequest_DESC)
-	serviceOsd := pb.SearchConfigRequest_ServiceType(pb.SearchConfigRequest_OSD)
-	levelBasic := pb.SearchConfigRequest_ConfigLevel(pb.SearchConfigRequest_BASIC)
-	typeStr := pb.SearchConfigRequest_ParamType(pb.SearchConfigRequest_STR)
-	typeInt := pb.SearchConfigRequest_ParamType(pb.SearchConfigRequest_INT)
+	serviceOsd := pb.ConfigParam_osd
+	levelBasic := pb.ConfigParam_basic
+	typeStr := pb.ConfigParam_str
+	typeInt := pb.ConfigParam_int
 
 	tests := []struct {
 		name   string
@@ -255,7 +255,7 @@ func TestConfig_Enum_JSON_Consistency(t *testing.T) {
 	// --- Test 1: For every possible enum value, check there are non-empty search results in JSON ---
 	// This will mean that all declared enum values exist in json
 
-	serviceStrMap := make(map[pb.SearchConfigRequest_ServiceType]string)
+	serviceStrMap := make(map[pb.ConfigParam_ServiceType]string)
 	for k, v := range serviceTypeMap {
 		serviceStrMap[k] = v
 	}
@@ -275,10 +275,10 @@ func TestConfig_Enum_JSON_Consistency(t *testing.T) {
 		req.True(found, "No JSON config param found for service enum %v (string '%s')", enumVal, strVal)
 	}
 
-	levelEnums := []pb.SearchConfigRequest_ConfigLevel{
-		pb.SearchConfigRequest_BASIC,
-		pb.SearchConfigRequest_ADVANCED,
-		pb.SearchConfigRequest_DEV,
+	levelEnums := []pb.ConfigParam_ConfigLevel{
+		pb.ConfigParam_basic,
+		pb.ConfigParam_advanced,
+		pb.ConfigParam_dev,
 	}
 	for _, enumVal := range levelEnums {
 		levelStr := strings.ToLower(enumVal.String())
@@ -323,18 +323,18 @@ func TestConfig_Enum_JSON_Consistency(t *testing.T) {
 	}
 
 	// Test for ParamType enum values
-	typeEnums := []pb.SearchConfigRequest_ParamType{
-		pb.SearchConfigRequest_STR,
-		pb.SearchConfigRequest_UUID,
-		pb.SearchConfigRequest_ADDR,
-		pb.SearchConfigRequest_ADDRVEC,
-		pb.SearchConfigRequest_BOOL,
-		pb.SearchConfigRequest_INT,
-		pb.SearchConfigRequest_FLOAT,
-		pb.SearchConfigRequest_UINT,
-		pb.SearchConfigRequest_SIZE,
-		pb.SearchConfigRequest_SECS,
-		pb.SearchConfigRequest_MILLISECS,
+	typeEnums := []pb.ConfigParam_ParamType{
+		pb.ConfigParam_str,
+		pb.ConfigParam_uuid,
+		pb.ConfigParam_addr,
+		pb.ConfigParam_addrvec,
+		pb.ConfigParam_bool,
+		pb.ConfigParam_int,
+		pb.ConfigParam_float,
+		pb.ConfigParam_uint,
+		pb.ConfigParam_size,
+		pb.ConfigParam_secs,
+		pb.ConfigParam_millisecs,
 	}
 
 	for _, enumVal := range typeEnums {
@@ -370,13 +370,13 @@ func TestConfig_Enum_JSON_Consistency(t *testing.T) {
 
 func TestMatchesService(t *testing.T) {
 	req := require.New(t)
-	osdService := pb.SearchConfigRequest_OSD
-	unknownService := pb.SearchConfigRequest_ServiceType(999)
+	osdService := pb.ConfigParam_osd
+	unknownService := pb.ConfigParam_ServiceType(999)
 
 	tests := []struct {
 		name     string
 		info     ConfigParamInfo
-		service  *pb.SearchConfigRequest_ServiceType
+		service  *pb.ConfigParam_ServiceType
 		expected bool
 	}{
 		{
@@ -616,14 +616,14 @@ func TestMatchesFullText(t *testing.T) {
 }
 
 func TestMatchesType(t *testing.T) {
-	strType := pb.SearchConfigRequest_STR
-	intType := pb.SearchConfigRequest_INT
-	unknownType := pb.SearchConfigRequest_ParamType(999)
+	strType := pb.ConfigParam_str
+	intType := pb.ConfigParam_int
+	unknownType := pb.ConfigParam_ParamType(999)
 
 	tests := []struct {
 		name      string
 		info      ConfigParamInfo
-		paramType *pb.SearchConfigRequest_ParamType
+		paramType *pb.ConfigParam_ParamType
 		expected  bool
 	}{
 		{
