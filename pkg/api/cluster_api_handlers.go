@@ -190,7 +190,7 @@ func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigReque
 
 		servicesEnums := make([]pb.ConfigParam_ServiceType, len(param.Services))
 		for i, s := range param.Services {
-			servicesEnums[i] = pb.ConfigParam_ServiceType(pb.ConfigParam_ServiceType_value[s])
+			servicesEnums[i] = cephconfig.ServiceStringToEnum[s]
 		}
 
 		respParams[i] = &pb.ConfigParam{

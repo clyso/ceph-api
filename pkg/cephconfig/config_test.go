@@ -217,6 +217,25 @@ func TestConfig_Search_FilteringAndSorting(t *testing.T) {
 				return nil
 			},
 		},
+		{
+			name:  "Filter by service immutable-object-cache",
+			query: QueryParams{Service: func() *pb.ConfigParam_ServiceType { s := pb.ConfigParam_immutable_object_cache; return &s }()},
+			assert: func(results []ConfigParamInfo) error {
+				for _, r := range results {
+					found := false
+					for _, svc := range r.Services {
+						if strings.EqualFold(svc, "immutable-object-cache") {
+							found = true
+							break
+						}
+					}
+					if !found {
+						return fmt.Errorf("param %s does not have service 'immutable-object-cache'", r.Name)
+					}
+				}
+				return nil
+			},
+		},
 	}
 
 	for _, tt := range tests {

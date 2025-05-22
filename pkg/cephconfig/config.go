@@ -72,6 +72,15 @@ var serviceTypeMap = map[pb.ConfigParam_ServiceType]string{
 	pb.ConfigParam_ceph_exporter:          "ceph-exporter",
 }
 
+// ServiceStringToEnum maps service string to enum value
+var ServiceStringToEnum = func() map[string]pb.ConfigParam_ServiceType {
+	m := make(map[string]pb.ConfigParam_ServiceType)
+	for k, v := range serviceTypeMap {
+		m[v] = k
+	}
+	return m
+}()
+
 // loadParamsMap loads all Ceph configuration params from the embedded JSON file into a map
 func loadParamsMap(ctx context.Context) (map[string]ConfigParamInfo, error) {
 	// Open the embedded config index file

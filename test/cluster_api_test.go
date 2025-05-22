@@ -347,4 +347,24 @@ func Test_SearchConfig(t *testing.T) {
 			r.True(found, "parameter '%s' should have OSD service", param.Name)
 		}
 	}
+
+	// Test 13: Filter by less common service type
+	serviceImmutable := pb.ConfigParam_immutable_object_cache
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		Service: &serviceImmutable,
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+	if len(resp.Params) > 0 {
+		for _, param := range resp.Params {
+			found := false
+			for _, svc := range param.Services {
+				if svc == pb.ConfigParam_immutable_object_cache {
+					found = true
+					break
+				}
+			}
+			r.True(found, "parameter '%s' should have 'immutable-object-cache' service", param.Name)
+		}
+	}
 }
