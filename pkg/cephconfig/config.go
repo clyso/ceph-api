@@ -81,8 +81,9 @@ var ServiceStringToEnum = func() map[string]pb.ConfigParam_ServiceType {
 	return m
 }()
 
-// loadParamsMap loads all Ceph configuration params from the embedded JSON file into a map
-func loadParamsMap(ctx context.Context) (map[string]ConfigParamInfo, error) {
+// loadParamsSlice loads all Ceph configuration params from the embedded JSON file into a sorted slice
+// NOTE: config-index.json should be sorted by the "name" field already
+func loadParamsSlice(ctx context.Context) ([]ConfigParamInfo, error) {
 	// Open the embedded config index file
 	logger := zerolog.Ctx(ctx)
 	logger.Info().Msg("Loading Ceph configuration parameters from embedded JSON file")
@@ -100,26 +101,69 @@ func loadParamsMap(ctx context.Context) (map[string]ConfigParamInfo, error) {
 		return nil, fmt.Errorf("failed to unmarshal config index JSON: %w", err)
 	}
 
-	// Convert to our ConfigParams map format
-	configParams := make(map[string]ConfigParamInfo)
-	for _, info := range jsonArray {
-		configParams[info.Name] = info
+	// Check if jsonArray is sorted by Name
+	for i := 1; i < len(jsonArray); i++ {
+		if jsonArray[i-1].Name > jsonArray[i].Name {
+			return nil, fmt.Errorf("config-index.json is not sorted by name at index %d: '%s' > '%s'", i, jsonArray[i-1].Name, jsonArray[i].Name)
+		}
 	}
 
-	return configParams, nil
+	return jsonArray, nil
+}
+
+// mergeParams merges two sorted lists of config params and names
+// - sortedBase: sorted slice of ConfigParamInfo (from JSON, must be sorted by Name)
+// - sortedCluster: sorted slice of names (from cluster, must be sorted)
+// - fetchNew: function to fetch details for new params (present in cluster but not in base)
+func mergeParams(
+	sortedBase []ConfigParamInfo,
+	sortedCluster []string,
+	fetchNew func(name string) (ConfigParamInfo, error),
+) ([]ConfigParamInfo, error) {
+	result := make([]ConfigParamInfo, 0, len(sortedCluster))
+	i, j := 0, 0
+	for i < len(sortedBase) && j < len(sortedCluster) {
+		a, b := sortedBase[i].Name, sortedCluster[j]
+		switch {
+		case a == b:
+			// Param exists in both base and cluster: keep from base
+			result = append(result, sortedBase[i])
+			i++
+			j++
+		case a > b:
+			// New param in cluster (not in base): fetch details and add
+			paramInfo, err := fetchNew(b)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, paramInfo)
+			j++
+		case a < b:
+			// Param in base but not in cluster: skip (remove)
+			i++
+		}
+	}
+	// Any remaining names in cluster are new params
+	for ; j < len(sortedCluster); j++ {
+		paramInfo, err := fetchNew(sortedCluster[j])
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, paramInfo)
+	}
+	return result, nil
 }
 
 // NewConfig creates a new Config instance and updates parameters from the cluster synchronously
 func NewConfig(ctx context.Context, radosSvc *rados.Svc, skipUpdate bool) (*Config, error) {
 	logger := zerolog.Ctx(ctx)
-	paramMap, err := loadParamsMap(ctx)
-
+	sortedBase, err := loadParamsSlice(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if skipUpdate {
-		return &Config{params: defaultSort(paramMap)}, nil
+		return &Config{params: sortedBase}, nil
 	}
 
 	const monCmd = `{"prefix": "config ls", "format": "json"}`
@@ -136,35 +180,22 @@ func NewConfig(ctx context.Context, radosSvc *rados.Svc, skipUpdate bool) (*Conf
 		return nil, err
 	}
 
-	clusterParamsSet := make(map[string]struct{}, len(clusterParams))
-	for _, name := range clusterParams {
-		clusterParamsSet[name] = struct{}{}
+	sort.Strings(clusterParams)
+
+	fetchNew := func(name string) (ConfigParamInfo, error) {
+		return fetchParamDetailFromCluster(ctx, radosSvc, name)
 	}
 
-	// Remove params not in cluster
-	for name := range paramMap {
-		if _, found := clusterParamsSet[name]; !found {
-			delete(paramMap, name)
-		}
-	}
-	// Add new params from cluster
-	for _, name := range clusterParams {
-		if _, found := paramMap[name]; !found {
-			paramInfo, err := fetchParamDetailFromCluster(ctx, radosSvc, name)
-			if err != nil {
-				logger.Err(err).Str("param", name).Msg("Failed to fetch parameter details")
-				return nil, err
-			}
-			paramMap[name] = paramInfo
-		}
+	result, err := mergeParams(sortedBase, clusterParams, fetchNew)
+	if err != nil {
+		return nil, err
 	}
 
-	params := defaultSort(paramMap)
 	logger.Info().
-		Int("total_params", len(params)).
-		Msg("Updated Ceph configuration parameters from cluster")
+		Int("total_params", len(result)).
+		Msg("Updated Ceph configuration parameters from cluster (single-pass)")
 
-	return &Config{params: params}, nil
+	return &Config{params: result}, nil
 }
 
 // fetchParamDetailFromCluster fetches detailed information for a single parameter from the Ceph cluster
@@ -342,15 +373,6 @@ func sortResults(results []ConfigParamInfo, field pb.SearchConfigRequest_SortFie
 			return false
 		}
 	})
-}
-
-func defaultSort(paramMap map[string]ConfigParamInfo) []ConfigParamInfo {
-	params := make([]ConfigParamInfo, 0, len(paramMap))
-	for _, v := range paramMap {
-		params = append(params, v)
-	}
-	sortResults(params, pb.SearchConfigRequest_NAME, pb.SearchConfigRequest_ASC)
-	return params
 }
 
 // Helper function to parse min/max values from interface{} to *float64 for the API response.

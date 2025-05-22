@@ -729,6 +729,81 @@ func TestParseMinMax(t *testing.T) {
 	}
 }
 
+func TestMergeParams(t *testing.T) {
+	req := require.New(t)
+	base := []ConfigParamInfo{
+		{Name: "alpha", Type: "str"},
+		{Name: "bravo", Type: "int"},
+		{Name: "charlie", Type: "bool"},
+	}
+	fetch := func(name string) (ConfigParamInfo, error) {
+		return ConfigParamInfo{Name: name, Type: "fetched"}, nil
+	}
+
+	t.Run("only common params", func(t *testing.T) {
+		merged, err := mergeParams(base, []string{"alpha", "bravo", "charlie"}, fetch)
+		req.NoError(err)
+		req.Equal(3, len(merged))
+		req.Equal("alpha", merged[0].Name)
+		req.Equal("bravo", merged[1].Name)
+		req.Equal("charlie", merged[2].Name)
+		// Types should be from base
+		req.Equal("str", merged[0].Type)
+		req.Equal("int", merged[1].Type)
+		req.Equal("bool", merged[2].Type)
+	})
+
+	t.Run("new param added", func(t *testing.T) {
+		merged, err := mergeParams(base, []string{"alpha", "bravo", "charlie", "delta"}, fetch)
+		req.NoError(err)
+		req.Equal(4, len(merged))
+		req.Equal("delta", merged[3].Name)
+		req.Equal("fetched", merged[3].Type)
+	})
+
+	t.Run("param removed", func(t *testing.T) {
+		merged, err := mergeParams(base, []string{"bravo", "charlie"}, fetch)
+		req.NoError(err)
+		req.Equal(2, len(merged))
+		req.Equal("bravo", merged[0].Name)
+		req.Equal("charlie", merged[1].Name)
+	})
+
+	t.Run("new and removed params", func(t *testing.T) {
+		merged, err := mergeParams(base, []string{"bravo", "charlie", "delta"}, fetch)
+		req.NoError(err)
+		req.Equal(3, len(merged))
+		req.Equal([]string{"bravo", "charlie", "delta"}, []string{merged[0].Name, merged[1].Name, merged[2].Name})
+		req.Equal("int", merged[0].Type)
+		req.Equal("bool", merged[1].Type)
+		req.Equal("fetched", merged[2].Type)
+	})
+
+	t.Run("all new params", func(t *testing.T) {
+		merged, err := mergeParams(base, []string{"delta", "echo"}, fetch)
+		req.NoError(err)
+		req.Equal(2, len(merged))
+		req.Equal("delta", merged[0].Name)
+		req.Equal("echo", merged[1].Name)
+		req.Equal("fetched", merged[0].Type)
+		req.Equal("fetched", merged[1].Type)
+	})
+
+	t.Run("empty cluster", func(t *testing.T) {
+		merged, err := mergeParams(base, []string{}, fetch)
+		req.NoError(err)
+		req.Equal(0, len(merged))
+	})
+
+	t.Run("empty base", func(t *testing.T) {
+		merged, err := mergeParams([]ConfigParamInfo{}, []string{"alpha", "bravo"}, fetch)
+		req.NoError(err)
+		req.Equal(2, len(merged))
+		req.Equal("alpha", merged[0].Name)
+		req.Equal("bravo", merged[1].Name)
+	})
+}
+
 func floatPtr(f float64) *float64 {
 	return &f
 }
