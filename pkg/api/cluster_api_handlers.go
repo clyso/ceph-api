@@ -178,6 +178,7 @@ func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigReque
 		FullText: req.GetFullText(),
 		Sort:     req.Sort,
 		Order:    req.Order,
+		Type:     req.Type,
 	}
 
 	params := c.configSvc.Search(query)

@@ -321,4 +321,30 @@ func Test_SearchConfig(t *testing.T) {
 			r.True(found, "parameter '%s' should have 'osd' service", param.Name)
 		}
 	}
+
+	// Test 12: Multiple filters
+	typeStr := pb.SearchConfigRequest_STR
+	levelAdvanced = pb.SearchConfigRequest_ADVANCED
+	serviceOsd = pb.SearchConfigRequest_OSD
+	resp, err = client.SearchConfig(tstCtx, &pb.SearchConfigRequest{
+		Type:    &typeStr,
+		Level:   &levelAdvanced,
+		Service: &serviceOsd,
+	})
+	r.NoError(err)
+	r.NotNil(resp)
+	if len(resp.Params) > 0 {
+		for _, param := range resp.Params {
+			r.Equal(pb.SearchConfigRequest_STR, param.Type, "parameter '%s' should have type STR", param.Name)
+			r.Equal(pb.SearchConfigRequest_ADVANCED, param.Level, "parameter '%s' should have level ADVANCED", param.Name)
+			found := false
+			for _, svc := range param.Services {
+				if svc == pb.SearchConfigRequest_OSD {
+					found = true
+					break
+				}
+			}
+			r.True(found, "parameter '%s' should have OSD service", param.Name)
+		}
+	}
 }
