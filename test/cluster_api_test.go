@@ -150,7 +150,7 @@ func Test_SearchConfig(t *testing.T) {
 		for _, param := range resp.Params {
 			hasMonService := false
 			for _, svc := range param.Services {
-				if svc == "mon" {
+				if svc == pb.SearchConfigRequest_MON {
 					hasMonService = true
 					break
 				}
@@ -186,7 +186,7 @@ func Test_SearchConfig(t *testing.T) {
 	if len(resp.Params) > 0 {
 		// Verify that all returned params have the BASIC level
 		for _, param := range resp.Params {
-			r.Equal("basic", param.Level, "parameter '%s' should have 'basic' level", param.Name)
+			r.Equal(pb.SearchConfigRequest_BASIC, param.Level, "parameter '%s' should have 'basic' level", param.Name)
 		}
 	}
 
@@ -258,15 +258,15 @@ func Test_SearchConfig(t *testing.T) {
 	if len(resp.Params) > 0 {
 		// Verify that all returned params have the OSD service and ADVANCED level
 		for _, param := range resp.Params {
-			hasOsdService := false
+			found := false
 			for _, svc := range param.Services {
-				if svc == "osd" {
-					hasOsdService = true
+				if svc == pb.SearchConfigRequest_OSD {
+					found = true
 					break
 				}
 			}
-			r.True(hasOsdService, "parameter '%s' should have 'osd' service", param.Name)
-			r.Equal("advanced", param.Level, "parameter '%s' should have 'advanced' level", param.Name)
+			r.True(found, "parameter '%s' should have 'osd' service", param.Name)
+			r.Equal(pb.SearchConfigRequest_ADVANCED, param.Level, "parameter '%s' should have 'advanced' level", param.Name)
 		}
 	}
 
@@ -282,8 +282,8 @@ func Test_SearchConfig(t *testing.T) {
 	if len(resp.Params) > 0 {
 		param := resp.Params[0]
 		r.NotEmpty(param.Name, "name should not be empty")
-		r.NotEmpty(param.Type, "type should not be empty")
-		r.NotEmpty(param.Level, "level should not be empty")
+		r.NotEqual(pb.SearchConfigRequest_STR, param.Type, "type should not be default/empty")
+		r.NotEqual(pb.SearchConfigRequest_BASIC, param.Level, "level should not be default/empty")
 	}
 
 	// Test 10: Test with invalid service type
@@ -311,14 +311,14 @@ func Test_SearchConfig(t *testing.T) {
 				"parameter '%s' should start with 'osd_'", param.Name)
 
 			// Verify it has OSD service
-			hasOsdService := false
+			found := false
 			for _, svc := range param.Services {
-				if svc == "osd" {
-					hasOsdService = true
+				if svc == pb.SearchConfigRequest_OSD {
+					found = true
 					break
 				}
 			}
-			r.True(hasOsdService, "parameter '%s' should have 'osd' service", param.Name)
+			r.True(found, "parameter '%s' should have 'osd' service", param.Name)
 		}
 	}
 }
