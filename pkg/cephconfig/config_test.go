@@ -263,6 +263,21 @@ func TestConfig_JSON_Count(t *testing.T) {
 	req.Equal(len(jsonArray), len(cfg.params), "item count mismatch: json=%d, params=%d", len(jsonArray), len(cfg.params))
 }
 
+func TestConfig_JSON_SortedByName(t *testing.T) {
+	req := require.New(t)
+	data, err := configIndexFile.ReadFile("config-index.json")
+	req.NoError(err, "failed to read embedded config-index.json: %v", err)
+
+	var jsonArray []ConfigParamInfo
+	req.NoError(json.Unmarshal(data, &jsonArray), "failed to unmarshal config index JSON: %v", err)
+
+	for i := 1; i < len(jsonArray); i++ {
+		if jsonArray[i-1].Name > jsonArray[i].Name {
+			t.Fatalf("config-index.json is not sorted by name at index %d: '%s' > '%s'", i, jsonArray[i-1].Name, jsonArray[i].Name)
+		}
+	}
+}
+
 func TestConfig_Enum_JSON_Consistency(t *testing.T) {
 	req := require.New(t)
 	data, err := configIndexFile.ReadFile("config-index.json")

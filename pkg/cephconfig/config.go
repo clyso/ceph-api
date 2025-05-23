@@ -101,13 +101,6 @@ func loadParamsSlice(ctx context.Context) ([]ConfigParamInfo, error) {
 		return nil, fmt.Errorf("failed to unmarshal config index JSON: %w", err)
 	}
 
-	// Check if jsonArray is sorted by Name
-	for i := 1; i < len(jsonArray); i++ {
-		if jsonArray[i-1].Name > jsonArray[i].Name {
-			return nil, fmt.Errorf("config-index.json is not sorted by name at index %d: '%s' > '%s'", i, jsonArray[i-1].Name, jsonArray[i].Name)
-		}
-	}
-
 	return jsonArray, nil
 }
 
