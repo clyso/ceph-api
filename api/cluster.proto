@@ -19,6 +19,7 @@ service Cluster {
     rpc CreateUser (CreateClusterUserReq) returns (google.protobuf.Empty);
     rpc ExportUser (ExportClusterUserReq) returns (ExportClusterUserResp);
     rpc DeleteUser (DeleteClusterUserReq) returns (google.protobuf.Empty);
+    rpc SearchConfig (SearchConfigRequest) returns (SearchConfigResponse);
 }
 
 message ClusterStatus{
@@ -69,4 +70,85 @@ message DeleteClusterUserReq{
 message ExportClusterUserResp{
     // User key and capabilities in Ceph config file format
     bytes data = 1;
+}
+
+// Config Param Search 
+message SearchConfigRequest {
+    
+    enum SortField {
+        NAME = 0;
+        TYPE = 1;
+        LEVEL = 2;
+    }
+    
+    enum SortOrder {
+        ASC = 0;
+        DESC = 1;
+    }
+    
+    optional ConfigParam.ServiceType service = 1;
+    optional string name = 2;
+    optional string full_text = 3;
+    optional ConfigParam.ConfigLevel level = 4;
+    optional SortField sort = 5;
+    optional SortOrder order = 6;
+    optional ConfigParam.ParamType type = 7;
+}
+
+message ConfigParam {
+
+    enum ServiceType {
+        common = 0;
+        mon = 1;
+        mds = 2;
+        osd = 3;
+        mgr = 4;
+        rgw = 5;
+        rbd = 6;
+        rbd_mirror = 7;
+        immutable_object_cache = 8;
+        mds_client = 9;
+        cephfs_mirror = 10;
+        ceph_exporter = 11;
+    }
+
+    enum ConfigLevel {
+        basic = 0;
+        advanced = 1;
+        dev = 2;
+    }
+
+    enum ParamType {
+        str = 0;
+        uuid = 1;
+        addr = 2;
+        addrvec = 3;
+        bool = 4;
+        int = 5;
+        float = 6;
+        uint = 7;
+        size = 8;
+        secs = 9;
+        millisecs = 10;
+    }
+
+    string name = 1;
+    ParamType type = 2;
+    ConfigLevel level = 3;
+    string desc = 4;
+    string long_desc = 5;
+    string default_value = 6;
+    string daemon_default = 7;
+    repeated string tags = 8;
+    repeated ServiceType services = 9;
+    repeated string see_also = 10;
+    repeated string enum_values = 11;
+    optional double min = 12;
+    optional double max = 13;
+    bool can_update_at_runtime = 14;
+    repeated string flags = 15;
+}
+
+message SearchConfigResponse {
+    repeated ConfigParam params = 1;
 }

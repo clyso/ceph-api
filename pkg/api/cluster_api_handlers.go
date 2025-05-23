@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
+	"github.com/clyso/ceph-api/pkg/cephconfig"
 	"github.com/clyso/ceph-api/pkg/rados"
 	"github.com/clyso/ceph-api/pkg/types"
 	"github.com/clyso/ceph-api/pkg/user"
@@ -17,14 +18,16 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func NewClusterAPI(radosSvc *rados.Svc) pb.ClusterServer {
+func NewClusterAPI(radosSvc *rados.Svc, configSvc *cephconfig.Config) pb.ClusterServer {
 	return &clusterAPI{
-		radosSvc: radosSvc,
+		radosSvc:  radosSvc,
+		configSvc: configSvc,
 	}
 }
 
 type clusterAPI struct {
-	radosSvc *rados.Svc
+	radosSvc  *rados.Svc
+	configSvc *cephconfig.Config
 }
 
 func (c *clusterAPI) DeleteUser(ctx context.Context, req *pb.DeleteClusterUserReq) (*emptypb.Empty, error) {
@@ -160,4 +163,56 @@ func (c *clusterAPI) UpdateStatus(ctx context.Context, req *pb.ClusterStatus) (*
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func (c *clusterAPI) SearchConfig(ctx context.Context, req *pb.SearchConfigRequest) (*pb.SearchConfigResponse, error) {
+	if err := user.HasPermissions(ctx, user.ScopeConfigOpt, user.PermRead); err != nil {
+		return nil, err
+	}
+
+	// Set defaults for all optional fields
+	query := cephconfig.QueryParams{
+		Service:  req.Service,
+		Level:    req.Level,
+		Name:     req.Name,
+		FullText: req.FullText,
+		Sort:     req.Sort,
+		Order:    req.Order,
+		Type:     req.Type,
+	}
+
+	params := c.configSvc.Search(query)
+
+	respParams := make([]*pb.ConfigParam, len(params))
+	for i, param := range params {
+		minPtr := cephconfig.ParseMinMax(param.Min)
+		maxPtr := cephconfig.ParseMinMax(param.Max)
+
+		servicesEnums := make([]pb.ConfigParam_ServiceType, len(param.Services))
+		for i, s := range param.Services {
+			servicesEnums[i] = cephconfig.ServiceStringToEnum[s]
+		}
+
+		respParams[i] = &pb.ConfigParam{
+			Name:               param.Name,
+			Type:               pb.ConfigParam_ParamType(pb.ConfigParam_ParamType_value[param.Type]),
+			Level:              pb.ConfigParam_ConfigLevel(pb.ConfigParam_ConfigLevel_value[param.Level]),
+			Desc:               param.Desc,
+			LongDesc:           param.LongDesc,
+			DefaultValue:       fmt.Sprint(param.Default),
+			DaemonDefault:      fmt.Sprint(param.DaemonDefault),
+			Tags:               param.Tags,
+			Services:           servicesEnums,
+			SeeAlso:            param.SeeAlso,
+			EnumValues:         param.EnumValues,
+			Min:                minPtr,
+			Max:                maxPtr,
+			CanUpdateAtRuntime: param.CanUpdateAtRuntime,
+			Flags:              param.Flags,
+		}
+	}
+
+	return &pb.SearchConfigResponse{
+		Params: respParams,
+	}, nil
 }
