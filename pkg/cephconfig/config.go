@@ -109,9 +109,10 @@ func loadParamsSlice(ctx context.Context) ([]ConfigParamInfo, error) {
 // - sortedCluster: sorted slice of names (from cluster, must be sorted)
 // - fetchNew: function to fetch details for new params (present in cluster but not in base)
 func mergeParams(
+	ctx context.Context,
 	sortedBase []ConfigParamInfo,
 	sortedCluster []string,
-	fetchNew func(name string) (ConfigParamInfo, error),
+	fetchNew func(ctx context.Context, name string) (ConfigParamInfo, error),
 ) ([]ConfigParamInfo, error) {
 	result := make([]ConfigParamInfo, 0, len(sortedCluster))
 	i, j := 0, 0
@@ -125,7 +126,7 @@ func mergeParams(
 			j++
 		case a > b:
 			// New param in cluster (not in base): fetch details and add
-			paramInfo, err := fetchNew(b)
+			paramInfo, err := fetchNew(ctx, b)
 			if err != nil {
 				return nil, err
 			}
@@ -138,7 +139,7 @@ func mergeParams(
 	}
 	// Any remaining names in cluster are new params
 	for ; j < len(sortedCluster); j++ {
-		paramInfo, err := fetchNew(sortedCluster[j])
+		paramInfo, err := fetchNew(ctx, sortedCluster[j])
 		if err != nil {
 			return nil, err
 		}
@@ -175,11 +176,11 @@ func NewConfig(ctx context.Context, radosSvc *rados.Svc, skipUpdate bool) (*Conf
 
 	sort.Strings(clusterParams)
 
-	fetchNew := func(name string) (ConfigParamInfo, error) {
+	fetchNew := func(ctx context.Context, name string) (ConfigParamInfo, error) {
 		return fetchParamDetailFromCluster(ctx, radosSvc, name)
 	}
 
-	result, err := mergeParams(sortedBase, clusterParams, fetchNew)
+	result, err := mergeParams(ctx, sortedBase, clusterParams, fetchNew)
 	if err != nil {
 		return nil, err
 	}

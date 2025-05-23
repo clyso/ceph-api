@@ -746,17 +746,18 @@ func TestParseMinMax(t *testing.T) {
 
 func TestMergeParams(t *testing.T) {
 	req := require.New(t)
+	ctx := context.Background()
 	base := []ConfigParamInfo{
 		{Name: "alpha", Type: "str"},
 		{Name: "bravo", Type: "int"},
 		{Name: "charlie", Type: "bool"},
 	}
-	fetch := func(name string) (ConfigParamInfo, error) {
+	fetch := func(ctx context.Context, name string) (ConfigParamInfo, error) {
 		return ConfigParamInfo{Name: name, Type: "fetched"}, nil
 	}
 
 	t.Run("only common params", func(t *testing.T) {
-		merged, err := mergeParams(base, []string{"alpha", "bravo", "charlie"}, fetch)
+		merged, err := mergeParams(ctx, base, []string{"alpha", "bravo", "charlie"}, fetch)
 		req.NoError(err)
 		req.Equal(3, len(merged))
 		req.Equal("alpha", merged[0].Name)
@@ -769,7 +770,7 @@ func TestMergeParams(t *testing.T) {
 	})
 
 	t.Run("new param added", func(t *testing.T) {
-		merged, err := mergeParams(base, []string{"alpha", "bravo", "charlie", "delta"}, fetch)
+		merged, err := mergeParams(ctx, base, []string{"alpha", "bravo", "charlie", "delta"}, fetch)
 		req.NoError(err)
 		req.Equal(4, len(merged))
 		req.Equal("delta", merged[3].Name)
@@ -777,7 +778,7 @@ func TestMergeParams(t *testing.T) {
 	})
 
 	t.Run("param removed", func(t *testing.T) {
-		merged, err := mergeParams(base, []string{"bravo", "charlie"}, fetch)
+		merged, err := mergeParams(ctx, base, []string{"bravo", "charlie"}, fetch)
 		req.NoError(err)
 		req.Equal(2, len(merged))
 		req.Equal("bravo", merged[0].Name)
@@ -785,7 +786,7 @@ func TestMergeParams(t *testing.T) {
 	})
 
 	t.Run("new and removed params", func(t *testing.T) {
-		merged, err := mergeParams(base, []string{"bravo", "charlie", "delta"}, fetch)
+		merged, err := mergeParams(ctx, base, []string{"bravo", "charlie", "delta"}, fetch)
 		req.NoError(err)
 		req.Equal(3, len(merged))
 		req.Equal([]string{"bravo", "charlie", "delta"}, []string{merged[0].Name, merged[1].Name, merged[2].Name})
@@ -795,7 +796,7 @@ func TestMergeParams(t *testing.T) {
 	})
 
 	t.Run("all new params", func(t *testing.T) {
-		merged, err := mergeParams(base, []string{"delta", "echo"}, fetch)
+		merged, err := mergeParams(ctx, base, []string{"delta", "echo"}, fetch)
 		req.NoError(err)
 		req.Equal(2, len(merged))
 		req.Equal("delta", merged[0].Name)
@@ -805,13 +806,13 @@ func TestMergeParams(t *testing.T) {
 	})
 
 	t.Run("empty cluster", func(t *testing.T) {
-		merged, err := mergeParams(base, []string{}, fetch)
+		merged, err := mergeParams(ctx, base, []string{}, fetch)
 		req.NoError(err)
 		req.Equal(0, len(merged))
 	})
 
 	t.Run("empty base", func(t *testing.T) {
-		merged, err := mergeParams([]ConfigParamInfo{}, []string{"alpha", "bravo"}, fetch)
+		merged, err := mergeParams(ctx, []ConfigParamInfo{}, []string{"alpha", "bravo"}, fetch)
 		req.NoError(err)
 		req.Equal(2, len(merged))
 		req.Equal("alpha", merged[0].Name)
