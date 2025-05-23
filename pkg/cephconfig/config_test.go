@@ -751,73 +751,162 @@ func TestMergeParams(t *testing.T) {
 		{Name: "alpha", Type: "str"},
 		{Name: "bravo", Type: "int"},
 		{Name: "charlie", Type: "bool"},
+		{Name: "delta", Type: "float"},
+		{Name: "echo", Type: "uuid"},
 	}
 	fetch := func(ctx context.Context, name string) (ConfigParamInfo, error) {
 		return ConfigParamInfo{Name: name, Type: "fetched"}, nil
 	}
 
-	t.Run("only common params", func(t *testing.T) {
-		merged, err := mergeParams(ctx, base, []string{"alpha", "bravo", "charlie"}, fetch)
-		req.NoError(err)
-		req.Equal(3, len(merged))
-		req.Equal("alpha", merged[0].Name)
-		req.Equal("bravo", merged[1].Name)
-		req.Equal("charlie", merged[2].Name)
-		// Types should be from base
-		req.Equal("str", merged[0].Type)
-		req.Equal("int", merged[1].Type)
-		req.Equal("bool", merged[2].Type)
-	})
+	tests := []struct {
+		name      string
+		base      []ConfigParamInfo
+		cluster   []string
+		wantNames []string
+		wantTypes []string
+	}{
+		{
+			name:      "all common, order preserved",
+			base:      base,
+			cluster:   []string{"alpha", "bravo", "charlie", "delta", "echo"},
+			wantNames: []string{"alpha", "bravo", "charlie", "delta", "echo"},
+			wantTypes: []string{"str", "int", "bool", "float", "uuid"},
+		},
+		{
+			name:      "new at start",
+			base:      base,
+			cluster:   []string{"alpha", "bravo", "charlie", "delta", "echo", "zulu"},
+			wantNames: []string{"alpha", "bravo", "charlie", "delta", "echo", "zulu"},
+			wantTypes: []string{"str", "int", "bool", "float", "uuid", "fetched"},
+		},
+		{
+			name:      "new in middle",
+			base:      base,
+			cluster:   []string{"alpha", "bravo", "charlie", "delta", "echo", "yankee"},
+			wantNames: []string{"alpha", "bravo", "charlie", "delta", "echo", "yankee"},
+			wantTypes: []string{"str", "int", "bool", "float", "uuid", "fetched"},
+		},
+		{
+			name:      "new at end",
+			base:      base,
+			cluster:   []string{"alpha", "bravo", "charlie", "delta", "echo", "xray"},
+			wantNames: []string{"alpha", "bravo", "charlie", "delta", "echo", "xray"},
+			wantTypes: []string{"str", "int", "bool", "float", "uuid", "fetched"},
+		},
+		{
+			name:      "missing at start",
+			base:      base,
+			cluster:   []string{"bravo", "charlie", "delta", "echo"},
+			wantNames: []string{"bravo", "charlie", "delta", "echo"},
+			wantTypes: []string{"int", "bool", "float", "uuid"},
+		},
+		{
+			name:      "missing in middle",
+			base:      base,
+			cluster:   []string{"alpha", "bravo", "delta", "echo"},
+			wantNames: []string{"alpha", "bravo", "delta", "echo"},
+			wantTypes: []string{"str", "int", "float", "uuid"},
+		},
+		{
+			name:      "missing at end",
+			base:      base,
+			cluster:   []string{"alpha", "bravo", "charlie", "delta"},
+			wantNames: []string{"alpha", "bravo", "charlie", "delta"},
+			wantTypes: []string{"str", "int", "bool", "float"},
+		},
+		{
+			name:      "all new params",
+			base:      base,
+			cluster:   []string{"foxtrot", "golf"},
+			wantNames: []string{"foxtrot", "golf"},
+			wantTypes: []string{"fetched", "fetched"},
+		},
+		{
+			name:      "all missing (empty cluster)",
+			base:      base,
+			cluster:   []string{},
+			wantNames: []string{},
+			wantTypes: []string{},
+		},
+		{
+			name:      "empty base, cluster has values",
+			base:      []ConfigParamInfo{},
+			cluster:   []string{"alpha", "bravo"},
+			wantNames: []string{"alpha", "bravo"},
+			wantTypes: []string{"fetched", "fetched"},
+		},
+		{
+			name:      "empty base and cluster",
+			base:      []ConfigParamInfo{},
+			cluster:   []string{},
+			wantNames: []string{},
+			wantTypes: []string{},
+		},
+		{
+			name:      "combination: new at start, missing in middle, new at end",
+			base:      base,
+			cluster:   []string{"alpha", "bravo", "echo", "xray", "zulu"},
+			wantNames: []string{"alpha", "bravo", "echo", "xray", "zulu"},
+			wantTypes: []string{"str", "int", "uuid", "fetched", "fetched"},
+		},
+		{
+			name:      "combination: new in middle, missing at start and end",
+			base:      base,
+			cluster:   []string{"bravo", "charlie", "yankee"},
+			wantNames: []string{"bravo", "charlie", "yankee"},
+			wantTypes: []string{"int", "bool", "fetched"},
+		},
+		{
+			name:      "interleaved new and base",
+			base:      base,
+			cluster:   []string{"alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel"},
+			wantNames: []string{"alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel"},
+			wantTypes: []string{"str", "int", "bool", "float", "uuid", "fetched", "fetched", "fetched"},
+		},
+		{
+			name:      "duplicates in cluster (should fetch for each duplicate)",
+			base:      base,
+			cluster:   []string{"alpha", "alpha", "bravo"},
+			wantNames: []string{"alpha", "alpha", "bravo"},
+			wantTypes: []string{"str", "fetched", "int"},
+		},
+		{
+			name:      "cluster order different from base",
+			base:      base,
+			cluster:   []string{"alpha", "bravo", "charlie", "delta", "echo"},
+			wantNames: []string{"alpha", "bravo", "charlie", "delta", "echo"},
+			wantTypes: []string{"str", "int", "bool", "float", "uuid"},
+		},
+		{
+			name:      "cluster is subset, out of order",
+			base:      base,
+			cluster:   []string{"alpha", "bravo"},
+			wantNames: []string{"alpha", "bravo"},
+			wantTypes: []string{"str", "int"},
+		},
+		{
+			name:      "cluster is superset, out of order",
+			base:      base,
+			cluster:   []string{"alpha", "bravo", "delta", "golf", "zulu"},
+			wantNames: []string{"alpha", "bravo", "delta", "golf", "zulu"},
+			wantTypes: []string{"str", "int", "float", "fetched", "fetched"},
+		},
+	}
 
-	t.Run("new param added", func(t *testing.T) {
-		merged, err := mergeParams(ctx, base, []string{"alpha", "bravo", "charlie", "delta"}, fetch)
-		req.NoError(err)
-		req.Equal(4, len(merged))
-		req.Equal("delta", merged[3].Name)
-		req.Equal("fetched", merged[3].Type)
-	})
-
-	t.Run("param removed", func(t *testing.T) {
-		merged, err := mergeParams(ctx, base, []string{"bravo", "charlie"}, fetch)
-		req.NoError(err)
-		req.Equal(2, len(merged))
-		req.Equal("bravo", merged[0].Name)
-		req.Equal("charlie", merged[1].Name)
-	})
-
-	t.Run("new and removed params", func(t *testing.T) {
-		merged, err := mergeParams(ctx, base, []string{"bravo", "charlie", "delta"}, fetch)
-		req.NoError(err)
-		req.Equal(3, len(merged))
-		req.Equal([]string{"bravo", "charlie", "delta"}, []string{merged[0].Name, merged[1].Name, merged[2].Name})
-		req.Equal("int", merged[0].Type)
-		req.Equal("bool", merged[1].Type)
-		req.Equal("fetched", merged[2].Type)
-	})
-
-	t.Run("all new params", func(t *testing.T) {
-		merged, err := mergeParams(ctx, base, []string{"delta", "echo"}, fetch)
-		req.NoError(err)
-		req.Equal(2, len(merged))
-		req.Equal("delta", merged[0].Name)
-		req.Equal("echo", merged[1].Name)
-		req.Equal("fetched", merged[0].Type)
-		req.Equal("fetched", merged[1].Type)
-	})
-
-	t.Run("empty cluster", func(t *testing.T) {
-		merged, err := mergeParams(ctx, base, []string{}, fetch)
-		req.NoError(err)
-		req.Equal(0, len(merged))
-	})
-
-	t.Run("empty base", func(t *testing.T) {
-		merged, err := mergeParams(ctx, []ConfigParamInfo{}, []string{"alpha", "bravo"}, fetch)
-		req.NoError(err)
-		req.Equal(2, len(merged))
-		req.Equal("alpha", merged[0].Name)
-		req.Equal("bravo", merged[1].Name)
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			merged, err := mergeParams(ctx, tt.base, tt.cluster, fetch)
+			req.NoError(err)
+			gotNames := make([]string, len(merged))
+			gotTypes := make([]string, len(merged))
+			for i, m := range merged {
+				gotNames[i] = m.Name
+				gotTypes[i] = m.Type
+			}
+			req.Equal(tt.wantNames, gotNames, "names mismatch")
+			req.Equal(tt.wantTypes, gotTypes, "types mismatch")
+		})
+	}
 }
 
 func floatPtr(f float64) *float64 {
