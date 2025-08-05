@@ -8,6 +8,7 @@ import (
 
 	"github.com/clyso/ceph-api/pkg/api"
 	"github.com/clyso/ceph-api/pkg/auth"
+	"github.com/clyso/ceph-api/pkg/cephconfig"
 	"github.com/clyso/ceph-api/pkg/config"
 	"github.com/clyso/ceph-api/pkg/log"
 	"github.com/clyso/ceph-api/pkg/rados"
@@ -50,7 +51,12 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	}
 	defer radosSvc.Close()
 
-	clusterAPI := api.NewClusterAPI(radosSvc)
+	configSvc, err := cephconfig.NewConfig(ctx, radosSvc, false)
+	if err != nil {
+		return err
+	}
+
+	clusterAPI := api.NewClusterAPI(radosSvc, configSvc)
 	userSvc, err := user.New(radosSvc)
 	if err != nil {
 		return err

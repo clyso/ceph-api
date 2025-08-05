@@ -23,6 +23,8 @@ http:
       response_body: "data"
     - selector: ceph.Cluster.DeleteUser
       delete: /api/cluster/user/{user_entity}
+    - selector: ceph.Cluster.SearchConfig
+      get: /api/cluster/config/search
     # User management
     - selector: ceph.Users.ListUsers
       get: /api/user
