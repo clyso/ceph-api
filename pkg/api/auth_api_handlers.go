@@ -114,7 +114,6 @@ func apiKeyToPB(in auth.APIKeyRecord) *pb.APIKeyResp {
 		Id:          in.ID,
 		Name:        in.Name,
 		Description: in.Description,
-		Owner:       in.Owner,
 		ClusterId:   in.ClusterID,
 		Enabled:     in.Enabled,
 		RevokedAt:   timeToPB(in.RevokedAt),

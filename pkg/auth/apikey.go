@@ -24,7 +24,6 @@ type APIKeyRecord struct {
 	ID          string     `json:"id"`
 	Name        string     `json:"name"`
 	Description string     `json:"description"`
-	Owner       string     `json:"owner"`
 	ClusterID   string     `json:"cluster_id"`
 	SecretHash  string     `json:"secret_hash"`
 	Enabled     bool       `json:"enabled"`

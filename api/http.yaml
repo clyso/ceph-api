@@ -60,13 +60,13 @@ http:
       get: /api/user/{name}/clone
     # Auth
     - selector: ceph.Auth.Login
-      post: /api/auth
+      post: /api/v1/auth/login
       body: "*"
     - selector: ceph.Auth.Logout
-      post: /api/auth/logout
+      post: /api/v1/auth/logout
       body: "*"
     - selector: ceph.Auth.Check
-      post: /api/auth/check
+      post: /api/v1/auth/check
       body: "*"
     - selector: ceph.Auth.Whoami
       get: /api/v1/auth/whoami

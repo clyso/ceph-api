@@ -33,7 +33,7 @@ type Server struct {
 	apiKeyStore *APIKeyStore
 }
 
-func NewServer(config Config, userSvc *user.Service, privateKey *rsa.PrivateKey, kid string, globalSecret []byte) (*Server, error) {
+func NewServer(config Config, userSvc *user.Service, privateKey *rsa.PrivateKey, kid string, apiKeyStore *APIKeyStore, globalSecret []byte) (*Server, error) {
 	if privateKey == nil {
 		return nil, fmt.Errorf("JWT signing key is required")
 	}
@@ -99,6 +99,7 @@ func NewServer(config Config, userSvc *user.Service, privateKey *rsa.PrivateKey,
 		refreshTokenStrategy:  strategy,
 		accessTokenStrategy:   strategy,
 		userSvc:               userSvc,
+		apiKeyStore:           apiKeyStore,
 	}, nil
 }
 

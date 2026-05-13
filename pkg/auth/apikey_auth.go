@@ -23,7 +23,7 @@ func authenticateAPIKey(ctx context.Context, tokenStr string, store *APIKeyStore
 	}
 	rec, err := store.Get(ctx, parsed.ID)
 	if err != nil {
-		zerolog.Ctx(ctx).Err(err).Str("api_key_id", parsed.ID).Msg("API key not found")
+		zerolog.Ctx(ctx).Debug().Err(err).Str("api_key_id", parsed.ID).Msg("API key not found")
 		return nil, unauthenticated(types.ErrUnauthenticated)
 	}
 	if !rec.Enabled || rec.RevokedAt != nil {

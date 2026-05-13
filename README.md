@@ -119,7 +119,7 @@ Each API user can have `READ`, `CREATE`, `UPDATE`, `DELETE` permission to Ceph r
 
 API authenticaiton usage can be found in [test/auth_test.go](./test/auth_test.go). But in general, client authentication can be handled by any client http/gRPC library supporting OAuth2.0.
 
-There is alternative auth API under `/api/auth` path (see [open api](./api/openapi/ceph-api.swagger.json)). This API is **not** implementing OAuth spec and exists for backwards compatibility with old Ceph API. This old api also does not have refresh token feature.
+There is alternative auth API under `/api/v1/auth/login`, `/api/v1/auth/logout`, and `/api/v1/auth/check` (see [open api](./api/openapi/ceph-api.swagger.json)). This API is **not** implementing OAuth spec and exists for backwards compatibility with old Ceph API. This old api also does not have refresh token feature.
 
 ## Clients
 

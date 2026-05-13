@@ -86,7 +86,7 @@ func TestNewServerUsesProvidedKID(t *testing.T) {
 		t.Fatalf("LoadOrCreateGlobalSecret() error = %v", err)
 	}
 
-	server, err := NewServer(Config{ClientID: "ceph-api", Issuer: "test"}, nil, priv, kid, globalSecret)
+	server, err := NewServer(Config{ClientID: "ceph-api", Issuer: "test"}, nil, priv, kid, nil, globalSecret)
 	if err != nil {
 		t.Fatalf("NewServer() error = %v", err)
 	}

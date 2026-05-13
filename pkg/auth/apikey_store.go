@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/clyso/ceph-api/pkg/types"
+	"github.com/rs/zerolog"
 )
 
 const apiKeyConfigPrefix = "ceph-api/auth/apikeys/"
@@ -65,7 +66,7 @@ func (s *APIKeyStore) List(ctx context.Context) ([]APIKeyRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-	records, err := decodeConfigKeyDump(raw)
+	records, err := decodeConfigKeyDump(ctx, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +161,7 @@ func decodeAPIKeyRecord(id string, raw []byte) (APIKeyRecord, error) {
 	return rec, nil
 }
 
-func decodeConfigKeyDump(raw []byte) ([]APIKeyRecord, error) {
+func decodeConfigKeyDump(ctx context.Context, raw []byte) ([]APIKeyRecord, error) {
 	var dumped map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &dumped); err != nil {
 		return nil, fmt.Errorf("decode config-key dump: %w", err)
@@ -170,13 +171,16 @@ func decodeConfigKeyDump(raw []byte) ([]APIKeyRecord, error) {
 		if !strings.HasPrefix(key, apiKeyConfigPrefix) {
 			continue
 		}
+		// Real monitors return config-key dump values as strings, while some tests
+		// and fixtures use the direct JSON shape. Accept both envelope shapes.
 		var value string
 		if err := json.Unmarshal(val, &value); err == nil {
 			val = json.RawMessage([]byte(value))
 		}
 		rec, err := decodeAPIKeyRecord(strings.TrimPrefix(key, apiKeyConfigPrefix), val)
 		if err != nil {
-			return nil, err
+			zerolog.Ctx(ctx).Warn().Err(err).Str("config_key", key).Msg("skip invalid API key record from config-key dump")
+			continue
 		}
 		records = append(records, rec)
 	}

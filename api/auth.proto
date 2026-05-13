@@ -81,14 +81,13 @@ message APIKeyResp{
     string id =1;
     string name =2;
     string description =3;
-    string owner =4;
-    string cluster_id =5;
-    bool enabled =6;
-    optional google.protobuf.Timestamp revoked_at =7;
-    optional google.protobuf.Timestamp created_at =8;
-    string created_by =9;
-    optional google.protobuf.Timestamp expires_at =10;
-    optional google.protobuf.Timestamp last_used_at =11;
+    string cluster_id =4;
+    bool enabled =5;
+    optional google.protobuf.Timestamp revoked_at =6;
+    optional google.protobuf.Timestamp created_at =7;
+    string created_by =8;
+    optional google.protobuf.Timestamp expires_at =9;
+    optional google.protobuf.Timestamp last_used_at =10;
 }
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {

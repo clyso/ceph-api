@@ -102,11 +102,10 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	}
 	apiKeyStore := auth.NewAPIKeyStore(radosSvc)
 
-	authServer, err := auth.NewServer(conf.Auth, userSvc, signingKey, signingKID, globalSecret)
+	authServer, err := auth.NewServer(conf.Auth, userSvc, signingKey, signingKID, apiKeyStore, globalSecret)
 	if err != nil {
 		return err
 	}
-	authServer.SetAPIKeyStore(apiKeyStore)
 	authAPI := api.NewAuthAPI(authServer)
 
 	server := util.NewServer()

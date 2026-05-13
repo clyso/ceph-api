@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -32,6 +33,26 @@ func TestAPIKeyTokenHashAndParse(t *testing.T) {
 	}
 }
 
+func TestParseAPIKeyTokenRejectsMalformedTokens(t *testing.T) {
+	for _, token := range []string{
+		"",
+		"ak_test.secret",
+		apiKeyTokenPrefix,
+		apiKeyTokenPrefix + "ak_test",
+		apiKeyTokenPrefix + ".secret",
+		apiKeyTokenPrefix + "ak_test.",
+		apiKeyTokenPrefix + "bad.secret",
+		apiKeyTokenPrefix + "ak_bad/id.secret",
+		apiKeyTokenPrefix + "ak_test.secret.extra",
+	} {
+		t.Run(token, func(t *testing.T) {
+			if _, err := parseAPIKeyToken(token); err == nil {
+				t.Fatal("parseAPIKeyToken() succeeded, want error")
+			}
+		})
+	}
+}
+
 func TestAPIKeyStoreCreateListAndRevoke(t *testing.T) {
 	ctx := context.Background()
 	store := NewAPIKeyStore(newFakeMonCommander())
@@ -39,7 +60,6 @@ func TestAPIKeyStoreCreateListAndRevoke(t *testing.T) {
 	rec := APIKeyRecord{
 		ID:         "ak_test",
 		Name:       "test-key",
-		Owner:      "user:admin",
 		SecretHash: hashAPIKeySecret("secret"),
 		Enabled:    true,
 		CreatedAt:  now,
@@ -84,7 +104,6 @@ func TestAPIKeyStoreTouchLastUsedDebouncesWrites(t *testing.T) {
 	rec := APIKeyRecord{
 		ID:         "ak_test",
 		Name:       "test-key",
-		Owner:      "user:admin",
 		SecretHash: hashAPIKeySecret("secret"),
 		Enabled:    true,
 		CreatedAt:  now,
@@ -114,6 +133,103 @@ func TestAPIKeyStoreTouchLastUsedDebouncesWrites(t *testing.T) {
 	}
 }
 
+func TestDecodeConfigKeyDumpAcceptsStringAndDirectEnvelopeValues(t *testing.T) {
+	now := time.Now().UTC()
+	direct := APIKeyRecord{
+		ID:         "ak_direct",
+		Name:       "direct",
+		SecretHash: hashAPIKeySecret("direct"),
+		Enabled:    true,
+		CreatedAt:  now,
+		CreatedBy:  "user:admin",
+	}
+	wrapped := APIKeyRecord{
+		ID:         "ak_wrapped",
+		Name:       "wrapped",
+		SecretHash: hashAPIKeySecret("wrapped"),
+		Enabled:    true,
+		CreatedAt:  now,
+		CreatedBy:  "user:admin",
+	}
+	directEnvelope := mustAPIKeyEnvelope(t, direct)
+	wrappedEnvelope := mustAPIKeyEnvelope(t, wrapped)
+	wrappedString, err := json.Marshal(string(wrappedEnvelope))
+	if err != nil {
+		t.Fatalf("marshal wrapped string: %v", err)
+	}
+	dump, err := json.Marshal(map[string]json.RawMessage{
+		apiKeyConfigKey(direct.ID):  directEnvelope,
+		apiKeyConfigKey(wrapped.ID): wrappedString,
+		"unrelated":                 directEnvelope,
+	})
+	if err != nil {
+		t.Fatalf("marshal dump: %v", err)
+	}
+
+	records, err := decodeConfigKeyDump(context.Background(), dump)
+	if err != nil {
+		t.Fatalf("decodeConfigKeyDump() error = %v", err)
+	}
+	if len(records) != 2 {
+		t.Fatalf("records len = %d, want 2: %+v", len(records), records)
+	}
+	seen := map[string]bool{}
+	for _, rec := range records {
+		seen[rec.ID] = true
+	}
+	if !seen[direct.ID] || !seen[wrapped.ID] {
+		t.Fatalf("records = %+v, want direct and wrapped ids", records)
+	}
+}
+
+func TestDecodeConfigKeyDumpSkipsInvalidRecords(t *testing.T) {
+	valid := APIKeyRecord{
+		ID:         "ak_valid",
+		Name:       "valid",
+		SecretHash: hashAPIKeySecret("valid"),
+		Enabled:    true,
+		CreatedAt:  time.Now().UTC(),
+		CreatedBy:  "user:admin",
+	}
+	wrongID := APIKeyRecord{
+		ID:         "ak_wrong",
+		Name:       "wrong",
+		SecretHash: hashAPIKeySecret("wrong"),
+		Enabled:    true,
+		CreatedAt:  time.Now().UTC(),
+		CreatedBy:  "user:admin",
+	}
+	dump, err := json.Marshal(map[string]json.RawMessage{
+		apiKeyConfigKey(valid.ID):        mustAPIKeyEnvelope(t, valid),
+		apiKeyConfigKey("ak_mismatched"): mustAPIKeyEnvelope(t, wrongID),
+		apiKeyConfigKey("ak_corrupt"):    json.RawMessage(`{"version":1}`),
+	})
+	if err != nil {
+		t.Fatalf("marshal dump: %v", err)
+	}
+
+	records, err := decodeConfigKeyDump(context.Background(), dump)
+	if err != nil {
+		t.Fatalf("decodeConfigKeyDump() error = %v", err)
+	}
+	if len(records) != 1 || records[0].ID != valid.ID {
+		t.Fatalf("records = %+v, want only valid record", records)
+	}
+}
+
+func mustAPIKeyEnvelope(t *testing.T, rec APIKeyRecord) json.RawMessage {
+	t.Helper()
+	value, err := json.Marshal(rec)
+	if err != nil {
+		t.Fatalf("marshal record: %v", err)
+	}
+	envelope, err := json.Marshal(keyStoreEnvelope{Version: 1, Value: value})
+	if err != nil {
+		t.Fatalf("marshal envelope: %v", err)
+	}
+	return envelope
+}
+
 func TestAPIKeyStoreShouldTouchLastUsedDebouncesInMemory(t *testing.T) {
 	store := NewAPIKeyStore(newFakeMonCommander())
 	now := time.Now().UTC()
@@ -141,7 +257,6 @@ func TestAuthenticateAPIKeySetsContextMetadata(t *testing.T) {
 	if err := store.Create(ctx, APIKeyRecord{
 		ID:         id,
 		Name:       "test-key",
-		Owner:      "user:admin",
 		SecretHash: hashAPIKeySecret(secret),
 		Enabled:    true,
 		CreatedAt:  time.Now().UTC(),

@@ -15,10 +15,6 @@ type CreateAPIKeyRequest struct {
 	ExpiresAt   *time.Time
 }
 
-func (s *Server) SetAPIKeyStore(store *APIKeyStore) {
-	s.apiKeyStore = store
-}
-
 func (s *Server) CreateAPIKey(ctx context.Context, req CreateAPIKeyRequest) (APIKeyRecord, string, error) {
 	if err := requireJWTAdministrator(ctx); err != nil {
 		return APIKeyRecord{}, "", err
@@ -45,7 +41,6 @@ func (s *Server) CreateAPIKey(ctx context.Context, req CreateAPIKeyRequest) (API
 		ID:          id,
 		Name:        req.Name,
 		Description: req.Description,
-		Owner:       "user:" + username,
 		SecretHash:  hashAPIKeySecret(secret),
 		Enabled:     true,
 		CreatedAt:   now,
