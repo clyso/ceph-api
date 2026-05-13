@@ -2,8 +2,8 @@ package auth
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/rsa"
+	"fmt"
 	"time"
 
 	"github.com/clyso/ceph-api/pkg/user"
@@ -32,17 +32,17 @@ type Server struct {
 	userSvc *user.Service
 }
 
-func NewServer(config Config, userSvc *user.Service) (*Server, error) {
-	var secret = make([]byte, 32)
-	_, err := rand.Read(secret)
-	if err != nil {
-		return nil, err
+func NewServer(config Config, userSvc *user.Service, privateKey *rsa.PrivateKey, kid string, globalSecret []byte) (*Server, error) {
+	if privateKey == nil {
+		return nil, fmt.Errorf("JWT signing key is required")
 	}
-
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, err
+	if kid == "" {
+		return nil, fmt.Errorf("JWT signing key id is required")
 	}
+	if len(globalSecret) < globalSecretSize {
+		return nil, fmt.Errorf("OAuth global secret must be at least %d bytes", globalSecretSize)
+	}
+	secret := append([]byte(nil), globalSecret...)
 
 	defaultStor := storage.NewMemoryStore()
 	defaultStor.Clients = map[string]fosite.Client{
@@ -88,7 +88,7 @@ func NewServer(config Config, userSvc *user.Service) (*Server, error) {
 
 	return &Server{
 		publicKey:             &privateKey.PublicKey,
-		keyID:                 "0",
+		keyID:                 kid,
 		issuer:                config.Issuer,
 		clientID:              config.ClientID,
 		refreshTokenLifespan:  config.RefreshTokenLifespan,

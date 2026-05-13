@@ -91,7 +91,17 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	}
 	usersAPI := api.NewUsersAPI(userSvc)
 
-	authServer, err := auth.NewServer(conf.Auth, userSvc)
+	keyStore := auth.NewKeyStore(radosSvc)
+	signingKey, signingKID, err := keyStore.LoadOrCreate(ctx)
+	if err != nil {
+		return fmt.Errorf("load JWT signing key: %w", err)
+	}
+	globalSecret, err := keyStore.LoadOrCreateGlobalSecret(ctx)
+	if err != nil {
+		return fmt.Errorf("load OAuth global secret: %w", err)
+	}
+
+	authServer, err := auth.NewServer(conf.Auth, userSvc, signingKey, signingKID, globalSecret)
 	if err != nil {
 		return err
 	}
