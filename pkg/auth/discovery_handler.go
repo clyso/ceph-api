@@ -42,13 +42,17 @@ type jwk struct {
 }
 
 func (s *Server) DiscoveryEndpoint(w http.ResponseWriter, r *http.Request) {
+	modes := []string{"password"}
+	if s.apiKeyStore != nil {
+		modes = append(modes, "api_key")
+	}
 	writeJSON(w, discoveryDocument{
 		Auth: discoveryAuth{
 			Issuer:         s.issuer,
 			Audience:       s.clientID,
 			TokenEndpoint:  tokenEndpoint,
 			RevokeEndpoint: revokeEndpoint,
-			Modes:          []string{"password"},
+			Modes:          modes,
 		},
 		JWKSURI: jwksURI,
 	})

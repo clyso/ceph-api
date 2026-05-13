@@ -71,6 +71,16 @@ http:
     - selector: ceph.Auth.Whoami
       get: /api/v1/auth/whoami
       response_body: "*"
+    - selector: ceph.Auth.CreateAPIKey
+      post: /api/v1/auth/api-keys
+      body: "*"
+    - selector: ceph.Auth.ListAPIKeys
+      get: /api/v1/auth/api-keys
+      response_body: "keys"
+    - selector: ceph.Auth.GetAPIKey
+      get: /api/v1/auth/api-keys/{key_id}
+    - selector: ceph.Auth.RevokeAPIKey
+      delete: /api/v1/auth/api-keys/{key_id}
     # CRUSH rules
     - selector: ceph.CrushRule.ListRules
       get: /api/crush_rule

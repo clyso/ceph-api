@@ -20,10 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Auth_Login_FullMethodName  = "/ceph.Auth/Login"
-	Auth_Logout_FullMethodName = "/ceph.Auth/Logout"
-	Auth_Check_FullMethodName  = "/ceph.Auth/Check"
-	Auth_Whoami_FullMethodName = "/ceph.Auth/Whoami"
+	Auth_Login_FullMethodName        = "/ceph.Auth/Login"
+	Auth_Logout_FullMethodName       = "/ceph.Auth/Logout"
+	Auth_Check_FullMethodName        = "/ceph.Auth/Check"
+	Auth_Whoami_FullMethodName       = "/ceph.Auth/Whoami"
+	Auth_CreateAPIKey_FullMethodName = "/ceph.Auth/CreateAPIKey"
+	Auth_ListAPIKeys_FullMethodName  = "/ceph.Auth/ListAPIKeys"
+	Auth_GetAPIKey_FullMethodName    = "/ceph.Auth/GetAPIKey"
+	Auth_RevokeAPIKey_FullMethodName = "/ceph.Auth/RevokeAPIKey"
 )
 
 // AuthClient is the client API for Auth service.
@@ -34,6 +38,10 @@ type AuthClient interface {
 	Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Check(ctx context.Context, in *TokenCheckReq, opts ...grpc.CallOption) (*TokenCheckResp, error)
 	Whoami(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*WhoamiResp, error)
+	CreateAPIKey(ctx context.Context, in *CreateAPIKeyReq, opts ...grpc.CallOption) (*CreateAPIKeyResp, error)
+	ListAPIKeys(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListAPIKeysResp, error)
+	GetAPIKey(ctx context.Context, in *GetAPIKeyReq, opts ...grpc.CallOption) (*APIKeyResp, error)
+	RevokeAPIKey(ctx context.Context, in *RevokeAPIKeyReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type authClient struct {
@@ -84,6 +92,46 @@ func (c *authClient) Whoami(ctx context.Context, in *emptypb.Empty, opts ...grpc
 	return out, nil
 }
 
+func (c *authClient) CreateAPIKey(ctx context.Context, in *CreateAPIKeyReq, opts ...grpc.CallOption) (*CreateAPIKeyResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateAPIKeyResp)
+	err := c.cc.Invoke(ctx, Auth_CreateAPIKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) ListAPIKeys(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListAPIKeysResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAPIKeysResp)
+	err := c.cc.Invoke(ctx, Auth_ListAPIKeys_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) GetAPIKey(ctx context.Context, in *GetAPIKeyReq, opts ...grpc.CallOption) (*APIKeyResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(APIKeyResp)
+	err := c.cc.Invoke(ctx, Auth_GetAPIKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) RevokeAPIKey(ctx context.Context, in *RevokeAPIKeyReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Auth_RevokeAPIKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServer is the server API for Auth service.
 // All implementations should embed UnimplementedAuthServer
 // for forward compatibility.
@@ -92,6 +140,10 @@ type AuthServer interface {
 	Logout(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	Check(context.Context, *TokenCheckReq) (*TokenCheckResp, error)
 	Whoami(context.Context, *emptypb.Empty) (*WhoamiResp, error)
+	CreateAPIKey(context.Context, *CreateAPIKeyReq) (*CreateAPIKeyResp, error)
+	ListAPIKeys(context.Context, *emptypb.Empty) (*ListAPIKeysResp, error)
+	GetAPIKey(context.Context, *GetAPIKeyReq) (*APIKeyResp, error)
+	RevokeAPIKey(context.Context, *RevokeAPIKeyReq) (*emptypb.Empty, error)
 }
 
 // UnimplementedAuthServer should be embedded to have
@@ -112,6 +164,18 @@ func (UnimplementedAuthServer) Check(context.Context, *TokenCheckReq) (*TokenChe
 }
 func (UnimplementedAuthServer) Whoami(context.Context, *emptypb.Empty) (*WhoamiResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Whoami not implemented")
+}
+func (UnimplementedAuthServer) CreateAPIKey(context.Context, *CreateAPIKeyReq) (*CreateAPIKeyResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateAPIKey not implemented")
+}
+func (UnimplementedAuthServer) ListAPIKeys(context.Context, *emptypb.Empty) (*ListAPIKeysResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAPIKeys not implemented")
+}
+func (UnimplementedAuthServer) GetAPIKey(context.Context, *GetAPIKeyReq) (*APIKeyResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAPIKey not implemented")
+}
+func (UnimplementedAuthServer) RevokeAPIKey(context.Context, *RevokeAPIKeyReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeAPIKey not implemented")
 }
 func (UnimplementedAuthServer) testEmbeddedByValue() {}
 
@@ -205,6 +269,78 @@ func _Auth_Whoami_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auth_CreateAPIKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateAPIKeyReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).CreateAPIKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_CreateAPIKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).CreateAPIKey(ctx, req.(*CreateAPIKeyReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_ListAPIKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).ListAPIKeys(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_ListAPIKeys_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).ListAPIKeys(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_GetAPIKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAPIKeyReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).GetAPIKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_GetAPIKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).GetAPIKey(ctx, req.(*GetAPIKeyReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_RevokeAPIKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeAPIKeyReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).RevokeAPIKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_RevokeAPIKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).RevokeAPIKey(ctx, req.(*RevokeAPIKeyReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Auth_ServiceDesc is the grpc.ServiceDesc for Auth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -227,6 +363,22 @@ var Auth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Whoami",
 			Handler:    _Auth_Whoami_Handler,
+		},
+		{
+			MethodName: "CreateAPIKey",
+			Handler:    _Auth_CreateAPIKey_Handler,
+		},
+		{
+			MethodName: "ListAPIKeys",
+			Handler:    _Auth_ListAPIKeys_Handler,
+		},
+		{
+			MethodName: "GetAPIKey",
+			Handler:    _Auth_GetAPIKey_Handler,
+		},
+		{
+			MethodName: "RevokeAPIKey",
+			Handler:    _Auth_RevokeAPIKey_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

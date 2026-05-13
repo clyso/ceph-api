@@ -1047,6 +1047,121 @@
         ]
       }
     },
+    "/api/v1/auth/api-keys": {
+      "get": {
+        "operationId": "Auth_ListAPIKeys",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "$ref": "#/definitions/cephAPIKeyResp"
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      },
+      "post": {
+        "operationId": "Auth_CreateAPIKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cephCreateAPIKeyResp"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cephCreateAPIKeyReq"
+            }
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/api-keys/{keyId}": {
+      "get": {
+        "operationId": "Auth_GetAPIKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cephAPIKeyResp"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "keyId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      },
+      "delete": {
+        "operationId": "Auth_RevokeAPIKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "keyId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/api/v1/auth/whoami": {
       "get": {
         "operationId": "Auth_Whoami",
@@ -1955,6 +2070,48 @@
         }
       }
     },
+    "cephAPIKeyResp": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "revokedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastUsedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "cephCephMonDumpAddrVec": {
       "type": "object",
       "properties": {
@@ -2396,6 +2553,32 @@
         }
       }
     },
+    "cephCreateAPIKeyReq": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "cephCreateAPIKeyResp": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "$ref": "#/definitions/cephAPIKeyResp"
+        },
+        "token": {
+          "type": "string"
+        }
+      }
+    },
     "cephCreateClusterUserReq": {
       "type": "object",
       "properties": {
@@ -2715,6 +2898,18 @@
         },
         "progressEvents": {
           "type": "object"
+        }
+      }
+    },
+    "cephListAPIKeysResp": {
+      "type": "object",
+      "properties": {
+        "keys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephAPIKeyResp"
+          }
         }
       }
     },

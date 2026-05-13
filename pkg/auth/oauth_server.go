@@ -29,7 +29,8 @@ type Server struct {
 	refreshTokenStrategy  oauth2.RefreshTokenStrategy
 	accessTokenStrategy   oauth2.AccessTokenStrategy
 
-	userSvc *user.Service
+	userSvc     *user.Service
+	apiKeyStore *APIKeyStore
 }
 
 func NewServer(config Config, userSvc *user.Service, privateKey *rsa.PrivateKey, kid string, globalSecret []byte) (*Server, error) {

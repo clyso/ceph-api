@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
+	"strings"
 
 	xctx "github.com/clyso/ceph-api/pkg/ctx"
 	"github.com/clyso/ceph-api/pkg/log"
@@ -19,7 +20,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func AuthFunc(userSvc *user.Service, provider fosite.OAuth2Provider, getKey func() *rsa.PublicKey) grpc_auth.AuthFunc {
+func AuthFunc(userSvc *user.Service, provider fosite.OAuth2Provider, getKey func() *rsa.PublicKey, apiKeyStore *APIKeyStore) grpc_auth.AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
 		method, ok := grpc.Method(ctx)
 		if !ok {
@@ -35,6 +36,9 @@ func AuthFunc(userSvc *user.Service, provider fosite.OAuth2Provider, getKey func
 		if err != nil {
 			zerolog.Ctx(ctx).Err(err).Msg("unable to extract bearer token from grpc meta")
 			return nil, unauthenticated(fmt.Errorf("no token present: %w", types.ErrUnauthenticated))
+		}
+		if strings.HasPrefix(tokenStr, apiKeyTokenPrefix) {
+			return authenticateAPIKey(ctx, tokenStr, apiKeyStore)
 		}
 		_, ar, err := provider.IntrospectToken(ctx, tokenStr, fosite.AccessToken, new(fosite.DefaultSession))
 		if err != nil {

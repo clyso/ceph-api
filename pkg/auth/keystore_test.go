@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/clyso/ceph-api/pkg/types"
@@ -97,8 +99,10 @@ func TestNewServerUsesProvidedKID(t *testing.T) {
 }
 
 type fakeMonCommander struct {
+	sync.Mutex
 	values map[string][]byte
 	sets   int
+	dumps  int
 }
 
 func newFakeMonCommander() *fakeMonCommander {
@@ -106,12 +110,24 @@ func newFakeMonCommander() *fakeMonCommander {
 }
 
 func (f *fakeMonCommander) ExecMon(_ context.Context, cmd string) ([]byte, error) {
+	f.Lock()
+	defer f.Unlock()
 	var req struct {
 		Prefix string `json:"prefix"`
 		Key    string `json:"key"`
 	}
 	if err := json.Unmarshal([]byte(cmd), &req); err != nil {
 		return nil, err
+	}
+	if req.Prefix == "config-key dump" {
+		f.dumps++
+		values := make(map[string]string, len(f.values))
+		for key, value := range f.values {
+			if req.Key == "" || strings.HasPrefix(key, req.Key) {
+				values[key] = string(value)
+			}
+		}
+		return json.Marshal(values)
 	}
 	if req.Prefix != "config-key get" {
 		return nil, errors.New("unexpected ExecMon command")
@@ -124,6 +140,8 @@ func (f *fakeMonCommander) ExecMon(_ context.Context, cmd string) ([]byte, error
 }
 
 func (f *fakeMonCommander) ExecMonWithInputBuff(_ context.Context, cmd string, in []byte) ([]byte, error) {
+	f.Lock()
+	defer f.Unlock()
 	var req struct {
 		Prefix string `json:"prefix"`
 		Key    string `json:"key"`

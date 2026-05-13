@@ -36,6 +36,15 @@ func HasPermissions(ctx context.Context, scope Scope, perms ...Permission) error
 	return nil
 }
 
+func AdministratorPermissions() map[string][]string {
+	role := systemRoleMap["administrator"]
+	res := make(map[string][]string, len(role.Permissions))
+	for scope, perms := range role.Permissions {
+		res[scope] = append([]string(nil), perms...)
+	}
+	return res
+}
+
 func New(radosSvc *rados.Svc) (*Service, error) {
 	res := &Service{radosSvc: radosSvc}
 	if err := res.updateFromDB(context.Background()); err != nil {
