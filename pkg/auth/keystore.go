@@ -49,7 +49,7 @@ func NewKeyStore(mon MonCommander) *KeyStore {
 }
 
 func (k *KeyStore) LoadOrCreate(ctx context.Context) (*rsa.PrivateKey, string, error) {
-	priv, kid, err := k.load(ctx)
+	priv, kid, err := k.loadJWTKey(ctx)
 	if err == nil {
 		return priv, kid, nil
 	}
@@ -66,7 +66,7 @@ func (k *KeyStore) LoadOrCreate(ctx context.Context) (*rsa.PrivateKey, string, e
 		return nil, "", err
 	}
 	// TODO: Re-load after first persist to detect concurrent starters racing on config-key set.
-	if err := k.store(ctx, priv, kid); err != nil {
+	if err := k.storeJWTKey(ctx, priv, kid); err != nil {
 		return nil, "", err
 	}
 	return priv, kid, nil
@@ -92,27 +92,57 @@ func (k *KeyStore) LoadOrCreateGlobalSecret(ctx context.Context) ([]byte, error)
 	return secret, nil
 }
 
-func (k *KeyStore) load(ctx context.Context) (*rsa.PrivateKey, string, error) {
-	cmd, err := json.Marshal(map[string]string{"prefix": "config-key get", "key": keyJWTActive})
+// storeEnvelope marshals value into the versioned keyStoreEnvelope and writes
+// it to the given config-key. label is only used to contextualize errors.
+func storeEnvelope(ctx context.Context, mon MonCommander, key string, value any, label string) error {
+	rec, err := json.Marshal(value)
 	if err != nil {
-		return nil, "", err
+		return fmt.Errorf("encode %s: %w", label, err)
 	}
-	raw, err := k.mon.ExecMon(ctx, string(cmd))
+	env, err := json.Marshal(keyStoreEnvelope{Version: 1, Value: json.RawMessage(rec)})
 	if err != nil {
-		return nil, "", err
+		return fmt.Errorf("encode %s envelope: %w", label, err)
 	}
+	cmd, err := json.Marshal(map[string]string{"prefix": "config-key set", "key": key})
+	if err != nil {
+		return err
+	}
+	if _, err := mon.ExecMonWithInputBuff(ctx, string(cmd), env); err != nil {
+		return fmt.Errorf("persist %s: %w", label, err)
+	}
+	return nil
+}
 
+func loadEnvelope(ctx context.Context, mon MonCommander, key string, out any, label string) error {
+	cmd, err := json.Marshal(map[string]string{"prefix": "config-key get", "key": key})
+	if err != nil {
+		return err
+	}
+	raw, err := mon.ExecMon(ctx, string(cmd))
+	if err != nil {
+		return err
+	}
+	return decodeEnvelope(raw, out, label)
+}
+
+func decodeEnvelope(raw []byte, out any, label string) error {
 	var env keyStoreEnvelope
 	if err := json.Unmarshal(raw, &env); err != nil {
-		return nil, "", fmt.Errorf("decode persisted JWT signing key envelope: %w", err)
+		return fmt.Errorf("decode persisted %s envelope: %w", label, err)
 	}
 	if env.Version == 0 || len(env.Value) == 0 {
-		return nil, "", fmt.Errorf("decode persisted JWT signing key envelope: missing value")
+		return fmt.Errorf("decode persisted %s envelope: missing value", label)
 	}
+	if err := json.Unmarshal(env.Value, out); err != nil {
+		return fmt.Errorf("decode persisted %s: %w", label, err)
+	}
+	return nil
+}
 
+func (k *KeyStore) loadJWTKey(ctx context.Context) (*rsa.PrivateKey, string, error) {
 	var rec persistedJWTKey
-	if err := json.Unmarshal(env.Value, &rec); err != nil {
-		return nil, "", fmt.Errorf("decode persisted JWT signing key: %w", err)
+	if err := loadEnvelope(ctx, k.mon, keyJWTActive, &rec, "JWT signing key"); err != nil {
+		return nil, "", err
 	}
 	der, err := base64.RawStdEncoding.DecodeString(rec.PrivateDER)
 	if err != nil {
@@ -132,50 +162,17 @@ func (k *KeyStore) load(ctx context.Context) (*rsa.PrivateKey, string, error) {
 	return priv, kid, nil
 }
 
-func (k *KeyStore) store(ctx context.Context, priv *rsa.PrivateKey, kid string) error {
-	rec, err := json.Marshal(persistedJWTKey{
+func (k *KeyStore) storeJWTKey(ctx context.Context, priv *rsa.PrivateKey, kid string) error {
+	return storeEnvelope(ctx, k.mon, keyJWTActive, persistedJWTKey{
 		KID:        kid,
 		PrivateDER: base64.RawStdEncoding.EncodeToString(x509.MarshalPKCS1PrivateKey(priv)),
-	})
-	if err != nil {
-		return err
-	}
-	env, err := json.Marshal(keyStoreEnvelope{Version: 1, Value: json.RawMessage(rec)})
-	if err != nil {
-		return err
-	}
-	cmd, err := json.Marshal(map[string]string{"prefix": "config-key set", "key": keyJWTActive})
-	if err != nil {
-		return err
-	}
-	_, err = k.mon.ExecMonWithInputBuff(ctx, string(cmd), env)
-	if err != nil {
-		return fmt.Errorf("persist JWT signing key: %w", err)
-	}
-	return nil
+	}, "JWT signing key")
 }
 
 func (k *KeyStore) loadGlobalSecret(ctx context.Context) ([]byte, error) {
-	cmd, err := json.Marshal(map[string]string{"prefix": "config-key get", "key": keyGlobalSecretActive})
-	if err != nil {
-		return nil, err
-	}
-	raw, err := k.mon.ExecMon(ctx, string(cmd))
-	if err != nil {
-		return nil, err
-	}
-
-	var env keyStoreEnvelope
-	if err := json.Unmarshal(raw, &env); err != nil {
-		return nil, fmt.Errorf("decode persisted OAuth global secret envelope: %w", err)
-	}
-	if env.Version == 0 || len(env.Value) == 0 {
-		return nil, fmt.Errorf("decode persisted OAuth global secret envelope: missing value")
-	}
-
 	var rec persistedGlobalSecret
-	if err := json.Unmarshal(env.Value, &rec); err != nil {
-		return nil, fmt.Errorf("decode persisted OAuth global secret: %w", err)
+	if err := loadEnvelope(ctx, k.mon, keyGlobalSecretActive, &rec, "OAuth global secret"); err != nil {
+		return nil, err
 	}
 	secret, err := base64.RawStdEncoding.DecodeString(rec.Secret)
 	if err != nil {
@@ -188,25 +185,9 @@ func (k *KeyStore) loadGlobalSecret(ctx context.Context) ([]byte, error) {
 }
 
 func (k *KeyStore) storeGlobalSecret(ctx context.Context, secret []byte) error {
-	rec, err := json.Marshal(persistedGlobalSecret{
+	return storeEnvelope(ctx, k.mon, keyGlobalSecretActive, persistedGlobalSecret{
 		Secret: base64.RawStdEncoding.EncodeToString(secret),
-	})
-	if err != nil {
-		return err
-	}
-	env, err := json.Marshal(keyStoreEnvelope{Version: 1, Value: json.RawMessage(rec)})
-	if err != nil {
-		return err
-	}
-	cmd, err := json.Marshal(map[string]string{"prefix": "config-key set", "key": keyGlobalSecretActive})
-	if err != nil {
-		return err
-	}
-	_, err = k.mon.ExecMonWithInputBuff(ctx, string(cmd), env)
-	if err != nil {
-		return fmt.Errorf("persist OAuth global secret: %w", err)
-	}
-	return nil
+	}, "OAuth global secret")
 }
 
 func computeKID(pub *rsa.PublicKey) (string, error) {
