@@ -33,7 +33,7 @@ func (s *Svc) ExecMon(ctx context.Context, cmd string) ([]byte, error) {
 func (s *Svc) ExecMonWithInputBuff(ctx context.Context, cmd string, inputBuffer []byte) ([]byte, error) {
 	logger := zerolog.Ctx(ctx).With().Str("mon_cmd", cmd).Logger()
 
-	logger.Debug().Str("mon_cmd_buf", string(inputBuffer)).Msg("executing mon command with input buffer")
+	logger.Debug().Int("mon_cmd_buf_len", len(inputBuffer)).Msg("executing mon command with input buffer")
 	cmdRes, cmdStatus, err := s.conn.MonCommandWithInputBuffer([]byte(cmd), inputBuffer)
 	if err != nil {
 		logger.Err(err).Str("cmd_status", cmdStatus).Msg("mon command with input buffer executed with error")
