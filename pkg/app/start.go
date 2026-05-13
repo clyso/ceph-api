@@ -125,6 +125,8 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 		{Method: http.MethodPost, Path: "/api/oauth/auth", Handler: authServer.AuthEndpoint},
 		{Method: http.MethodPost, Path: "/api/oauth/revoke", Handler: authServer.RevokeEndpoint},
 		{Method: http.MethodPost, Path: "/api/oauth/introspect", Handler: authServer.IntrospectionEndpoint},
+		{Method: http.MethodGet, Path: "/.well-known/ceph-api", Handler: authServer.DiscoveryEndpoint},
+		{Method: http.MethodGet, Path: "/.well-known/ceph-api/jwks.json", Handler: authServer.JWKSEndpoint},
 	}
 	httpServer, err := api.GRPCGateway(ctx, conf.Api, metricsHandler, httpRoutes)
 	if err != nil {
