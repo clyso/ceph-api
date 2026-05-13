@@ -38,9 +38,10 @@ spec:
             {{- end }}
           command:
             - "ceph-api"
-            - "-config"
+            - "serve"
+            - "--config"
             - "/bin/config/config.yaml"
-            - "-config-override"
+            - "--config-override"
             - "/bin/config/override.yaml"
           volumeMounts:
             - mountPath: /bin/config/config.yaml
