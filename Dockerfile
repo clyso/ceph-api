@@ -68,4 +68,4 @@ COPY --from=builder /build/dependencies/lib/ /lib/
 COPY --from=builder /build/ceph-api /bin/ceph-api
 WORKDIR /bin
 
-CMD ["ceph-api"]
+ENTRYPOINT ["/bin/ceph-api", "serve"]

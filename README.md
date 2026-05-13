@@ -36,7 +36,7 @@ In this way Ceph API could be deployed anywhere with access to Ceph `mon`.
    CEPH_DEMO_TAG=latest docker-compose up
    ```
 
-   Ceph-API docker container starts with both REST and grpc APIs on port `:9969` and creates default admin account with both username `admin` and password `yoursecretpass`.
+   Ceph-API docker container runs `ceph-api serve`, starts both REST and grpc APIs on port `:9969`, and creates default admin account with both username `admin` and password `yoursecretpass`.
 
 2. Get API Access token:
 
@@ -70,7 +70,17 @@ In this way Ceph API could be deployed anywhere with access to Ceph `mon`.
 ## Config
 
 By default, both gRPC and REST API are exposed on the same port `:9969`. See all default configurations in [`pkg/config/config.yaml`](./pkg/config/config.yaml).
-To override default configuration, create similar YAML file and provide its path to application binary as `-config` or `-config-override` arguments. The latter will override the former and can be useful to manage secret values (mount k8s secret to this path).
+Start the server with `ceph-api serve`. To override default configuration, create similar YAML file and provide its path with the `--config` or `--config-override` arguments. The latter will override the former and can be useful to manage secret values (mount k8s secret to this path).
+
+```shell
+ceph-api serve --config /path/to/config.yaml --config-override /path/to/override.yaml
+```
+
+The Docker image uses `/bin/ceph-api serve` as its entrypoint, so server configuration flags can be passed directly after the image name:
+
+```shell
+docker run ghcr.io/clyso/ceph-api:latest --config /path/to/config.yaml
+```
 
 Additionally, any config parameter can be set with envar in following format:
 `CFG_<yaml properties seprated with _>=<value>`. For example:
@@ -85,8 +95,8 @@ app:
 API config uses the following precedence order:
 
 1. Default [`config.yaml`](./pkg/config/config.yaml)
-2. YAML file provided in `-config`
-3. YAML file provided in `-config-override`
+2. YAML file provided in `--config`
+3. YAML file provided in `--config-override`
 4. Envars
 
 ## Mock Mode
@@ -94,7 +104,7 @@ API config uses the following precedence order:
 To run Ceph API in mock mode without a real Ceph cluster:
 
 ```shell
-CFG_APP_CREATEADMIN=true CFG_APP_ADMINUSERNAME=admin CFG_APP_ADMINPASSWORD=yoursecretpass go run -tags=mock ./cmd/ceph-api/main.go
+CFG_APP_CREATEADMIN=true CFG_APP_ADMINUSERNAME=admin CFG_APP_ADMINPASSWORD=yoursecretpass go run -tags=mock ./cmd/ceph-api serve
 ```
 
 ## Security
