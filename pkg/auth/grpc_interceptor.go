@@ -65,7 +65,10 @@ func AuthFunc(userSvc *user.Service, provider fosite.OAuth2Provider, getKey func
 			return nil, unauthenticated(types.ErrUnauthenticated)
 		}
 		ctx = log.WithUsername(ctx, usr.Username)
+		ctx = xctx.SetRoles(ctx, usr.Roles)
 		ctx = xctx.SetPermissions(ctx, userSvc.GetPermissions(ctx, username))
+		ctx = xctx.SetAuthType(ctx, "jwt")
+		ctx = xctx.SetAPIKeyID(ctx, "")
 
 		return ctx, nil
 	}

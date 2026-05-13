@@ -13,6 +13,7 @@ service Auth {
     rpc Login(LoginReq) returns (LoginResp);
     rpc Logout(google.protobuf.Empty) returns(google.protobuf.Empty);
     rpc Check(TokenCheckReq)returns(TokenCheckResp);
+    rpc Whoami(google.protobuf.Empty) returns(WhoamiResp);
 }
 
 message LoginReq{
@@ -38,6 +39,14 @@ message TokenCheckResp{
     bool pwd_update_required =2;
     optional google.protobuf.Timestamp pwd_expiration_date =3;
     bool sso =4;
+    map<string,google.protobuf.ListValue> permissions=5 ;
+}
+
+message WhoamiResp{
+    string subject =1;
+    string auth_type =2;
+    string api_key_id =3;
+    repeated string roles =4;
     map<string,google.protobuf.ListValue> permissions=5 ;
 }
 

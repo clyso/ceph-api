@@ -23,6 +23,7 @@ const (
 	Auth_Login_FullMethodName  = "/ceph.Auth/Login"
 	Auth_Logout_FullMethodName = "/ceph.Auth/Logout"
 	Auth_Check_FullMethodName  = "/ceph.Auth/Check"
+	Auth_Whoami_FullMethodName = "/ceph.Auth/Whoami"
 )
 
 // AuthClient is the client API for Auth service.
@@ -32,6 +33,7 @@ type AuthClient interface {
 	Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*LoginResp, error)
 	Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Check(ctx context.Context, in *TokenCheckReq, opts ...grpc.CallOption) (*TokenCheckResp, error)
+	Whoami(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*WhoamiResp, error)
 }
 
 type authClient struct {
@@ -72,6 +74,16 @@ func (c *authClient) Check(ctx context.Context, in *TokenCheckReq, opts ...grpc.
 	return out, nil
 }
 
+func (c *authClient) Whoami(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*WhoamiResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WhoamiResp)
+	err := c.cc.Invoke(ctx, Auth_Whoami_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServer is the server API for Auth service.
 // All implementations should embed UnimplementedAuthServer
 // for forward compatibility.
@@ -79,6 +91,7 @@ type AuthServer interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	Logout(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	Check(context.Context, *TokenCheckReq) (*TokenCheckResp, error)
+	Whoami(context.Context, *emptypb.Empty) (*WhoamiResp, error)
 }
 
 // UnimplementedAuthServer should be embedded to have
@@ -96,6 +109,9 @@ func (UnimplementedAuthServer) Logout(context.Context, *emptypb.Empty) (*emptypb
 }
 func (UnimplementedAuthServer) Check(context.Context, *TokenCheckReq) (*TokenCheckResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Check not implemented")
+}
+func (UnimplementedAuthServer) Whoami(context.Context, *emptypb.Empty) (*WhoamiResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Whoami not implemented")
 }
 func (UnimplementedAuthServer) testEmbeddedByValue() {}
 
@@ -171,6 +187,24 @@ func _Auth_Check_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auth_Whoami_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).Whoami(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_Whoami_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).Whoami(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Auth_ServiceDesc is the grpc.ServiceDesc for Auth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -189,6 +223,10 @@ var Auth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Check",
 			Handler:    _Auth_Check_Handler,
+		},
+		{
+			MethodName: "Whoami",
+			Handler:    _Auth_Whoami_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

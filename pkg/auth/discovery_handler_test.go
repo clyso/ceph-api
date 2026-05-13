@@ -93,7 +93,8 @@ func newTestServer(t *testing.T) *Server {
 	if err != nil {
 		t.Fatalf("compute kid: %v", err)
 	}
-	server, err := NewServer(Config{ClientID: "ceph-api", Issuer: "http://issuer.example"}, nil, priv, kid)
+	globalSecret := []byte("0123456789abcdef0123456789abcdef")
+	server, err := NewServer(Config{ClientID: "ceph-api", Issuer: "http://issuer.example"}, nil, priv, kid, globalSecret)
 	if err != nil {
 		t.Fatalf("NewServer() error = %v", err)
 	}
