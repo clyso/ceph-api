@@ -15,7 +15,11 @@ import (
 	"github.com/clyso/ceph-api/pkg/types"
 )
 
-const keyJWTActive = "ceph-api/auth/jwt-key/active"
+const (
+	keyJWTActive          = "ceph-api/auth/jwt-key/active"
+	keyGlobalSecretActive = "ceph-api/auth/global-secret/active"
+	globalSecretSize      = 32
+)
 
 type MonCommander interface {
 	ExecMon(ctx context.Context, cmd string) ([]byte, error)
@@ -29,6 +33,10 @@ type KeyStore struct {
 type persistedJWTKey struct {
 	KID        string `json:"kid"`
 	PrivateDER string `json:"private_der"`
+}
+
+type persistedGlobalSecret struct {
+	Secret string `json:"secret"`
 }
 
 type keyStoreEnvelope struct {
@@ -62,6 +70,26 @@ func (k *KeyStore) LoadOrCreate(ctx context.Context) (*rsa.PrivateKey, string, e
 		return nil, "", err
 	}
 	return priv, kid, nil
+}
+
+func (k *KeyStore) LoadOrCreateGlobalSecret(ctx context.Context) ([]byte, error) {
+	secret, err := k.loadGlobalSecret(ctx)
+	if err == nil {
+		return secret, nil
+	}
+	if !errors.Is(err, types.RadosErrorNotFound) {
+		return nil, err
+	}
+
+	secret = make([]byte, globalSecretSize)
+	if _, err := rand.Read(secret); err != nil {
+		return nil, fmt.Errorf("generate OAuth global secret: %w", err)
+	}
+	// TODO: Re-load after first persist to detect concurrent starters racing on config-key set.
+	if err := k.storeGlobalSecret(ctx, secret); err != nil {
+		return nil, err
+	}
+	return secret, nil
 }
 
 func (k *KeyStore) load(ctx context.Context) (*rsa.PrivateKey, string, error) {
@@ -123,6 +151,60 @@ func (k *KeyStore) store(ctx context.Context, priv *rsa.PrivateKey, kid string) 
 	_, err = k.mon.ExecMonWithInputBuff(ctx, string(cmd), env)
 	if err != nil {
 		return fmt.Errorf("persist JWT signing key: %w", err)
+	}
+	return nil
+}
+
+func (k *KeyStore) loadGlobalSecret(ctx context.Context) ([]byte, error) {
+	cmd, err := json.Marshal(map[string]string{"prefix": "config-key get", "key": keyGlobalSecretActive})
+	if err != nil {
+		return nil, err
+	}
+	raw, err := k.mon.ExecMon(ctx, string(cmd))
+	if err != nil {
+		return nil, err
+	}
+
+	var env keyStoreEnvelope
+	if err := json.Unmarshal(raw, &env); err != nil {
+		return nil, fmt.Errorf("decode persisted OAuth global secret envelope: %w", err)
+	}
+	if env.Version == 0 || len(env.Value) == 0 {
+		return nil, fmt.Errorf("decode persisted OAuth global secret envelope: missing value")
+	}
+
+	var rec persistedGlobalSecret
+	if err := json.Unmarshal(env.Value, &rec); err != nil {
+		return nil, fmt.Errorf("decode persisted OAuth global secret: %w", err)
+	}
+	secret, err := base64.RawStdEncoding.DecodeString(rec.Secret)
+	if err != nil {
+		return nil, fmt.Errorf("decode persisted OAuth global secret value: %w", err)
+	}
+	if len(secret) != globalSecretSize {
+		return nil, fmt.Errorf("decode persisted OAuth global secret: invalid size")
+	}
+	return secret, nil
+}
+
+func (k *KeyStore) storeGlobalSecret(ctx context.Context, secret []byte) error {
+	rec, err := json.Marshal(persistedGlobalSecret{
+		Secret: base64.RawStdEncoding.EncodeToString(secret),
+	})
+	if err != nil {
+		return err
+	}
+	env, err := json.Marshal(keyStoreEnvelope{Version: 1, Value: json.RawMessage(rec)})
+	if err != nil {
+		return err
+	}
+	cmd, err := json.Marshal(map[string]string{"prefix": "config-key set", "key": keyGlobalSecretActive})
+	if err != nil {
+		return err
+	}
+	_, err = k.mon.ExecMonWithInputBuff(ctx, string(cmd), env)
+	if err != nil {
+		return fmt.Errorf("persist OAuth global secret: %w", err)
 	}
 	return nil
 }

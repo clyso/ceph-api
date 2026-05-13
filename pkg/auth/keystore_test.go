@@ -43,6 +43,34 @@ func TestKeyStoreLoadOrCreateCreatesAndReloadsKey(t *testing.T) {
 	}
 }
 
+func TestKeyStoreLoadOrCreateGlobalSecretCreatesAndReloadsSecret(t *testing.T) {
+	ctx := context.Background()
+	mon := newFakeMonCommander()
+	store := NewKeyStore(mon)
+
+	secret, err := store.LoadOrCreateGlobalSecret(ctx)
+	if err != nil {
+		t.Fatalf("LoadOrCreateGlobalSecret() error = %v", err)
+	}
+	if len(secret) != globalSecretSize {
+		t.Fatalf("global secret len = %d, want %d", len(secret), globalSecretSize)
+	}
+	if mon.sets != 1 {
+		t.Fatalf("config-key set count = %d, want 1", mon.sets)
+	}
+
+	reloadedSecret, err := store.LoadOrCreateGlobalSecret(ctx)
+	if err != nil {
+		t.Fatalf("second LoadOrCreateGlobalSecret() error = %v", err)
+	}
+	if string(reloadedSecret) != string(secret) {
+		t.Fatal("reloaded global secret does not match persisted secret")
+	}
+	if mon.sets != 1 {
+		t.Fatalf("config-key set count after reload = %d, want 1", mon.sets)
+	}
+}
+
 func TestNewServerUsesProvidedKID(t *testing.T) {
 	ctx := context.Background()
 	store := NewKeyStore(newFakeMonCommander())
@@ -51,7 +79,12 @@ func TestNewServerUsesProvidedKID(t *testing.T) {
 		t.Fatalf("LoadOrCreate() error = %v", err)
 	}
 
-	server, err := NewServer(Config{ClientID: "ceph-api", Issuer: "test"}, nil, priv, kid)
+	globalSecret, err := store.LoadOrCreateGlobalSecret(ctx)
+	if err != nil {
+		t.Fatalf("LoadOrCreateGlobalSecret() error = %v", err)
+	}
+
+	server, err := NewServer(Config{ClientID: "ceph-api", Issuer: "test"}, nil, priv, kid, globalSecret)
 	if err != nil {
 		t.Fatalf("NewServer() error = %v", err)
 	}
