@@ -57,6 +57,7 @@ func (k *KeyStore) LoadOrCreate(ctx context.Context) (*rsa.PrivateKey, string, e
 	if err != nil {
 		return nil, "", err
 	}
+	// TODO: Re-load after first persist to detect concurrent starters racing on config-key set.
 	if err := k.store(ctx, priv, kid); err != nil {
 		return nil, "", err
 	}
