@@ -120,13 +120,15 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	if conf.Metrics.Enabled {
 		metricsHandler = promhttp.Handler().ServeHTTP
 	}
-	oauthHandlers := map[string]http.HandlerFunc{
-		"/api/oauth/token":      authServer.TokenEndpoint,
-		"/api/oauth/auth":       authServer.AuthEndpoint,
-		"/api/oauth/revoke":     authServer.RevokeEndpoint,
-		"/api/oauth/introspect": authServer.IntrospectionEndpoint,
+	httpRoutes := []api.HTTPRoute{
+		{Method: http.MethodPost, Path: "/api/oauth/token", Handler: authServer.TokenEndpoint},
+		{Method: http.MethodPost, Path: "/api/oauth/auth", Handler: authServer.AuthEndpoint},
+		{Method: http.MethodPost, Path: "/api/oauth/revoke", Handler: authServer.RevokeEndpoint},
+		{Method: http.MethodPost, Path: "/api/oauth/introspect", Handler: authServer.IntrospectionEndpoint},
+		{Method: http.MethodGet, Path: "/.well-known/ceph-api", Handler: authServer.DiscoveryEndpoint},
+		{Method: http.MethodGet, Path: "/.well-known/ceph-api/jwks.json", Handler: authServer.JWKSEndpoint},
 	}
-	httpServer, err := api.GRPCGateway(ctx, conf.Api, metricsHandler, oauthHandlers)
+	httpServer, err := api.GRPCGateway(ctx, conf.Api, metricsHandler, httpRoutes)
 	if err != nil {
 		return err
 	}

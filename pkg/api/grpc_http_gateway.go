@@ -16,7 +16,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func GRPCGateway(ctx context.Context, conf Config, metricsHandler http.HandlerFunc, oauthHandlers map[string]http.HandlerFunc) (http.Handler, error) {
+type HTTPRoute struct {
+	Method  string
+	Path    string
+	Handler http.HandlerFunc
+}
+
+func GRPCGateway(ctx context.Context, conf Config, metricsHandler http.HandlerFunc, routes []HTTPRoute) (http.Handler, error) {
 	mux := runtime.NewServeMux()
 	var opts []grpc.DialOption
 
@@ -53,9 +59,8 @@ func GRPCGateway(ctx context.Context, conf Config, metricsHandler http.HandlerFu
 	if metricsHandler != nil {
 		handleGET(mux, "/metrics", metricsHandler)
 	}
-	// Register fosite oauth endpoints
-	for path, h := range oauthHandlers {
-		handlePOST(mux, path, h)
+	for _, route := range routes {
+		handleRoute(mux, route)
 	}
 
 	if conf.ServeDebug {
@@ -88,19 +93,14 @@ func GRPCGateway(ctx context.Context, conf Config, metricsHandler http.HandlerFu
 }
 
 func handleGET(mux *runtime.ServeMux, path string, handler http.HandlerFunc) {
-	err := mux.HandlePath("GET", path, func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
-		handler(w, r)
-	})
-	if err != nil {
-		panic(fmt.Errorf("%w: unable to register http handler %s", err, path))
-	}
+	handleRoute(mux, HTTPRoute{Method: http.MethodGet, Path: path, Handler: handler})
 }
 
-func handlePOST(mux *runtime.ServeMux, path string, handler http.HandlerFunc) {
-	err := mux.HandlePath("POST", path, func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
-		handler(w, r)
+func handleRoute(mux *runtime.ServeMux, route HTTPRoute) {
+	err := mux.HandlePath(route.Method, route.Path, func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		route.Handler(w, r)
 	})
 	if err != nil {
-		panic(fmt.Errorf("%w: unable to register http handler %s", err, path))
+		panic(fmt.Errorf("%w: unable to register %s http handler %s", err, route.Method, route.Path))
 	}
 }
