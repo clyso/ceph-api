@@ -38,8 +38,13 @@ func authenticateAPIKey(ctx context.Context, tokenStr string, store *APIKeyStore
 
 	subject := "apikey:" + rec.ID
 	ctx = log.WithUsername(ctx, subject)
-	ctx = xctx.SetRoles(ctx, []string{"administrator"})
-	ctx = xctx.SetPermissions(ctx, user.AdministratorPermissions())
+	permissions, err := user.PermissionsFromInlineScopes(rec.Scopes)
+	if err != nil {
+		zerolog.Ctx(ctx).Warn().Err(err).Str("api_key_id", rec.ID).Msg("API key has invalid scopes")
+		return nil, unauthenticated(types.ErrUnauthenticated)
+	}
+	ctx = xctx.SetRoles(ctx, nil)
+	ctx = xctx.SetPermissions(ctx, permissions)
 	ctx = xctx.SetAuthType(ctx, "api_key")
 	ctx = xctx.SetAPIKeyID(ctx, rec.ID)
 

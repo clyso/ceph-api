@@ -11,9 +11,10 @@ import (
 func TestAuthAPIKeyCreateCommand(t *testing.T) {
 	var gotAuth string
 	var gotReq struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		ExpiresAt   string `json:"expires_at"`
+		Name        string   `json:"name"`
+		Description string   `json:"description"`
+		ExpiresAt   string   `json:"expires_at"`
+		Scopes      []string `json:"scopes"`
 	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -41,6 +42,8 @@ func TestAuthAPIKeyCreateCommand(t *testing.T) {
 		"--name", "poc",
 		"--description", "business logic",
 		"--expires-at", "2027-05-13T00:00:00Z",
+		"--scope", "config-opt:read",
+		"--scope", "config-opt:update",
 	})
 
 	if err := cmd.Execute(); err != nil {
@@ -51,6 +54,9 @@ func TestAuthAPIKeyCreateCommand(t *testing.T) {
 	}
 	if gotReq.Name != "poc" || gotReq.Description != "business logic" || gotReq.ExpiresAt != "2027-05-13T00:00:00Z" {
 		t.Fatalf("request = %+v", gotReq)
+	}
+	if len(gotReq.Scopes) != 2 || gotReq.Scopes[0] != "config-opt:read" || gotReq.Scopes[1] != "config-opt:update" {
+		t.Fatalf("scopes = %v, want config-opt read/update", gotReq.Scopes)
 	}
 	if got, want := out.String(), "capi_v1_ak_test.secret\n"; got != want {
 		t.Fatalf("output = %q, want %q", got, want)

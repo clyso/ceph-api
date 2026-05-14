@@ -75,6 +75,7 @@ func (a *authAPI) CreateAPIKey(ctx context.Context, req *pb.CreateAPIKeyReq) (*p
 		Name:        req.GetName(),
 		Description: req.GetDescription(),
 		ExpiresAt:   expiresAt,
+		Scopes:      req.GetScopes(),
 	})
 	if err != nil {
 		return nil, err
@@ -121,6 +122,7 @@ func apiKeyToPB(in auth.APIKeyRecord) *pb.APIKeyResp {
 		CreatedBy:   in.CreatedBy,
 		ExpiresAt:   timeToPB(in.ExpiresAt),
 		LastUsedAt:  timeToPB(in.LastUsedAt),
+		Scopes:      append([]string(nil), in.Scopes...),
 	}
 }
 

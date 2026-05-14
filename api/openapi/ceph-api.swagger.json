@@ -2106,6 +2106,12 @@
         "lastUsedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -2562,6 +2568,12 @@
         "expiresAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

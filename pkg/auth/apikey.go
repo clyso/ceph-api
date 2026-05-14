@@ -26,6 +26,7 @@ type APIKeyRecord struct {
 	Description string     `json:"description"`
 	ClusterID   string     `json:"cluster_id"`
 	SecretHash  string     `json:"secret_hash"`
+	Scopes      []string   `json:"scopes"`
 	Enabled     bool       `json:"enabled"`
 	RevokedAt   *time.Time `json:"revoked_at"`
 	CreatedAt   time.Time  `json:"created_at"`

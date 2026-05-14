@@ -58,6 +58,7 @@ message CreateAPIKeyReq{
     string name =1;
     string description =2;
     optional google.protobuf.Timestamp expires_at =3;
+    repeated string scopes =4;
 }
 
 message CreateAPIKeyResp{
@@ -88,6 +89,7 @@ message APIKeyResp{
     string created_by =8;
     optional google.protobuf.Timestamp expires_at =9;
     optional google.protobuf.Timestamp last_used_at =10;
+    repeated string scopes =11;
 }
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {

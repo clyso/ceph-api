@@ -7,12 +7,14 @@ import (
 
 	xctx "github.com/clyso/ceph-api/pkg/ctx"
 	"github.com/clyso/ceph-api/pkg/types"
+	"github.com/clyso/ceph-api/pkg/user"
 )
 
 type CreateAPIKeyRequest struct {
 	Name        string
 	Description string
 	ExpiresAt   *time.Time
+	Scopes      []string
 }
 
 func (s *Server) CreateAPIKey(ctx context.Context, req CreateAPIKeyRequest) (APIKeyRecord, string, error) {
@@ -35,13 +37,16 @@ func (s *Server) CreateAPIKey(ctx context.Context, req CreateAPIKeyRequest) (API
 	}
 	now := time.Now().UTC()
 	username := xctx.GetUsername(ctx)
-	// API-key v1 intentionally issues administrator keys only. Scoped roles are
-	// deferred until role grants can be persisted and enforced end-to-end.
+	scopes, err := user.NormalizeInlineScopes(req.Scopes)
+	if err != nil {
+		return APIKeyRecord{}, "", err
+	}
 	rec := APIKeyRecord{
 		ID:          id,
 		Name:        req.Name,
 		Description: req.Description,
 		SecretHash:  hashAPIKeySecret(secret),
+		Scopes:      scopes,
 		Enabled:     true,
 		CreatedAt:   now,
 		CreatedBy:   "user:" + username,

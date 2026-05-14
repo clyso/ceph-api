@@ -22,6 +22,7 @@ type authAPIKeyCreateOptions struct {
 	name        string
 	description string
 	expiresAt   string
+	scopes      []string
 	output      string
 }
 
@@ -57,6 +58,7 @@ func newAuthAPIKeyCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&opts.name, "name", "", "API key name")
 	cmd.Flags().StringVar(&opts.description, "description", "", "API key description")
 	cmd.Flags().StringVar(&opts.expiresAt, "expires-at", "", "API key expiration as RFC3339 timestamp")
+	cmd.Flags().StringArrayVar(&opts.scopes, "scope", nil, "API key inline scope, e.g. config-opt:read or config-opt:read/update; repeatable")
 	cmd.Flags().StringVarP(&opts.output, "output", "o", "token", "output format: token or json")
 	_ = cmd.MarkFlagRequired("name")
 	return cmd
@@ -87,6 +89,9 @@ func runAuthAPIKeyCreate(ctx context.Context, stdin io.Reader, stdout io.Writer,
 			return fmt.Errorf("parse --expires-at as RFC3339: %w", err)
 		}
 		body["expires_at"] = expiresAt.Format(time.RFC3339)
+	}
+	if len(opts.scopes) != 0 {
+		body["scopes"] = opts.scopes
 	}
 
 	reqBody, err := json.Marshal(body)

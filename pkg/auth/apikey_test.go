@@ -8,6 +8,7 @@ import (
 	"time"
 
 	xctx "github.com/clyso/ceph-api/pkg/ctx"
+	"github.com/clyso/ceph-api/pkg/user"
 )
 
 func TestAPIKeyTokenHashAndParse(t *testing.T) {
@@ -61,6 +62,7 @@ func TestAPIKeyStoreCreateListAndRevoke(t *testing.T) {
 		ID:         "ak_test",
 		Name:       "test-key",
 		SecretHash: hashAPIKeySecret("secret"),
+		Scopes:     []string{"monitor:read"},
 		Enabled:    true,
 		CreatedAt:  now,
 		CreatedBy:  "user:admin",
@@ -73,7 +75,7 @@ func TestAPIKeyStoreCreateListAndRevoke(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Get() error = %v", err)
 	}
-	if got.ID != rec.ID || got.SecretHash != rec.SecretHash {
+	if got.ID != rec.ID || got.SecretHash != rec.SecretHash || len(got.Scopes) != 1 || got.Scopes[0] != "monitor:read" {
 		t.Fatalf("Get() = %+v, want persisted record", got)
 	}
 	listed, err := store.List(ctx)
@@ -258,6 +260,7 @@ func TestAuthenticateAPIKeySetsContextMetadata(t *testing.T) {
 		ID:         id,
 		Name:       "test-key",
 		SecretHash: hashAPIKeySecret(secret),
+		Scopes:     []string{"config-opt:read", "config-opt:update"},
 		Enabled:    true,
 		CreatedAt:  time.Now().UTC(),
 		CreatedBy:  "user:admin",
@@ -278,8 +281,39 @@ func TestAuthenticateAPIKeySetsContextMetadata(t *testing.T) {
 	if got := xctx.GetUsername(gotCtx); got != "apikey:"+id {
 		t.Fatalf("username = %q, want apikey subject", got)
 	}
-	if len(xctx.GetPermissions(gotCtx)) == 0 {
-		t.Fatal("permissions are empty, want administrator permissions")
+	permissions := xctx.GetPermissions(gotCtx)
+	if got := xctx.GetRoles(gotCtx); len(got) != 0 {
+		t.Fatalf("roles = %v, want none for inline-scoped API key", got)
+	}
+	if err := user.HasPermissions(gotCtx, user.ScopeConfigOpt, user.PermRead, user.PermUpdate); err != nil {
+		t.Fatalf("HasPermissions(config-opt read/update) error = %v; permissions=%+v", err, permissions)
+	}
+	if permissions["monitor"] != nil {
+		t.Fatalf("monitor permissions = %v, want none", permissions["monitor"])
+	}
+}
+
+func TestAuthenticateAPIKeyRejectsInvalidPersistedScopes(t *testing.T) {
+	ctx := context.Background()
+	store := NewAPIKeyStore(newFakeMonCommander())
+	id, secret, token, err := newAPIKeyToken()
+	if err != nil {
+		t.Fatalf("newAPIKeyToken() error = %v", err)
+	}
+	if err := store.Create(ctx, APIKeyRecord{
+		ID:         id,
+		Name:       "test-key",
+		SecretHash: hashAPIKeySecret(secret),
+		Scopes:     []string{"unknown:read"},
+		Enabled:    true,
+		CreatedAt:  time.Now().UTC(),
+		CreatedBy:  "user:admin",
+	}); err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	if _, err := authenticateAPIKey(ctx, token, store); err == nil {
+		t.Fatal("authenticateAPIKey() succeeded with invalid persisted scopes, want error")
 	}
 }
 
@@ -290,12 +324,15 @@ func TestServerAPIKeyCRUDRequiresJWTAdministrator(t *testing.T) {
 	ctx = xctx.SetRoles(ctx, []string{"administrator"})
 	server := &Server{apiKeyStore: NewAPIKeyStore(newFakeMonCommander())}
 
-	rec, token, err := server.CreateAPIKey(ctx, CreateAPIKeyRequest{Name: "terraform"})
+	rec, token, err := server.CreateAPIKey(ctx, CreateAPIKeyRequest{Name: "terraform", Scopes: []string{"config-opt:read/update", "config-opt:read"}})
 	if err != nil {
 		t.Fatalf("CreateAPIKey() error = %v", err)
 	}
 	if token == "" || rec.ID == "" || rec.SecretHash == "" {
 		t.Fatalf("CreateAPIKey() returned incomplete key: rec=%+v token=%q", rec, token)
+	}
+	if got, want := strings.Join(rec.Scopes, ","), "config-opt:read,config-opt:update"; got != want {
+		t.Fatalf("scopes = %q, want %q", got, want)
 	}
 
 	listed, err := server.ListAPIKeys(ctx)
