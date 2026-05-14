@@ -182,6 +182,53 @@ curl -X POST -u "ceph-api:yoursecretpass" \
 http://localhost:9969/api/oauth/token
 ```
 
+## API keys
+
+### Create a scoped API key
+
+using the built in CLI, you will need the API Access token from previous step
+```
+ceph-api auth api-key create \
+  --endpoint http://localhost:9969 \
+  --token "$CEPH_API_TOKEN" \
+  --name github-actions-config \
+  --description "CI key for GitOps config management" \
+  --scope config-opt:read \
+  --scope config-opt:create \
+  --scope config-opt:update \
+  --scope config-opt:delete
+```
+
+will return
+```
+capi_v1_ak_....<secret>
+```
+
+Via HTTP
+
+```
+curl -X POST http://localhost:9969/api/v1/auth/api-keys \
+  -H "Authorization: Bearer $CEPH_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "github-actions-config",
+    "description": "CI key for GitOps config management",
+    "scopes": [
+      "config-opt:read",
+      "config-opt:create",
+      "config-opt:update",
+      "config-opt:delete"
+    ]
+  }'
+```
+
+### Use the API Key
+
+```
+curl http://localhost:9969/api/v1/auth/whoami \
+  -H "Authorization: Bearer $CEPH_API_KEY"
+```
+
 ## Test
 
 Along with unit test project contains e2e test to run against real Ceph cluster.
