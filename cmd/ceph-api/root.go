@@ -24,6 +24,7 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&opts.configOverridePath, "config-override", "", "set path to config override directory")
 
 	cmd.AddCommand(newServeCmd(opts))
+	cmd.AddCommand(newAuthCmd())
 	cmd.AddCommand(newVersionCmd())
 
 	return cmd
