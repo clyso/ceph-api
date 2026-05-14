@@ -2,7 +2,10 @@ package rados
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 
+	cephrados "github.com/ceph/go-ceph/rados"
 	"github.com/rs/zerolog"
 )
 
@@ -20,6 +23,10 @@ func (s *Svc) ExecMon(ctx context.Context, cmd string) ([]byte, error) {
 	logger.Debug().Msg("executing mon command")
 	cmdRes, cmdStatus, err := s.conn.MonCommand([]byte(cmd))
 	if err != nil {
+		if isConfigKeyGetNotFound(cmd, err) {
+			logger.Debug().Err(err).Str("cmd_status", cmdStatus).Msg("config-key not found")
+			return nil, err
+		}
 		logger.Err(err).Str("cmd_status", cmdStatus).Msg("mon command executed with error")
 		return nil, err
 	}
@@ -64,4 +71,17 @@ func (s *Svc) ExecMgr(ctx context.Context, cmd string) ([]byte, error) {
 
 func (s *Svc) Close() {
 	s.conn.Shutdown()
+}
+
+func isConfigKeyGetNotFound(cmd string, err error) bool {
+	if !errors.Is(err, cephrados.ErrNotFound) {
+		return false
+	}
+	var req struct {
+		Prefix string `json:"prefix"`
+	}
+	if json.Unmarshal([]byte(cmd), &req) != nil {
+		return false
+	}
+	return req.Prefix == "config-key get"
 }
