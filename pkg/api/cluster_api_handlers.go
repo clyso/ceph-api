@@ -123,7 +123,7 @@ func (c *clusterAPI) UpdateUser(ctx context.Context, req *pb.UpdateClusterUserRe
 	monCmd := fmt.Sprintf(cmdTempl, req.UserEntity, strings.Join(caps, ","))
 	_, err := c.radosSvc.ExecMon(ctx, monCmd)
 	if err != nil {
-		if errors.Is(err, types.RadosErrorNotFound) {
+		if errors.Is(err, types.ErrRadosNotFound) {
 			return nil, types.ErrNotFound
 		}
 		return nil, err
@@ -138,7 +138,7 @@ func (c *clusterAPI) GetStatus(ctx context.Context, _ *emptypb.Empty) (*pb.Clust
 	const monCmd = `{"prefix":"config-key get", "key":"mgr/dashboard/cluster/status"}`
 	cmdRes, err := c.radosSvc.ExecMon(ctx, monCmd)
 	if err != nil {
-		if errors.Is(err, types.RadosErrorNotFound) {
+		if errors.Is(err, types.ErrRadosNotFound) {
 			// If the status is not set, assume it is already fully functional.
 			return &pb.ClusterStatus{Status: pb.ClusterStatus_POST_INSTALLED}, nil
 		}

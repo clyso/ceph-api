@@ -58,10 +58,8 @@ func (c *crushRuleAPI) CreateRule(ctx context.Context, req *pb.CreateRuleRequest
 		if req.Profile != nil {
 			cmdMap["profile"] = *req.Profile
 		}
-	} else {
-		if req.Root != nil {
-			cmdMap["root"] = *req.Root
-		}
+	} else if req.Root != nil {
+		cmdMap["root"] = *req.Root
 	}
 
 	cmdBytes, err := json.Marshal(cmdMap)

@@ -35,7 +35,11 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	if err != nil {
 		return err
 	}
-	defer shutdown(context.Background())
+	defer func() {
+		if err := shutdown(context.Background()); err != nil {
+			logger.Warn().Err(err).Msg("tracer shutdown failed")
+		}
+	}()
 
 	// get rados connection
 	radosConn, err := getRadosConnection(conf.Rados)
@@ -63,7 +67,8 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	}
 	if conf.App.CreateAdmin {
 		_, err = userSvc.GetUser(ctx, conf.App.AdminUsername)
-		if errors.Is(err, types.ErrNotFound) {
+		switch {
+		case errors.Is(err, types.ErrNotFound):
 			err = userSvc.CreateUser(ctx, user.User{
 				Username: conf.App.AdminUsername,
 				Roles:    []string{"administrator"},
@@ -74,7 +79,7 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 			if err != nil {
 				return fmt.Errorf("%w: unable to create admin user", err)
 			}
-		} else if err == nil {
+		case err == nil:
 			err = userSvc.UpdateUser(ctx, user.User{
 				Username: conf.App.AdminUsername,
 				Roles:    []string{"administrator"},
@@ -85,7 +90,7 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 			if err != nil {
 				return fmt.Errorf("%w: unable to update admin user", err)
 			}
-		} else {
+		default:
 			logger.Info().Err(err).Msg("skip default administrator creation")
 		}
 	}

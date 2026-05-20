@@ -34,15 +34,15 @@ func NewMockConn() (RadosConnInterface, error) {
 	// Load responses from the embedded FS
 	monResponses, err := loadResponsesFromDir(monDir)
 	if err != nil {
-		return nil, fmt.Errorf("error loading mon responses: %v", err)
+		return nil, fmt.Errorf("error loading mon responses: %w", err)
 	}
 	monInputResponses, err := loadResponsesFromDir(monInputDir)
 	if err != nil {
-		return nil, fmt.Errorf("error loading mon-input responses: %v", err)
+		return nil, fmt.Errorf("error loading mon-input responses: %w", err)
 	}
 	mgrResponses, err := loadResponsesFromDir(mgrDir)
 	if err != nil {
-		return nil, fmt.Errorf("error loading mgr responses: %v", err)
+		return nil, fmt.Errorf("error loading mgr responses: %w", err)
 	}
 
 	return &MockConn{

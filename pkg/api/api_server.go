@@ -26,7 +26,8 @@ func Serve(ctx context.Context, conf Config, grpcServer *grpc.Server, httpServer
 		zerolog.Ctx(ctx).Info().Msgf("serving grpc and http API on the same port %d", conf.HttpPort)
 		var lis net.Listener
 		if conf.Secure {
-			tlsConf, err := selfIssuedTlsConf()
+			var tlsConf *tls.Config
+			tlsConf, err = selfIssuedTlsConf()
 			if err != nil {
 				return nil, nil, err
 			}
@@ -136,7 +137,7 @@ func selfIssuedTlsConf() (*tls.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	tlsConf := &tls.Config{InsecureSkipVerify: true} //nolint: gosec
+	tlsConf := &tls.Config{}
 	tlsConf.Certificates = make([]tls.Certificate, 1)
 	tlsConf.Certificates[0] = cert
 	return tlsConf, nil

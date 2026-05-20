@@ -80,7 +80,7 @@ func NewServer(config Config, userSvc *user.Service) (*Server, error) {
 		compose.OAuth2AuthorizeImplicitFactory,
 		compose.OAuth2ClientCredentialsGrantFactory,
 		compose.OAuth2RefreshTokenGrantFactory,
-		compose.OAuth2ResourceOwnerPasswordCredentialsFactory,
+		compose.OAuth2ResourceOwnerPasswordCredentialsFactory, //nolint:staticcheck // ROPC grant required for Ceph dashboard login compatibility
 		compose.RFC7523AssertionGrantFactory,
 		compose.OAuth2TokenIntrospectionFactory,
 		compose.OAuth2TokenRevocationFactory,

@@ -11,7 +11,6 @@ import (
 	"github.com/clyso/ceph-api/pkg/log"
 	"github.com/clyso/ceph-api/pkg/trace"
 	"github.com/clyso/ceph-api/pkg/types"
-	"github.com/golang/protobuf/proto"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -25,6 +24,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/protoadapt"
 )
 
 func NewGrpcServer(conf Config,
@@ -179,7 +179,7 @@ func convertApiError(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
-	details := []proto.Message{&errdetails.RequestInfo{RequestId: xctx.GetTraceID(ctx)}}
+	details := []protoadapt.MessageV1{&errdetails.RequestInfo{RequestId: xctx.GetTraceID(ctx)}}
 	var code codes.Code
 	var mappedErr error
 	switch {

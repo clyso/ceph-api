@@ -7,6 +7,5 @@ import (
 )
 
 const (
-	// ErrNotFound is returned when an object is not found.
-	RadosErrorNotFound = rados.ErrNotFound
+	ErrRadosNotFound = rados.ErrNotFound
 )

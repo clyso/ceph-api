@@ -35,9 +35,11 @@ func (s *Server) Login(ctx context.Context, username, password string) (*LoginRe
 	resBody := struct {
 		Token string `json:"access_token"`
 	}{}
-	json.Unmarshal(resp.Body.Bytes(), &resBody)
+	if err := json.Unmarshal(resp.Body.Bytes(), &resBody); err != nil {
+		return nil, fmt.Errorf("%w: decode auth response: %w", types.ErrInternal, err)
+	}
 	if resBody.Token == "" {
-		return nil, fmt.Errorf("%w: unable to get token from auth resp boyd", types.ErrInternal)
+		return nil, fmt.Errorf("%w: unable to get token from auth response body", types.ErrInternal)
 	}
 	usr, err := s.userSvc.GetUser(ctx, username)
 	if err != nil {

@@ -148,7 +148,7 @@ func (u *usersAPI) CreateUser(ctx context.Context, req *pb.CreateUserReq) (*empt
 		PwdUpdateRequired: false,
 	}
 	if req.PwdExpirationDate != nil {
-		var expIn int = int(req.PwdExpirationDate.Seconds)
+		expIn := int(req.PwdExpirationDate.Seconds)
 		usr.PwdExpirationDate = &expIn
 	}
 	err := u.svc.CreateUser(ctx, usr)
@@ -225,7 +225,7 @@ func (u *usersAPI) UpdateUser(ctx context.Context, req *pb.CreateUserReq) (*empt
 		PwdUpdateRequired: req.PwdUpdateRequired,
 	}
 	if req.PwdExpirationDate != nil {
-		var expIn int = int(req.PwdExpirationDate.Seconds)
+		expIn := int(req.PwdExpirationDate.Seconds)
 		usr.PwdExpirationDate = &expIn
 	}
 	err := u.svc.UpdateUser(ctx, usr)

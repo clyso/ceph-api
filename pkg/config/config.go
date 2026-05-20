@@ -50,7 +50,7 @@ func Get(conf any, sources ...Src) error {
 	if err != nil {
 		return fmt.Errorf("%w: unable to read default config.yaml", err)
 	}
-	defer data.Close()
+	defer func() { _ = data.Close() }()
 
 	v := viper.NewWithOptions(viper.EnvKeyReplacer(strings.NewReplacer(".", "_")))
 	v.SetConfigType("yaml")

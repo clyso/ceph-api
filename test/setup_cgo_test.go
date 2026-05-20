@@ -18,7 +18,9 @@ import (
 	"github.com/clyso/ceph-api/pkg/config"
 	"github.com/clyso/ceph-api/test/testenv"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -92,14 +94,17 @@ func runSetup(m *testing.M) (int, error) {
 	fmt.Println("http", httpAddr)
 	fmt.Println("grpc", grpcAddr)
 
-	tlsOpt := grpc.WithInsecure()
+	if err := waitForTCP(ctx, grpcAddr, 2*time.Minute); err != nil {
+		return 1, fmt.Errorf("wait for api server: %w", err)
+	}
+
+	tlsOpt := grpc.WithTransportCredentials(insecure.NewCredentials())
 	if conf.Api.Secure {
 		tlsOpt = grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true}))
 	}
-	grpcConn, err = grpc.DialContext(ctx, grpcAddr,
+	grpcConn, err = grpc.NewClient(grpcAddr,
 		tlsOpt,
-		grpc.WithBackoffMaxDelay(time.Second),
-		grpc.WithBlock(),
+		grpc.WithConnectParams(grpc.ConnectParams{Backoff: backoff.DefaultConfig, MinConnectTimeout: time.Second}),
 	)
 	if err != nil {
 		return 1, fmt.Errorf("dial grpc: %w", err)
@@ -129,6 +134,24 @@ func runSetup(m *testing.M) (int, error) {
 	case <-time.After(5 * time.Second):
 	}
 	return exitCode, nil
+}
+
+func waitForTCP(ctx context.Context, addr string, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	var dialer net.Dialer
+	for {
+		conn, err := dialer.DialContext(ctx, "tcp", addr)
+		if err == nil {
+			_ = conn.Close()
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("%s not reachable: %w", addr, err)
+		case <-time.After(200 * time.Millisecond):
+		}
+	}
 }
 
 func getRandomPort() (int, string) {

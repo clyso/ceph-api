@@ -153,7 +153,10 @@ func (e *CephEnv) waitHealthy(ctx context.Context, timeout time.Duration) error 
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("timeout waiting for ceph health (last: %v): %w", lastErr, ctx.Err())
+			if lastErr == nil {
+				return fmt.Errorf("timeout waiting for ceph health: %w", ctx.Err())
+			}
+			return fmt.Errorf("timeout waiting for ceph health (last: %s): %w", lastErr.Error(), ctx.Err())
 		case <-ticker.C:
 			exitCode, reader, err := e.container.Exec(ctx, []string{"ceph", "health"}, tcexec.Multiplexed())
 			if err != nil {

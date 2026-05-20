@@ -21,7 +21,7 @@ func GRPCGateway(ctx context.Context, conf Config, metricsHandler http.HandlerFu
 	var opts []grpc.DialOption
 
 	if conf.Secure {
-		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: false}))) //nolint: gosec
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	} else {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
