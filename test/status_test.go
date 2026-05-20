@@ -1,3 +1,5 @@
+//go:build cgo
+
 package test
 
 import (
@@ -221,7 +223,6 @@ func Test_GetCephReport(t *testing.T) {
 	r.True(ok, "Health status field should exist")
 	// HEALTH Should be HEALTH_OK, HEALTH_WARN, HEALTH_ERR
 	r.Contains([]string{"HEALTH_OK", "HEALTH_WARN", "HEALTH_ERR"}, healthStatus.GetStringValue(), "Health status should be HEALTH_OK, HEALTH_WARN, or HEALTH_ERR")
-
 
 	monmapField, ok := res.Fields["monmap"]
 	r.True(ok, "Monmap field should exist")
