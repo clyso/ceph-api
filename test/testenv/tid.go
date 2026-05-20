@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	dockercontainer "github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/moby/moby/api/pkg/stdcopy"
+	mobycontainer "github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/mount"
+	"github.com/moby/moby/client"
 	"github.com/testcontainers/testcontainers-go"
 )
 
@@ -48,7 +48,7 @@ func RunInDocker(cfg DockerTestConfig) int {
 			KeepImage:  true,
 		},
 		Cmd: []string{"sleep", "infinity"},
-		HostConfigModifier: func(hc *dockercontainer.HostConfig) {
+		HostConfigModifier: func(hc *mobycontainer.HostConfig) {
 			// Host networking so the inner test process can reach the
 			// CephEnv container's mapped host ports.
 			hc.NetworkMode = "host"
@@ -77,7 +77,7 @@ func RunInDocker(cfg DockerTestConfig) int {
 
 	cmd := buildInnerCmd(cfg)
 
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := client.New(client.FromEnv)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tid: docker client: %v\n", err)
 		return 1
@@ -93,7 +93,7 @@ func RunInDocker(cfg DockerTestConfig) int {
 		}
 	}
 
-	execResp, err := cli.ContainerExecCreate(ctx, containerID, dockercontainer.ExecOptions{
+	execResp, err := cli.ExecCreate(ctx, containerID, client.ExecCreateOptions{
 		Cmd:          cmd,
 		Env:          envVars,
 		AttachStdout: true,
@@ -105,7 +105,7 @@ func RunInDocker(cfg DockerTestConfig) int {
 		return 1
 	}
 
-	attachResp, err := cli.ContainerExecAttach(ctx, execResp.ID, dockercontainer.ExecAttachOptions{})
+	attachResp, err := cli.ExecAttach(ctx, execResp.ID, client.ExecAttachOptions{})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tid: exec attach: %v\n", err)
 		return 1
@@ -114,7 +114,7 @@ func RunInDocker(cfg DockerTestConfig) int {
 
 	_, _ = stdcopy.StdCopy(os.Stdout, os.Stderr, attachResp.Reader)
 
-	inspectResp, err := cli.ContainerExecInspect(ctx, execResp.ID)
+	inspectResp, err := cli.ExecInspect(ctx, execResp.ID, client.ExecInspectOptions{})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tid: exec inspect: %v\n", err)
 		return 1

@@ -6,14 +6,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	dockercontainer "github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/go-connections/nat"
+	mobycontainer "github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/network"
 	"github.com/testcontainers/testcontainers-go"
 	tcexec "github.com/testcontainers/testcontainers-go/exec"
 	tcnetwork "github.com/testcontainers/testcontainers-go/network"
@@ -39,6 +39,12 @@ const (
 
 	envCephImage     = "CEPH_TEST_IMAGE"
 	defaultCephImage = "ghcr.io/arttor/ceph-test:v19"
+)
+
+var (
+	networkSubnetPrefix = netip.MustParsePrefix(networkSubnet)
+	networkGatewayAddr  = netip.MustParseAddr(networkGateway)
+	monIPAddr           = netip.MustParseAddr(MonIP)
 )
 
 type CephEnv struct {
@@ -78,7 +84,7 @@ func (e *CephEnv) createNetwork(ctx context.Context) error {
 		tcnetwork.WithIPAM(&network.IPAM{
 			Driver: "default",
 			Config: []network.IPAMConfig{
-				{Subnet: networkSubnet, Gateway: networkGateway},
+				{Subnet: networkSubnetPrefix, Gateway: networkGatewayAddr},
 			},
 		}),
 	)
@@ -112,14 +118,14 @@ func (e *CephEnv) startContainer(ctx context.Context) error {
 		NetworkAliases: map[string][]string{netName: {"ceph"}},
 		EndpointSettingsModifier: func(es map[string]*network.EndpointSettings) {
 			es[netName] = &network.EndpointSettings{
-				IPAMConfig: &network.EndpointIPAMConfig{IPv4Address: MonIP},
+				IPAMConfig: &network.EndpointIPAMConfig{IPv4Address: monIPAddr},
 				Aliases:    []string{"ceph"},
 			}
 		},
-		HostConfigModifier: func(hc *dockercontainer.HostConfig) {
+		HostConfigModifier: func(hc *mobycontainer.HostConfig) {
 			hc.Privileged = true
 		},
-		ConfigModifier: func(cfg *dockercontainer.Config) {
+		ConfigModifier: func(cfg *mobycontainer.Config) {
 			cfg.Hostname = "ceph-demo"
 		},
 	}
@@ -273,7 +279,7 @@ func (e *CephEnv) MappedURL(ctx context.Context, scheme string, port int) (strin
 	if err != nil {
 		return "", fmt.Errorf("get container host: %w", err)
 	}
-	mp, err := e.container.MappedPort(ctx, nat.Port(fmt.Sprintf("%d/tcp", port)))
+	mp, err := e.container.MappedPort(ctx, fmt.Sprintf("%d/tcp", port))
 	if err != nil {
 		return "", fmt.Errorf("get mapped port %d: %w", port, err)
 	}

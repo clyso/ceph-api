@@ -54,9 +54,9 @@ func (s *Server) TokenEndpoint(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	session := accessRequest.GetSession().(*oauth2.JWTSession)
-	// Set token subject as login
+	// fosite sets session.Subject via SetSubject after Authenticate (password grant);
+	// the JWT "sub" claim is built from JWTClaims.Subject, which we must populate here.
 	session.JWTClaims.Subject = usr.Username
-	session.Subject = usr.Username
 
 	// Next we create a response for the access request. Again, we iterate through the TokenEndpointHandlers
 	// and aggregate the result in response.

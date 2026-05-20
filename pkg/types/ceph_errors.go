@@ -6,6 +6,6 @@ import (
 	"github.com/ceph/go-ceph/rados"
 )
 
-const (
+var (
 	ErrRadosNotFound = rados.ErrNotFound
 )

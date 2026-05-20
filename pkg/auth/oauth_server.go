@@ -131,18 +131,16 @@ type fositeStore struct {
 	*storage.MemoryStore
 }
 
-func (s *fositeStore) Authenticate(ctx context.Context, name string, secret string) error {
-
+func (s *fositeStore) Authenticate(ctx context.Context, name string, secret string) (string, error) {
 	usr, err := s.userSvc.GetUser(ctx, name)
 	if err != nil {
-		return fosite.ErrNotFound
+		return "", fosite.ErrNotFound
 	}
 	if !usr.Enabled {
-		return fosite.ErrNotFound.WithDebug("User disabled")
+		return "", fosite.ErrNotFound.WithDebug("User disabled")
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(secret))
-	if err != nil {
-		return fosite.ErrNotFound.WithDebug("Invalid Credentials")
+	if err := bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(secret)); err != nil {
+		return "", fosite.ErrNotFound.WithDebug("Invalid Credentials")
 	}
-	return nil
+	return usr.Username, nil
 }
