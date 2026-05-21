@@ -19,3 +19,4 @@ plugins:
       - grpc_api_configuration=http.yaml
       - allow_merge=true
       - merge_file_name=ceph-api
+      - json_names_for_fields=false

@@ -10,13 +10,13 @@ help:
 check: ## fmt + vet + unit tests
 	go fmt ./...
 	CGO_ENABLED=0 go vet ./...
-	CGO_ENABLED=0 go test ./pkg/...
+	CGO_ENABLED=0 go test ./...
 
 lint: ## golangci-lint
 	CGO_ENABLED=0 go tool golangci-lint run
 
 e2e-test: ## e2e tests in Docker (-tid)
-	CGO_ENABLED=0 go test ./test/... -tid
+	CGO_ENABLED=0 go test ./test/ -tid
 
 proto: ## regenerate gRPC stubs and OpenAPI
 	cd api && go tool buf generate

@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	cephapi "github.com/clyso/ceph-api"
 	"github.com/clyso/ceph-api/pkg/app"
 	"github.com/clyso/ceph-api/pkg/config"
+	"github.com/clyso/ceph-api/test/parity"
 	"github.com/clyso/ceph-api/test/testenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
@@ -32,11 +34,23 @@ var (
 	admConn  *grpc.ClientConn
 
 	cephEnv *testenv.CephEnv
+
+	// Authenticated HTTP clients used by the dashboard-parity test. Both
+	// log in once at TestMain time via POST /api/auth and re-use the bearer
+	// token; parity tests assume auth works and do not re-verify it.
+	parityOurs *parity.Client
+	parityDash *parity.Client
 )
 
 const (
 	admin = "ceph-e2e-test-admin"
 	pass  = "ceph-e2e-test-pass"
+
+	// Paths relative to the test package directory (cwd when
+	// `go test ./test/...` runs inside the Docker container).
+	parityHTTPYAMLPath  = "../api/http.yaml"
+	parityDashboardYAML = "../third_party/ceph/src/pybind/mgr/dashboard/openapi.yaml"
+	parityAPIDiffPath   = "parity/api_diff.yaml"
 )
 
 func runSetup(m *testing.M) (int, error) {
@@ -121,7 +135,63 @@ func runSetup(m *testing.M) (int, error) {
 	}
 	admConn = c.Conn()
 
+	// Dashboard /api/auth requires the v1.0 versioned media type; ceph-api
+	// tolerates any Accept (gateway registered under MIMEWildcard) so we
+	// send the same header to both sides to keep requests cloned.
+	const loginAccept = "application/vnd.ceph.api.v1.0+json"
+
+	parityOurs, err = parity.Login(tstCtx, httpAddr, &http.Client{}, loginAccept, admin, pass)
+	if err != nil {
+		return 1, fmt.Errorf("authenticate ceph-api parity client: %w", err)
+	}
+
+	dashURL, dashUser, dashPass, err := cephEnv.Dashboard(tstCtx)
+	if err != nil {
+		return 1, fmt.Errorf("dashboard URL: %w", err)
+	}
+	dashHTTP := &http.Client{Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec // dashboard uses self-signed cert
+	}}
+	parityDash, err = parity.Login(tstCtx, dashURL, dashHTTP, loginAccept, dashUser, dashPass)
+	if err != nil {
+		return 1, fmt.Errorf("authenticate dashboard parity client: %w", err)
+	}
+
+	if err := parity.Init(parityDash, parityOurs, parityHTTPYAMLPath, parityDashboardYAML, parityAPIDiffPath); err != nil {
+		return 1, fmt.Errorf("parity.Init: %w", err)
+	}
+
 	exitCode := m.Run()
+
+	// Coverage gate 1: every gRPC method declared in proto descriptors
+	// must have a rule in api/http.yaml. Forces every new RPC to be
+	// HTTP-exposed. Standard infrastructure services (gRPC reflection,
+	// gRPC health checking, OTLP collector) are not part of the
+	// ceph-api surface and are excluded by service-prefix.
+	if err := parity.AssertGRPCMethodsRouted(parity.Routes(), []string{
+		"grpc.", "opentelemetry.",
+	}); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		if exitCode == 0 {
+			exitCode = 1
+		}
+	}
+
+	// Coverage gate 2: every HTTP route in api/http.yaml must have been
+	// exercised on some parity test. /api/auth* is excluded - the
+	// bootstrap login above already covers it and parity clients
+	// can't dogfood their own auth flow.
+	if err := parity.AssertRoutesCovered(
+		parity.Routes(),
+		parity.CoveredEndpoints(),
+		[]string{"/api/auth"},
+	); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		if exitCode == 0 {
+			exitCode = 1
+		}
+	}
+
 	cancel()
 	grpcConn.Close()
 	c.Close()

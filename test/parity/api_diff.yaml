@@ -1,0 +1,19 @@
+# Declared divergences between the ceph dashboard and ceph-api response
+# bodies. Keys are endpoint ids in the form "<METHOD> <PATH-TEMPLATE>" as
+# they appear in inventory.yaml (e.g. "GET /api/role/{name}"). Values are
+# lists of JSONPath ignores with a mandatory `reason:`.
+#
+# This file IS the migration guide for dashboard clients: every entry is
+# something a client switching from the dashboard to ceph-api would
+# observe.
+#
+# JSONPath subset: $ root, . descent, * wildcard for "any array index or
+# map key" at a single position. See test/parity/diff.go for the matcher.
+#
+# Example:
+#   "GET /api/cluster":
+#     - path: $.uptime
+#       reason: live; varies between calls
+#
+# Empty until Phase 2.3 walks the parity tests endpoint by endpoint and
+# decides what we promise to match vs intentionally diverge.

@@ -3,10 +3,12 @@
 package test
 
 import (
-	"errors"
+	"fmt"
+	"os"
 	"testing"
 )
 
-func runSetup(_ *testing.M) (int, error) {
-	return 1, errors.New("CGo required to run e2e tests directly; use `go test ./test/... -tid` to run them inside a Docker container with ceph dev libs")
+func runSetup(m *testing.M) (int, error) {
+	fmt.Fprintln(os.Stderr, "test: e2e tests skipped (cgo disabled); use `make e2e-test` or `go test ./test/ -tid` to run them in Docker with ceph dev libs")
+	return m.Run(), nil
 }
