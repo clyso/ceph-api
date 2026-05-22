@@ -10,11 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const crushRuleAccept = "application/vnd.ceph.api.v2.0+json"
+// Reads use v2.0; mutations use v1.0. Dashboard returns 415 if the
+// Accept does not match the per-route version.
+const (
+	crushRuleReadAccept  = "application/vnd.ceph.api.v2.0+json"
+	crushRuleWriteAccept = "application/vnd.ceph.api.v1.0+json"
+)
 
 func Test_Parity_CrushRule_List(t *testing.T) {
 	r := parity.New(t)
-	call := parity.Call{Method: "GET", Path: "/api/crush_rule", Accept: crushRuleAccept}
+	call := parity.Call{Method: "GET", Path: "/api/crush_rule", Accept: crushRuleReadAccept}
 	for _, b := range r.Backends(call) {
 		r.DoRecord(b, call)
 	}
@@ -25,7 +30,7 @@ func Test_Parity_CrushRule_Get(t *testing.T) {
 	get := parity.Call{
 		Method: "GET", Path: "/api/crush_rule/{name}",
 		PathParams: map[string]string{"name": "replicated_rule"},
-		Accept:     crushRuleAccept,
+		Accept:     crushRuleReadAccept,
 	}
 	for _, b := range r.Backends(get) {
 		r.DoRecord(b, get)
@@ -42,10 +47,10 @@ func Test_Parity_CrushRule_CRUD(t *testing.T) {
 		"failure_domain": "osd",
 		"device_class":   "",
 	}
-	create := parity.Call{Method: "POST", Path: "/api/crush_rule", Body: createBody, Accept: crushRuleAccept}
+	create := parity.Call{Method: "POST", Path: "/api/crush_rule", Body: createBody, Accept: crushRuleWriteAccept}
 	del := parity.Call{
 		Method: "DELETE", Path: "/api/crush_rule/{name}",
-		PathParams: map[string]string{"name": name}, Accept: crushRuleAccept,
+		PathParams: map[string]string{"name": name}, Accept: crushRuleWriteAccept,
 	}
 
 	r.Do(parity.Ours, del)

@@ -68,7 +68,7 @@ var (
 		ours    *Client
 		routes  *RouteSet // routes from api/http.yaml (ours)
 		dashRts *RouteSet // routes from dashboard openapi.yaml
-		diff    map[string][]Ignore
+		ignores map[string][]Ignore
 	}
 
 	coverageMu sync.Mutex
@@ -97,7 +97,7 @@ func Init(dash, ours *Client, httpYAMLPath, dashboardSwaggerPath, apiDiffPath st
 	state.ours = ours
 	state.routes = NewRouteSet(routes)
 	state.dashRts = NewRouteSet(dashRoutes)
-	state.diff = diff
+	state.ignores = diff
 	state.ready = true
 	return nil
 }
@@ -190,19 +190,16 @@ func New(t testing.TB) *Recorder {
 
 // Backends returns the list of backends a parity test should iterate
 // over for the given call. Routes that exist in api/http.yaml but not
-// in the dashboard's openapi (same method + same path shape) return
-// just [Ours] — there's no dashboard counterpart to compare against,
-// so we still exercise our side for coverage but don't try to call
-// the dashboard. Routes that exist in both return the standard
-// [Dash, Ours] pair.
+// in the dashboard's openapi return just [Ours]; routes that exist in
+// both return the standard [Dash, Ours] pair.
 //
 //	for _, b := range r.Backends(call) { r.DoRecord(b, call) }
 func (r *Recorder) Backends(c Call) []Backend {
 	endpoint := strings.ToUpper(c.Method) + " " + c.Path
-	if DashboardHas(endpoint) {
-		return Backends
+	if !DashboardHas(endpoint) {
+		return []Backend{Ours}
 	}
-	return []Backend{Ours}
+	return Backends
 }
 
 // Do sends call to backend b without recording it for comparison or
@@ -330,7 +327,7 @@ func (r *Recorder) assertAll() {
 	defer r.mu.Unlock()
 
 	state.mu.RLock()
-	diff := state.diff
+	ignoresByEndpoint := state.ignores
 	state.mu.RUnlock()
 
 	endpoints := make([]string, 0, len(r.records))
@@ -384,10 +381,16 @@ func (r *Recorder) assertAll() {
 			continue
 		}
 
-		// 204 No Content and similar empty responses are not a JSON
-		// parse error; treat both-empty as equal.
-		dashEmpty := len(bytes.TrimSpace(dashRec.body)) == 0
-		oursEmpty := len(bytes.TrimSpace(oursRec.body)) == 0
+		// `$` in api_diff = "body shape is intentionally divergent,
+		// don't compare". Transitional — every entry is debt to fix.
+		if hasRootIgnore(endpoint) {
+			continue
+		}
+
+		// 204 No Content + similar empty responses must not be JSON-
+		// parsed; isEffectivelyEmpty also tolerates `{}` / `null`.
+		dashEmpty := isEffectivelyEmpty(dashRec.body)
+		oursEmpty := isEffectivelyEmpty(oursRec.body)
 		if dashEmpty && oursEmpty {
 			continue
 		}
@@ -413,7 +416,7 @@ func (r *Recorder) assertAll() {
 			continue
 		}
 
-		ignores := diff[endpoint]
+		ignores := ignoresByEndpoint[endpoint]
 		if diffs := Compare(dashJSON, oursJSON, ignores); len(diffs) > 0 {
 			var b strings.Builder
 			fmt.Fprintf(&b, "parity: %q diverges (%d divergence(s), %d declared ignore(s))\n",
@@ -539,4 +542,25 @@ func truncate(b []byte) string {
 		return string(b)
 	}
 	return string(b[:max]) + "..."
+}
+
+// isEffectivelyEmpty also folds in the grpc-gateway artifact `{}` and
+// JSON `null` so a 204 dashboard response pairs with our Empty-proto
+// response without a presence-mismatch error.
+func isEffectivelyEmpty(b []byte) bool {
+	trimmed := bytes.TrimSpace(b)
+	return len(trimmed) == 0 ||
+		bytes.Equal(trimmed, []byte("{}")) ||
+		bytes.Equal(trimmed, []byte("null"))
+}
+
+func hasRootIgnore(endpoint string) bool {
+	state.mu.RLock()
+	defer state.mu.RUnlock()
+	for _, ig := range state.ignores[endpoint] {
+		if strings.TrimSpace(ig.Path) == "$" {
+			return true
+		}
+	}
+	return false
 }

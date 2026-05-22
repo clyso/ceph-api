@@ -400,8 +400,7 @@
           "200": {
             "description": "User key and capabilities in Ceph config file format",
             "schema": {
-              "type": "string",
-              "format": "byte"
+              "type": "string"
             }
           },
           "default": {
@@ -795,6 +794,29 @@
         ]
       }
     },
+    "/api/status/pg_dump": {
+      "get": {
+        "summary": "command: ceph pg dump",
+        "operationId": "Status_GetCephPgDump",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cephGetCephPgDumpResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Status"
+        ]
+      }
+    },
     "/api/status/report": {
       "get": {
         "summary": "command: ceph report",
@@ -1093,6 +1115,801 @@
       ],
       "default": "common"
     },
+    "PGStatPGStat_StatSum": {
+      "type": "object",
+      "properties": {
+        "num_bytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_object_clones": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_object_copies": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_missing_on_primary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_missing": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_degraded": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_misplaced": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_unfound": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_dirty": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_whiteouts": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_read": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_read_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_write": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_write_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_shallow_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_deep_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_bytes_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_keys_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_omap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_hit_set_archive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_bytes_hit_set_archive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_promote": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_mode_high": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_mode_low": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_mode_some": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_mode_full": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_pinned": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_legacy_snapsets": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_large_omap_objects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_manifest": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_omap_bytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_omap_keys": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_repaired": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PGStatsDeltaPGStatsDelta_StatSum": {
+      "type": "object",
+      "properties": {
+        "num_bytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_object_clones": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_object_copies": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_missing_on_primary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_missing": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_degraded": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_misplaced": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_unfound": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_dirty": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_whiteouts": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_read": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_read_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_write": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_write_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_shallow_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_deep_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_bytes_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_keys_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_omap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_hit_set_archive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_bytes_hit_set_archive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_promote": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_mode_high": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_mode_low": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_mode_some": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_mode_full": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_pinned": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_legacy_snapsets": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_large_omap_objects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_manifest": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_omap_bytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_omap_keys": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_repaired": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PGStatsDeltaPGStatsDelta_StoreStats": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internally_reserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_stored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_original": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omap_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internal_metadata": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PGStatsSumPGStatsSum_StatSum": {
+      "type": "object",
+      "properties": {
+        "num_bytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_object_clones": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_object_copies": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_missing_on_primary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_missing": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_degraded": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_misplaced": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_unfound": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_dirty": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_whiteouts": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_read": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_read_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_write": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_write_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_shallow_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_deep_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_bytes_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_keys_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_omap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_hit_set_archive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_bytes_hit_set_archive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_promote": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_mode_high": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_mode_low": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_mode_some": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_mode_full": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_pinned": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_legacy_snapsets": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_large_omap_objects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_manifest": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_omap_bytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_omap_keys": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_repaired": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PGStatsSumPGStatsSum_StoreStats": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internally_reserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_stored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_original": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omap_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internal_metadata": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PoolStatsPoolStats_StatSum": {
+      "type": "object",
+      "properties": {
+        "num_bytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_object_clones": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_object_copies": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_missing_on_primary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_missing": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_degraded": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_misplaced": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_unfound": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_dirty": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_whiteouts": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_read": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_read_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_write": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_write_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_shallow_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_deep_scrub_errors": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_bytes_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_keys_recovered": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_omap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_hit_set_archive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_bytes_hit_set_archive": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_promote": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_mode_high": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_flush_mode_low": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_mode_some": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_evict_mode_full": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_pinned": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_legacy_snapsets": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_large_omap_objects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_manifest": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_omap_bytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_omap_keys": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_objects_repaired": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "PoolStatsPoolStats_StoreStats": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internally_reserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_stored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_original": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omap_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internal_metadata": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "SearchConfigRequestSortField": {
       "type": "string",
       "enum": [
@@ -1124,6 +1941,9 @@
               "type": "object"
             }
           }
+        },
+        "system": {
+          "type": "boolean"
         }
       }
     },
@@ -1500,6 +2320,19 @@
         }
       }
     },
+    "cephClusterUserCap": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "type": "string",
+          "title": "capability scope entity, e.g: \"mon\", \"osd\""
+        },
+        "cap": {
+          "type": "string",
+          "title": "capability value, e.g: \"allow r\", \"allow rw pool=liverpool\""
+        }
+      }
+    },
     "cephClusterUsers": {
       "type": "object",
       "properties": {
@@ -1583,15 +2416,14 @@
       "type": "object",
       "properties": {
         "capabilities": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "title": "user capabilities, e.g: {\"mon\": \"allow r\",\"osd\":\"allow rw pool=liverpool\"}"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephClusterUserCap"
+          }
         },
         "user_entity": {
-          "type": "string",
-          "title": "entity, e.g: \"client.admin\""
+          "type": "string"
         },
         "import_data": {
           "type": "string",
@@ -1673,7 +2505,6 @@
       "properties": {
         "data": {
           "type": "string",
-          "format": "byte",
           "title": "User key and capabilities in Ceph config file format"
         }
       }
@@ -1836,6 +2667,18 @@
         }
       }
     },
+    "cephGetCephPgDumpResponse": {
+      "type": "object",
+      "properties": {
+        "pg_ready": {
+          "type": "boolean"
+        },
+        "pg_map": {
+          "$ref": "#/definitions/cephPGMap"
+        }
+      },
+      "title": "PG DUMP"
+    },
     "cephGetCephStatusResponse": {
       "type": "object",
       "properties": {
@@ -1940,6 +2783,274 @@
               "type": "object"
             }
           }
+        }
+      }
+    },
+    "cephOSDStatsSum": {
+      "type": "object",
+      "properties": {
+        "up_from": {
+          "type": "string",
+          "format": "int64"
+        },
+        "seq": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_pgs": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_osds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_per_pool_osds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_per_pool_omap_osds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb_used": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb_used_data": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb_used_omap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb_used_meta": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb_avail": {
+          "type": "string",
+          "format": "int64"
+        },
+        "statfs": {
+          "$ref": "#/definitions/cephOSDStatsSumStatFs"
+        },
+        "hb_peers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "snap_trim_queue_len": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_snap_trimming": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_shards_repaired": {
+          "type": "string",
+          "format": "int64"
+        },
+        "op_queue_age_hist": {
+          "$ref": "#/definitions/cephOSDStatsSumOpQueueAgeHist"
+        },
+        "perf_stat": {
+          "$ref": "#/definitions/cephOSDStatsSumPerfStat"
+        },
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "network_ping_times": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephOSDStatsSumNetworkPingTime"
+          }
+        }
+      }
+    },
+    "cephOSDStatsSumNetworkPingTime": {
+      "type": "object",
+      "properties": {
+        "osd": {
+          "type": "string",
+          "format": "int64"
+        },
+        "last_update": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephOSDStatsSumNetworkPingTimeInterface"
+          }
+        }
+      }
+    },
+    "cephOSDStatsSumNetworkPingTimeInterface": {
+      "type": "object",
+      "properties": {
+        "interface_name": {
+          "type": "string"
+        },
+        "average": {
+          "$ref": "#/definitions/cephOSDStatsSumNetworkPingTimeInterfaceAverage"
+        },
+        "min": {
+          "$ref": "#/definitions/cephOSDStatsSumNetworkPingTimeInterfaceMin"
+        },
+        "max": {
+          "$ref": "#/definitions/cephOSDStatsSumNetworkPingTimeInterfaceMax"
+        },
+        "last": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOSDStatsSumNetworkPingTimeInterfaceAverage": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOSDStatsSumNetworkPingTimeInterfaceMax": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOSDStatsSumNetworkPingTimeInterfaceMin": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOSDStatsSumOpQueueAgeHist": {
+      "type": "object",
+      "properties": {
+        "histogram": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "upper_bound": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephOSDStatsSumPerfStat": {
+      "type": "object",
+      "properties": {
+        "commit_latency_ms": {
+          "type": "string",
+          "format": "int64"
+        },
+        "apply_latency_ms": {
+          "type": "string",
+          "format": "int64"
+        },
+        "commit_latency_ns": {
+          "type": "string",
+          "format": "int64"
+        },
+        "apply_latency_ns": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephOSDStatsSumStatFs": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internally_reserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_stored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_original": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omap_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internal_metadata": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -2459,6 +3570,710 @@
         }
       }
     },
+    "cephOsdStats": {
+      "type": "object",
+      "properties": {
+        "osd": {
+          "type": "string",
+          "format": "int64"
+        },
+        "up_from": {
+          "type": "string",
+          "format": "int64"
+        },
+        "seq": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_pgs": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_osds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_per_pool_osds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_per_pool_omap_osds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb_used": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb_used_data": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb_used_omap": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb_used_meta": {
+          "type": "string",
+          "format": "int64"
+        },
+        "kb_avail": {
+          "type": "string",
+          "format": "int64"
+        },
+        "statfs": {
+          "$ref": "#/definitions/cephOsdStatsStatFs"
+        },
+        "hb_peers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "snap_trim_queue_len": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_snap_trimming": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_shards_repaired": {
+          "type": "string",
+          "format": "int64"
+        },
+        "op_queue_age_hist": {
+          "$ref": "#/definitions/cephOsdStatsOpQueueAgeHist"
+        },
+        "perf_stat": {
+          "$ref": "#/definitions/cephOsdStatsPerfStat"
+        },
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "network_ping_times": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephOsdStatsNetworkPingTime"
+          }
+        }
+      }
+    },
+    "cephOsdStatsNetworkPingTime": {
+      "type": "object",
+      "properties": {
+        "osd": {
+          "type": "string",
+          "format": "int64"
+        },
+        "last_update": {
+          "type": "string"
+        },
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephOsdStatsNetworkPingTimeInterface"
+          }
+        }
+      }
+    },
+    "cephOsdStatsNetworkPingTimeInterface": {
+      "type": "object",
+      "properties": {
+        "interface_name": {
+          "type": "string"
+        },
+        "average": {
+          "$ref": "#/definitions/cephOsdStatsNetworkPingTimeInterfaceAverage"
+        },
+        "min": {
+          "$ref": "#/definitions/cephOsdStatsNetworkPingTimeInterfaceMin"
+        },
+        "max": {
+          "$ref": "#/definitions/cephOsdStatsNetworkPingTimeInterfaceMax"
+        },
+        "last": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOsdStatsNetworkPingTimeInterfaceAverage": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOsdStatsNetworkPingTimeInterfaceMax": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOsdStatsNetworkPingTimeInterfaceMin": {
+      "type": "object",
+      "properties": {
+        "min1": {
+          "type": "number",
+          "format": "double"
+        },
+        "min5": {
+          "type": "number",
+          "format": "double"
+        },
+        "min15": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "cephOsdStatsOpQueueAgeHist": {
+      "type": "object",
+      "properties": {
+        "histogram": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "upper_bound": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephOsdStatsPerfStat": {
+      "type": "object",
+      "properties": {
+        "commit_latency_ms": {
+          "type": "string",
+          "format": "int64"
+        },
+        "apply_latency_ms": {
+          "type": "string",
+          "format": "int64"
+        },
+        "commit_latency_ns": {
+          "type": "string",
+          "format": "int64"
+        },
+        "apply_latency_ns": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephOsdStatsStatFs": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internally_reserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_stored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_original": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omap_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internal_metadata": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephPGMap": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "format": "int64"
+        },
+        "stamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_osdmap_epoch": {
+          "type": "string",
+          "format": "int64"
+        },
+        "last_pg_scan": {
+          "type": "string",
+          "format": "int64"
+        },
+        "pg_stats_sum": {
+          "$ref": "#/definitions/cephPGStatsSum"
+        },
+        "osd_stats_sum": {
+          "$ref": "#/definitions/cephOSDStatsSum"
+        },
+        "pg_stats_delta": {
+          "$ref": "#/definitions/cephPGStatsDelta"
+        },
+        "pg_stats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephPGStat"
+          }
+        },
+        "pool_stats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephPoolStats"
+          }
+        },
+        "osd_stats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephOsdStats"
+          }
+        },
+        "pool_statfs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephPoolStatFs"
+          }
+        }
+      }
+    },
+    "cephPGStat": {
+      "type": "object",
+      "properties": {
+        "pgid": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "reported_seq": {
+          "type": "string",
+          "format": "int64"
+        },
+        "reported_epoch": {
+          "type": "string",
+          "format": "int64"
+        },
+        "state": {
+          "type": "string"
+        },
+        "last_fresh": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_change": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_active": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_peered": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_clean": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_became_active": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_became_peered": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_unstale": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_undegraded": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_fullsized": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mapping_epoch": {
+          "type": "string",
+          "format": "int64"
+        },
+        "log_start": {
+          "type": "string"
+        },
+        "ondisk_log_start": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "int64"
+        },
+        "last_epoch_clean": {
+          "type": "string",
+          "format": "int64"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "parent_split_bits": {
+          "type": "string",
+          "format": "int64"
+        },
+        "last_scrub": {
+          "type": "string"
+        },
+        "last_scrub_stamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_deep_scrub": {
+          "type": "string"
+        },
+        "last_deep_scrub_stamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_clean_scrub_stamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "objects_scrubbed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "log_size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "log_dups_size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "ondisk_log_size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "stats_invalid": {
+          "type": "boolean"
+        },
+        "dirty_stats_invalid": {
+          "type": "boolean"
+        },
+        "omap_stats_invalid": {
+          "type": "boolean"
+        },
+        "hitset_stats_invalid": {
+          "type": "boolean"
+        },
+        "hitset_bytes_stats_invalid": {
+          "type": "boolean"
+        },
+        "pin_stats_invalid": {
+          "type": "boolean"
+        },
+        "manifest_stats_invalid": {
+          "type": "boolean"
+        },
+        "snaptrimq_len": {
+          "type": "string",
+          "format": "int64"
+        },
+        "last_scrub_duration": {
+          "type": "string",
+          "format": "int64"
+        },
+        "scrub_schedule": {
+          "type": "string"
+        },
+        "scrub_duration": {
+          "type": "number",
+          "format": "double"
+        },
+        "objects_trimmed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "snaptrim_duration": {
+          "type": "number",
+          "format": "double"
+        },
+        "stat_sum": {
+          "$ref": "#/definitions/PGStatPGStat_StatSum"
+        },
+        "up": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "acting": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "avail_no_missing": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "object_location_counts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "blocked_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "up_primary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "acting_primary": {
+          "type": "string",
+          "format": "int64"
+        },
+        "purged_snaps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        }
+      }
+    },
+    "cephPGStatsDelta": {
+      "type": "object",
+      "properties": {
+        "stat_sum": {
+          "$ref": "#/definitions/PGStatsDeltaPGStatsDelta_StatSum"
+        },
+        "store_stats": {
+          "$ref": "#/definitions/PGStatsDeltaPGStatsDelta_StoreStats"
+        },
+        "log_size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "ondisk_log_size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "up": {
+          "type": "string",
+          "format": "int64"
+        },
+        "acting": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_store_stats": {
+          "type": "string",
+          "format": "int64"
+        },
+        "stamp_delta": {
+          "type": "string"
+        }
+      }
+    },
+    "cephPGStatsSum": {
+      "type": "object",
+      "properties": {
+        "stat_sum": {
+          "$ref": "#/definitions/PGStatsSumPGStatsSum_StatSum"
+        },
+        "store_stats": {
+          "$ref": "#/definitions/PGStatsSumPGStatsSum_StoreStats"
+        },
+        "log_size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "ondisk_log_size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "up": {
+          "type": "string",
+          "format": "int64"
+        },
+        "acting": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_store_stats": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephPoolStatFs": {
+      "type": "object",
+      "properties": {
+        "poolid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "osd": {
+          "type": "string",
+          "format": "int64"
+        },
+        "total": {
+          "type": "string",
+          "format": "int64"
+        },
+        "available": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internally_reserved": {
+          "type": "string",
+          "format": "int64"
+        },
+        "allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_stored": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "data_compressed_original": {
+          "type": "string",
+          "format": "int64"
+        },
+        "omap_allocated": {
+          "type": "string",
+          "format": "int64"
+        },
+        "internal_metadata": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "cephPoolStats": {
+      "type": "object",
+      "properties": {
+        "poolid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_pg": {
+          "type": "string",
+          "format": "int64"
+        },
+        "stat_sum": {
+          "$ref": "#/definitions/PoolStatsPoolStats_StatSum"
+        },
+        "store_stats": {
+          "$ref": "#/definitions/PoolStatsPoolStats_StoreStats"
+        },
+        "log_size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "ondisk_log_size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "up": {
+          "type": "string",
+          "format": "int64"
+        },
+        "acting": {
+          "type": "string",
+          "format": "int64"
+        },
+        "num_store_stats": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "cephPoolType": {
       "type": "string",
       "enum": [
@@ -2484,6 +4299,9 @@
               "type": "object"
             }
           }
+        },
+        "system": {
+          "type": "boolean"
         }
       }
     },
@@ -2596,15 +4414,14 @@
       "type": "object",
       "properties": {
         "capabilities": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "title": "user capabilities, e.g: {\"mon\": \"allow r\",\"osd\":\"allow rw pool=liverpool\"}"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephClusterUserCap"
+          }
         },
         "user_entity": {
-          "type": "string",
-          "title": "entity, e.g: \"client.admin\""
+          "type": "string"
         }
       }
     },

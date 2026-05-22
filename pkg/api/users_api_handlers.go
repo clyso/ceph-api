@@ -94,6 +94,7 @@ func roleToPb(r user.Role) *pb.Role {
 		Name:              r.Name,
 		Description:       r.Description,
 		ScopesPermissions: permissions,
+		System:            r.IsSystem,
 	}
 }
 

@@ -37,6 +37,14 @@ func Test_Parity_Status_OsdDump(t *testing.T) {
 	}
 }
 
+func Test_Parity_Status_PgDump(t *testing.T) {
+	r := parity.New(t)
+	call := parity.Call{Method: "GET", Path: "/api/status/pg_dump"}
+	for _, b := range r.Backends(call) {
+		r.DoRecord(b, call)
+	}
+}
+
 func Test_Parity_Status_Report(t *testing.T) {
 	r := parity.New(t)
 	call := parity.Call{Method: "GET", Path: "/api/status/report"}

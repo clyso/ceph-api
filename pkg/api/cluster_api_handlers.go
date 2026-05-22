@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -47,7 +46,7 @@ func (c *clusterAPI) ExportUser(ctx context.Context, req *pb.ExportClusterUserRe
 	if err := user.HasPermissions(ctx, user.ScopeConfigOpt, user.PermRead); err != nil {
 		return nil, err
 	}
-	buf := bytes.NewBuffer(nil)
+	var buf strings.Builder
 	for _, entity := range req.Entities {
 		const monCmdTeml = `{"prefix": "auth export", "entity": "%s"}`
 		monCmd := fmt.Sprintf(monCmdTeml, entity)
@@ -59,7 +58,7 @@ func (c *clusterAPI) ExportUser(ctx context.Context, req *pb.ExportClusterUserRe
 		buf.Write(res)
 		buf.WriteRune('\n')
 	}
-	return &pb.ExportClusterUserResp{Data: buf.Bytes()}, nil
+	return &pb.ExportClusterUserResp{Data: buf.String()}, nil
 }
 
 func (c *clusterAPI) CreateUser(ctx context.Context, req *pb.CreateClusterUserReq) (*emptypb.Empty, error) {
@@ -78,8 +77,8 @@ func (c *clusterAPI) CreateUser(ctx context.Context, req *pb.CreateClusterUserRe
 
 	const cmdTempl = `{"prefix": "auth add", "entity": "%s", "caps": [%s]}`
 	caps := make([]string, 0, len(req.Capabilities)*2)
-	for k, v := range req.Capabilities {
-		caps = append(caps, strconv.Quote(k), strconv.Quote(v))
+	for _, cuc := range req.Capabilities {
+		caps = append(caps, strconv.Quote(cuc.Entity), strconv.Quote(cuc.Cap))
 	}
 	monCmd := fmt.Sprintf(cmdTempl, req.UserEntity, strings.Join(caps, ","))
 	_, err := c.radosSvc.ExecMon(ctx, monCmd)
@@ -108,6 +107,11 @@ func (c *clusterAPI) GetUsers(ctx context.Context, _ *emptypb.Empty) (*pb.Cluste
 	if err != nil {
 		return nil, err
 	}
+	// Match dashboard: it serializes the cephx key via SecretStr,
+	// which renders as 11 asterisks. See dashboard _crud.serialize.
+	for _, u := range res.AuthDump {
+		u.Key = "***********"
+	}
 	return &pb.ClusterUsers{Users: res.AuthDump}, nil
 }
 
@@ -117,8 +121,8 @@ func (c *clusterAPI) UpdateUser(ctx context.Context, req *pb.UpdateClusterUserRe
 	}
 	const cmdTempl = `{"prefix": "auth caps", "entity": "%s", "caps": [%s]}`
 	caps := make([]string, 0, len(req.Capabilities)*2)
-	for k, v := range req.Capabilities {
-		caps = append(caps, strconv.Quote(k), strconv.Quote(v))
+	for _, cuc := range req.Capabilities {
+		caps = append(caps, strconv.Quote(cuc.Entity), strconv.Quote(cuc.Cap))
 	}
 	monCmd := fmt.Sprintf(cmdTempl, req.UserEntity, strings.Join(caps, ","))
 	_, err := c.radosSvc.ExecMon(ctx, monCmd)

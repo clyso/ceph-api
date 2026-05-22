@@ -73,6 +73,7 @@ type Role struct {
 	Name              string                         `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Description       *string                        `protobuf:"bytes,2,opt,name=description,proto3,oneof" json:"description,omitempty"`
 	ScopesPermissions map[string]*structpb.ListValue `protobuf:"bytes,3,rep,name=scopes_permissions,proto3" json:"scopes_permissions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	System            bool                           `protobuf:"varint,4,opt,name=system,proto3" json:"system,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -126,6 +127,13 @@ func (x *Role) GetScopesPermissions() map[string]*structpb.ListValue {
 		return x.ScopesPermissions
 	}
 	return nil
+}
+
+func (x *Role) GetSystem() bool {
+	if x != nil {
+		return x.System
+	}
+	return false
 }
 
 type GetRoleReq struct {
@@ -579,11 +587,12 @@ const file_users_proto_rawDesc = "" +
 	"\vusers.proto\x12\x04ceph\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"-\n" +
 	"\tRolesResp\x12 \n" +
 	"\x05roles\x18\x01 \x03(\v2\n" +
-	".ceph.RoleR\x05roles\"\x86\x02\n" +
+	".ceph.RoleR\x05roles\"\x9e\x02\n" +
 	"\x04Role\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
 	"\vdescription\x18\x02 \x01(\tH\x00R\vdescription\x88\x01\x01\x12Q\n" +
-	"\x12scopes_permissions\x18\x03 \x03(\v2!.ceph.Role.ScopesPermissionsEntryR\x12scopes_permissions\x1a`\n" +
+	"\x12scopes_permissions\x18\x03 \x03(\v2!.ceph.Role.ScopesPermissionsEntryR\x12scopes_permissions\x12\x16\n" +
+	"\x06system\x18\x04 \x01(\bR\x06system\x1a`\n" +
 	"\x16ScopesPermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01B\x0e\n" +

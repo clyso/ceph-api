@@ -43,17 +43,20 @@ message ClusterUser {
     string key = 3;
 }
 
+message ClusterUserCap {
+    // capability scope entity, e.g: "mon", "osd"
+    string entity = 1;
+    // capability value, e.g: "allow r", "allow rw pool=liverpool"
+    string cap = 2;
+}
+
 message UpdateClusterUserReq{
-    // user capabilities, e.g: {"mon": "allow r","osd":"allow rw pool=liverpool"}
-    map<string, string> capabilities = 1;
-    // entity, e.g: "client.admin"
+    repeated ClusterUserCap capabilities = 1;
     string user_entity = 2 [json_name = "user_entity"];
 }
 
 message CreateClusterUserReq{
-    // user capabilities, e.g: {"mon": "allow r","osd":"allow rw pool=liverpool"}
-    map<string, string> capabilities = 1;
-    // entity, e.g: "client.admin"
+    repeated ClusterUserCap capabilities = 1;
     string user_entity = 2 [json_name = "user_entity"];
     // keyring file format - if import_data is set then other fields ignored
     bytes import_data = 3 [json_name = "import_data"];
@@ -69,7 +72,7 @@ message DeleteClusterUserReq{
 
 message ExportClusterUserResp{
     // User key and capabilities in Ceph config file format
-    bytes data = 1;
+    string data = 1;
 }
 
 // Config Param Search 

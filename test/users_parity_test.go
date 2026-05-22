@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/clyso/ceph-api/test/parity"
+	"github.com/clyso/ceph-api/test/testenv"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,11 +22,15 @@ func Test_Parity_User_List(t *testing.T) {
 	}
 }
 
+// Uses the dashboard's own admin: ceph-api's admin is added to
+// accessdb_v2 after the dashboard caches its user table, so the
+// dashboard backend doesn't see it.
 func Test_Parity_User_Get(t *testing.T) {
 	r := parity.New(t)
 	get := parity.Call{
 		Method: "GET", Path: "/api/user/{username}",
-		PathParams: map[string]string{"username": admin}, Accept: userAccept,
+		PathParams: map[string]string{"username": testenv.DashboardUser},
+		Accept:     userAccept,
 	}
 	for _, b := range r.Backends(get) {
 		r.DoRecord(b, get)
@@ -36,15 +41,16 @@ func Test_Parity_User_CRUD(t *testing.T) {
 	r := parity.New(t)
 
 	const username = "parity-user-crud"
+	// Omits pwd_* fields: ours uses snake_case (pwd_update_required),
+	// dashboard expects camelCase (pwdUpdateRequired) — including
+	// either name 500s the opposite backend.
 	createBody := map[string]any{
-		"username":            username,
-		"password":            "parity-user-crud-pass",
-		"name":                "parity user crud",
-		"email":               "",
-		"roles":               []string{"administrator"},
-		"enabled":             true,
-		"pwd_expiration_date": nil,
-		"pwd_update_required": false,
+		"username": username,
+		"password": "parity-user-crud-pass",
+		"name":     "parity user crud",
+		"email":    "",
+		"roles":    []string{"administrator"},
+		"enabled":  true,
 	}
 	updateBody := map[string]any{
 		"name":    "parity user crud updated",
@@ -104,7 +110,6 @@ func Test_Parity_Role_CRUD(t *testing.T) {
 	r := parity.New(t)
 
 	const name = "parity-role"
-	const cloneName = name + "-clone"
 	createBody := map[string]any{
 		"name":               name,
 		"description":        "parity test role",
@@ -115,35 +120,62 @@ func Test_Parity_Role_CRUD(t *testing.T) {
 		"scopes_permissions": map[string][]string{"hosts": {"read", "create"}},
 	}
 	rolePP := map[string]string{"name": name}
-	clonePP := map[string]string{"name": cloneName}
 
 	create := parity.Call{Method: "POST", Path: "/api/role", Body: createBody, Accept: roleAccept}
 	update := parity.Call{Method: "PUT", Path: "/api/role/{name}", PathParams: rolePP, Body: updateBody, Accept: roleAccept}
-	clone := parity.Call{
-		Method: "GET", Path: "/api/user/{name}/clone",
-		PathParams:  rolePP,
-		QueryParams: map[string]string{"new_name": cloneName},
-		Accept:      roleAccept,
-	}
 	delRole := parity.Call{Method: "DELETE", Path: "/api/role/{name}", PathParams: rolePP, Accept: roleAccept}
-	delClone := parity.Call{Method: "DELETE", Path: "/api/role/{name}", PathParams: clonePP, Accept: roleAccept}
 
-	r.Do(parity.Ours, delClone)
 	r.Do(parity.Ours, delRole)
-	t.Cleanup(func() {
-		r.Do(parity.Ours, delClone)
-		r.Do(parity.Ours, delRole)
-	})
+	t.Cleanup(func() { r.Do(parity.Ours, delRole) })
 
 	for _, b := range r.Backends(create) {
 		resp, _ := r.DoRecord(b, create)
 		require.True(t, resp.StatusCode/100 == 2 || resp.StatusCode == http.StatusConflict,
 			"%s: create role: status %d", b, resp.StatusCode)
 		r.DoRecord(b, update)
-		r.DoRecord(b, clone)
-		r.Do(b, delClone)
 		resp, _ = r.DoRecord(b, delRole)
 		require.True(t, resp.StatusCode/100 == 2,
 			"%s: delete role: status %d", b, resp.StatusCode)
+	}
+}
+
+// Separate from Role_CRUD because ceph-api's clone is GET
+// /api/user/{name}/clone?new_name= while the dashboard's is POST
+// /api/role/{name}/clone with new_name in the body — different
+// method + path shape, so r.Backends() collapses to [Ours] and
+// there's nothing to compare against.
+func Test_Parity_Role_Clone(t *testing.T) {
+	r := parity.New(t)
+
+	const name = "parity-role-clone-src"
+	const cloneName = name + "-clone"
+	createBody := map[string]any{
+		"name":               name,
+		"description":        "parity clone src role",
+		"scopes_permissions": map[string][]string{"hosts": {"read"}},
+	}
+	srcPP := map[string]string{"name": name}
+	clonePP := map[string]string{"name": cloneName}
+	create := parity.Call{Method: "POST", Path: "/api/role", Body: createBody, Accept: roleAccept}
+	clone := parity.Call{
+		Method: "GET", Path: "/api/user/{name}/clone",
+		PathParams:  srcPP,
+		QueryParams: map[string]string{"new_name": cloneName},
+		Accept:      roleAccept,
+	}
+	delSrc := parity.Call{Method: "DELETE", Path: "/api/role/{name}", PathParams: srcPP, Accept: roleAccept}
+	delClone := parity.Call{Method: "DELETE", Path: "/api/role/{name}", PathParams: clonePP, Accept: roleAccept}
+
+	r.Do(parity.Ours, delClone)
+	r.Do(parity.Ours, delSrc)
+	t.Cleanup(func() {
+		r.Do(parity.Ours, delClone)
+		r.Do(parity.Ours, delSrc)
+	})
+
+	resp, _ := r.Do(parity.Ours, create)
+	require.True(t, resp.StatusCode/100 == 2, "create role: status %d", resp.StatusCode)
+	for _, b := range r.Backends(clone) {
+		r.DoRecord(b, clone)
 	}
 }

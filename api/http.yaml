@@ -89,6 +89,9 @@ http:
     - selector: ceph.Status.GetCephOsdDump
       get: /api/status/osd_dump
       response_body: "*"
+    - selector: ceph.Status.GetCephPgDump
+      get: /api/status/pg_dump
+      response_body: "*"
     - selector: ceph.Status.GetCephReport
       get: /api/status/report
       response_body: "*"

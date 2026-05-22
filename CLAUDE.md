@@ -93,3 +93,21 @@ For cross-release diffs, `make ceph-ref-versions` fetches `v18.2.7` and `v20.0.0
 - **No DB.** All persistent state (users, OAuth clients, tokens) lives in Ceph via rados commands or the config-key store (`pkg/cephconfig/`).
 - **Mock mode is offline-dev convenience, not contract.** `CGO_ENABLED=0` builds make `make check` runnable without ceph libs, but the mock JSON in `pkg/rados/mock-data/` is hand-curated and routinely lags real Ceph. Wire-format bugs are caught by `make e2e-test` against a real cluster, not by `make check`. New endpoint work must be validated against `make e2e-test`. Updating `mock-data/` for new endpoints is **not** required.
 - **Tests live in two places.** Unit tests next to the code they test (`pkg/**/*_test.go`). E2E tests in `test/`. Test harness in `test/testenv/`. Anything in `test/` runs against a real Ceph started by `testenv.NewCephEnv` — no mocks.
+
+## Comments
+
+Default to **zero comments**. Only keep one when removing it would leave a future reader unable to derive a non-obvious invariant, workaround, or external constraint. Before finishing any edit, re-scan every comment added; if you can't justify it under one of the three tests below, delete it.
+
+**Banned:**
+- History narration (`legacy`, `previously`, `used to`, `now uses`, `added for X`).
+- Internal task/session references (`tracked as #123`, `see TASKS.md 2.1`, `Phase 2.3 summary`).
+- Foreign-project name-drops (`from cesto`, `matches chorus pattern`).
+- Restating well-named code or paraphrasing identifiers.
+- Doc comments that just restate the function signature.
+
+**Keep if any of:**
+1. The WHY is non-obvious from reading the surrounding code.
+2. A future agent or human couldn't re-derive it without the comment.
+3. It describes an external constraint — library contract, protocol quirk, framework artifact, regulatory requirement.
+
+Examples that pass: `// fosite sets session.Subject via SetSubject after Authenticate`, `// grpc-gateway emits {} for Empty proto responses`, `//nolint:gosec // self-signed cert on localhost-only listener`.
