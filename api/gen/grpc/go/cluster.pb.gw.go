@@ -344,7 +344,7 @@ func RegisterClusterHandlerServer(ctx context.Context, mux *runtime.ServeMux, se
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_Cluster_UpdateUser_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Cluster_UpdateUser_0(annotatedContext, mux, outboundMarshaler, w, req, response_Cluster_UpdateUser_0{resp.(*ClusterUserStatusResp)}, mux.GetForwardResponseOptions()...)
 	})
 	mux.Handle(http.MethodPost, pattern_Cluster_CreateUser_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
@@ -364,7 +364,7 @@ func RegisterClusterHandlerServer(ctx context.Context, mux *runtime.ServeMux, se
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_Cluster_CreateUser_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Cluster_CreateUser_0(annotatedContext, mux, outboundMarshaler, w, req, response_Cluster_CreateUser_0{resp.(*ClusterUserStatusResp)}, mux.GetForwardResponseOptions()...)
 	})
 	mux.Handle(http.MethodPost, pattern_Cluster_ExportUser_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
@@ -532,7 +532,7 @@ func RegisterClusterHandlerClient(ctx context.Context, mux *runtime.ServeMux, cl
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_Cluster_UpdateUser_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Cluster_UpdateUser_0(annotatedContext, mux, outboundMarshaler, w, req, response_Cluster_UpdateUser_0{resp.(*ClusterUserStatusResp)}, mux.GetForwardResponseOptions()...)
 	})
 	mux.Handle(http.MethodPost, pattern_Cluster_CreateUser_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
@@ -549,7 +549,7 @@ func RegisterClusterHandlerClient(ctx context.Context, mux *runtime.ServeMux, cl
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_Cluster_CreateUser_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Cluster_CreateUser_0(annotatedContext, mux, outboundMarshaler, w, req, response_Cluster_CreateUser_0{resp.(*ClusterUserStatusResp)}, mux.GetForwardResponseOptions()...)
 	})
 	mux.Handle(http.MethodPost, pattern_Cluster_ExportUser_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
@@ -612,6 +612,24 @@ type response_Cluster_GetUsers_0 struct {
 func (m response_Cluster_GetUsers_0) XXX_ResponseBody() interface{} {
 	response := m.ClusterUsers
 	return response.Users
+}
+
+type response_Cluster_UpdateUser_0 struct {
+	*ClusterUserStatusResp
+}
+
+func (m response_Cluster_UpdateUser_0) XXX_ResponseBody() interface{} {
+	response := m.ClusterUserStatusResp
+	return response.Status
+}
+
+type response_Cluster_CreateUser_0 struct {
+	*ClusterUserStatusResp
+}
+
+func (m response_Cluster_CreateUser_0) XXX_ResponseBody() interface{} {
+	response := m.ClusterUserStatusResp
+	return response.Status
 }
 
 type response_Cluster_ExportUser_0 struct {

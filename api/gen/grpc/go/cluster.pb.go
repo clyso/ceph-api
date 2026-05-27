@@ -114,7 +114,7 @@ func (x SearchConfigRequest_SortField) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SearchConfigRequest_SortField.Descriptor instead.
 func (SearchConfigRequest_SortField) EnumDescriptor() ([]byte, []int) {
-	return file_cluster_proto_rawDescGZIP(), []int{9, 0}
+	return file_cluster_proto_rawDescGZIP(), []int{10, 0}
 }
 
 type SearchConfigRequest_SortOrder int32
@@ -160,7 +160,7 @@ func (x SearchConfigRequest_SortOrder) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SearchConfigRequest_SortOrder.Descriptor instead.
 func (SearchConfigRequest_SortOrder) EnumDescriptor() ([]byte, []int) {
-	return file_cluster_proto_rawDescGZIP(), []int{9, 1}
+	return file_cluster_proto_rawDescGZIP(), []int{10, 1}
 }
 
 type ConfigParam_ServiceType int32
@@ -236,7 +236,7 @@ func (x ConfigParam_ServiceType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConfigParam_ServiceType.Descriptor instead.
 func (ConfigParam_ServiceType) EnumDescriptor() ([]byte, []int) {
-	return file_cluster_proto_rawDescGZIP(), []int{10, 0}
+	return file_cluster_proto_rawDescGZIP(), []int{11, 0}
 }
 
 type ConfigParam_ConfigLevel int32
@@ -285,7 +285,7 @@ func (x ConfigParam_ConfigLevel) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConfigParam_ConfigLevel.Descriptor instead.
 func (ConfigParam_ConfigLevel) EnumDescriptor() ([]byte, []int) {
-	return file_cluster_proto_rawDescGZIP(), []int{10, 1}
+	return file_cluster_proto_rawDescGZIP(), []int{11, 1}
 }
 
 type ConfigParam_ParamType int32
@@ -358,7 +358,7 @@ func (x ConfigParam_ParamType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConfigParam_ParamType.Descriptor instead.
 func (ConfigParam_ParamType) EnumDescriptor() ([]byte, []int) {
-	return file_cluster_proto_rawDescGZIP(), []int{10, 2}
+	return file_cluster_proto_rawDescGZIP(), []int{11, 2}
 }
 
 type ClusterStatus struct {
@@ -623,7 +623,7 @@ type CreateClusterUserReq struct {
 	Capabilities []*ClusterUserCap      `protobuf:"bytes,1,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
 	UserEntity   string                 `protobuf:"bytes,2,opt,name=user_entity,proto3" json:"user_entity,omitempty"`
 	// keyring file format - if import_data is set then other fields ignored
-	ImportData    []byte `protobuf:"bytes,3,opt,name=import_data,proto3" json:"import_data,omitempty"`
+	ImportData    string `protobuf:"bytes,3,opt,name=import_data,proto3" json:"import_data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -672,11 +672,11 @@ func (x *CreateClusterUserReq) GetUserEntity() string {
 	return ""
 }
 
-func (x *CreateClusterUserReq) GetImportData() []byte {
+func (x *CreateClusterUserReq) GetImportData() string {
 	if x != nil {
 		return x.ImportData
 	}
-	return nil
+	return ""
 }
 
 type ExportClusterUserReq struct {
@@ -812,6 +812,51 @@ func (x *ExportClusterUserResp) GetData() string {
 	return ""
 }
 
+type ClusterUserStatusResp struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Dashboard-compatible status string, e.g. "Successfully created user 'client.x'".
+	Status        string `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClusterUserStatusResp) Reset() {
+	*x = ClusterUserStatusResp{}
+	mi := &file_cluster_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClusterUserStatusResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterUserStatusResp) ProtoMessage() {}
+
+func (x *ClusterUserStatusResp) ProtoReflect() protoreflect.Message {
+	mi := &file_cluster_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterUserStatusResp.ProtoReflect.Descriptor instead.
+func (*ClusterUserStatusResp) Descriptor() ([]byte, []int) {
+	return file_cluster_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ClusterUserStatusResp) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
 // Config Param Search
 type SearchConfigRequest struct {
 	state         protoimpl.MessageState         `protogen:"open.v1"`
@@ -828,7 +873,7 @@ type SearchConfigRequest struct {
 
 func (x *SearchConfigRequest) Reset() {
 	*x = SearchConfigRequest{}
-	mi := &file_cluster_proto_msgTypes[9]
+	mi := &file_cluster_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -840,7 +885,7 @@ func (x *SearchConfigRequest) String() string {
 func (*SearchConfigRequest) ProtoMessage() {}
 
 func (x *SearchConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cluster_proto_msgTypes[9]
+	mi := &file_cluster_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -853,7 +898,7 @@ func (x *SearchConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchConfigRequest.ProtoReflect.Descriptor instead.
 func (*SearchConfigRequest) Descriptor() ([]byte, []int) {
-	return file_cluster_proto_rawDescGZIP(), []int{9}
+	return file_cluster_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SearchConfigRequest) GetService() ConfigParam_ServiceType {
@@ -928,7 +973,7 @@ type ConfigParam struct {
 
 func (x *ConfigParam) Reset() {
 	*x = ConfigParam{}
-	mi := &file_cluster_proto_msgTypes[10]
+	mi := &file_cluster_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -940,7 +985,7 @@ func (x *ConfigParam) String() string {
 func (*ConfigParam) ProtoMessage() {}
 
 func (x *ConfigParam) ProtoReflect() protoreflect.Message {
-	mi := &file_cluster_proto_msgTypes[10]
+	mi := &file_cluster_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -953,7 +998,7 @@ func (x *ConfigParam) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigParam.ProtoReflect.Descriptor instead.
 func (*ConfigParam) Descriptor() ([]byte, []int) {
-	return file_cluster_proto_rawDescGZIP(), []int{10}
+	return file_cluster_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ConfigParam) GetName() string {
@@ -1070,7 +1115,7 @@ type SearchConfigResponse struct {
 
 func (x *SearchConfigResponse) Reset() {
 	*x = SearchConfigResponse{}
-	mi := &file_cluster_proto_msgTypes[11]
+	mi := &file_cluster_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1082,7 +1127,7 @@ func (x *SearchConfigResponse) String() string {
 func (*SearchConfigResponse) ProtoMessage() {}
 
 func (x *SearchConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cluster_proto_msgTypes[11]
+	mi := &file_cluster_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1095,7 +1140,7 @@ func (x *SearchConfigResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchConfigResponse.ProtoReflect.Descriptor instead.
 func (*SearchConfigResponse) Descriptor() ([]byte, []int) {
-	return file_cluster_proto_rawDescGZIP(), []int{11}
+	return file_cluster_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SearchConfigResponse) GetParams() []*ConfigParam {
@@ -1133,13 +1178,15 @@ const file_cluster_proto_rawDesc = "" +
 	"\x14CreateClusterUserReq\x128\n" +
 	"\fcapabilities\x18\x01 \x03(\v2\x14.ceph.ClusterUserCapR\fcapabilities\x12 \n" +
 	"\vuser_entity\x18\x02 \x01(\tR\vuser_entity\x12 \n" +
-	"\vimport_data\x18\x03 \x01(\fR\vimport_data\"2\n" +
+	"\vimport_data\x18\x03 \x01(\tR\vimport_data\"2\n" +
 	"\x14ExportClusterUserReq\x12\x1a\n" +
 	"\bentities\x18\x01 \x03(\tR\bentities\"8\n" +
 	"\x14DeleteClusterUserReq\x12 \n" +
 	"\vuser_entity\x18\x01 \x01(\tR\vuser_entity\"+\n" +
 	"\x15ExportClusterUserResp\x12\x12\n" +
-	"\x04data\x18\x01 \x01(\tR\x04data\"\x91\x04\n" +
+	"\x04data\x18\x01 \x01(\tR\x04data\"/\n" +
+	"\x15ClusterUserStatusResp\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"\x91\x04\n" +
 	"\x13SearchConfigRequest\x12<\n" +
 	"\aservice\x18\x01 \x01(\x0e2\x1d.ceph.ConfigParam.ServiceTypeH\x00R\aservice\x88\x01\x01\x12\x17\n" +
 	"\x04name\x18\x02 \x01(\tH\x01R\x04name\x88\x01\x01\x12 \n" +
@@ -1219,15 +1266,15 @@ const file_cluster_proto_rawDesc = "" +
 	"\x04_minB\x06\n" +
 	"\x04_max\"A\n" +
 	"\x14SearchConfigResponse\x12)\n" +
-	"\x06params\x18\x01 \x03(\v2\x11.ceph.ConfigParamR\x06params2\x8c\x04\n" +
+	"\x06params\x18\x01 \x03(\v2\x11.ceph.ConfigParamR\x06params2\x96\x04\n" +
 	"\aCluster\x128\n" +
 	"\tGetStatus\x12\x16.google.protobuf.Empty\x1a\x13.ceph.ClusterStatus\x12;\n" +
 	"\fUpdateStatus\x12\x13.ceph.ClusterStatus\x1a\x16.google.protobuf.Empty\x126\n" +
-	"\bGetUsers\x12\x16.google.protobuf.Empty\x1a\x12.ceph.ClusterUsers\x12@\n" +
+	"\bGetUsers\x12\x16.google.protobuf.Empty\x1a\x12.ceph.ClusterUsers\x12E\n" +
 	"\n" +
-	"UpdateUser\x12\x1a.ceph.UpdateClusterUserReq\x1a\x16.google.protobuf.Empty\x12@\n" +
+	"UpdateUser\x12\x1a.ceph.UpdateClusterUserReq\x1a\x1b.ceph.ClusterUserStatusResp\x12E\n" +
 	"\n" +
-	"CreateUser\x12\x1a.ceph.CreateClusterUserReq\x1a\x16.google.protobuf.Empty\x12E\n" +
+	"CreateUser\x12\x1a.ceph.CreateClusterUserReq\x1a\x1b.ceph.ClusterUserStatusResp\x12E\n" +
 	"\n" +
 	"ExportUser\x12\x1a.ceph.ExportClusterUserReq\x1a\x1b.ceph.ExportClusterUserResp\x12@\n" +
 	"\n" +
@@ -1247,7 +1294,7 @@ func file_cluster_proto_rawDescGZIP() []byte {
 }
 
 var file_cluster_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_cluster_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_cluster_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_cluster_proto_goTypes = []any{
 	(ClusterStatus_Status)(0),          // 0: ceph.ClusterStatus.Status
 	(SearchConfigRequest_SortField)(0), // 1: ceph.SearchConfigRequest.SortField
@@ -1264,16 +1311,17 @@ var file_cluster_proto_goTypes = []any{
 	(*ExportClusterUserReq)(nil),       // 12: ceph.ExportClusterUserReq
 	(*DeleteClusterUserReq)(nil),       // 13: ceph.DeleteClusterUserReq
 	(*ExportClusterUserResp)(nil),      // 14: ceph.ExportClusterUserResp
-	(*SearchConfigRequest)(nil),        // 15: ceph.SearchConfigRequest
-	(*ConfigParam)(nil),                // 16: ceph.ConfigParam
-	(*SearchConfigResponse)(nil),       // 17: ceph.SearchConfigResponse
-	nil,                                // 18: ceph.ClusterUser.CapsEntry
-	(*emptypb.Empty)(nil),              // 19: google.protobuf.Empty
+	(*ClusterUserStatusResp)(nil),      // 15: ceph.ClusterUserStatusResp
+	(*SearchConfigRequest)(nil),        // 16: ceph.SearchConfigRequest
+	(*ConfigParam)(nil),                // 17: ceph.ConfigParam
+	(*SearchConfigResponse)(nil),       // 18: ceph.SearchConfigResponse
+	nil,                                // 19: ceph.ClusterUser.CapsEntry
+	(*emptypb.Empty)(nil),              // 20: google.protobuf.Empty
 }
 var file_cluster_proto_depIdxs = []int32{
 	0,  // 0: ceph.ClusterStatus.status:type_name -> ceph.ClusterStatus.Status
 	8,  // 1: ceph.ClusterUsers.users:type_name -> ceph.ClusterUser
-	18, // 2: ceph.ClusterUser.caps:type_name -> ceph.ClusterUser.CapsEntry
+	19, // 2: ceph.ClusterUser.caps:type_name -> ceph.ClusterUser.CapsEntry
 	9,  // 3: ceph.UpdateClusterUserReq.capabilities:type_name -> ceph.ClusterUserCap
 	9,  // 4: ceph.CreateClusterUserReq.capabilities:type_name -> ceph.ClusterUserCap
 	3,  // 5: ceph.SearchConfigRequest.service:type_name -> ceph.ConfigParam.ServiceType
@@ -1284,23 +1332,23 @@ var file_cluster_proto_depIdxs = []int32{
 	5,  // 10: ceph.ConfigParam.type:type_name -> ceph.ConfigParam.ParamType
 	4,  // 11: ceph.ConfigParam.level:type_name -> ceph.ConfigParam.ConfigLevel
 	3,  // 12: ceph.ConfigParam.services:type_name -> ceph.ConfigParam.ServiceType
-	16, // 13: ceph.SearchConfigResponse.params:type_name -> ceph.ConfigParam
-	19, // 14: ceph.Cluster.GetStatus:input_type -> google.protobuf.Empty
+	17, // 13: ceph.SearchConfigResponse.params:type_name -> ceph.ConfigParam
+	20, // 14: ceph.Cluster.GetStatus:input_type -> google.protobuf.Empty
 	6,  // 15: ceph.Cluster.UpdateStatus:input_type -> ceph.ClusterStatus
-	19, // 16: ceph.Cluster.GetUsers:input_type -> google.protobuf.Empty
+	20, // 16: ceph.Cluster.GetUsers:input_type -> google.protobuf.Empty
 	10, // 17: ceph.Cluster.UpdateUser:input_type -> ceph.UpdateClusterUserReq
 	11, // 18: ceph.Cluster.CreateUser:input_type -> ceph.CreateClusterUserReq
 	12, // 19: ceph.Cluster.ExportUser:input_type -> ceph.ExportClusterUserReq
 	13, // 20: ceph.Cluster.DeleteUser:input_type -> ceph.DeleteClusterUserReq
-	15, // 21: ceph.Cluster.SearchConfig:input_type -> ceph.SearchConfigRequest
+	16, // 21: ceph.Cluster.SearchConfig:input_type -> ceph.SearchConfigRequest
 	6,  // 22: ceph.Cluster.GetStatus:output_type -> ceph.ClusterStatus
-	19, // 23: ceph.Cluster.UpdateStatus:output_type -> google.protobuf.Empty
+	20, // 23: ceph.Cluster.UpdateStatus:output_type -> google.protobuf.Empty
 	7,  // 24: ceph.Cluster.GetUsers:output_type -> ceph.ClusterUsers
-	19, // 25: ceph.Cluster.UpdateUser:output_type -> google.protobuf.Empty
-	19, // 26: ceph.Cluster.CreateUser:output_type -> google.protobuf.Empty
+	15, // 25: ceph.Cluster.UpdateUser:output_type -> ceph.ClusterUserStatusResp
+	15, // 26: ceph.Cluster.CreateUser:output_type -> ceph.ClusterUserStatusResp
 	14, // 27: ceph.Cluster.ExportUser:output_type -> ceph.ExportClusterUserResp
-	19, // 28: ceph.Cluster.DeleteUser:output_type -> google.protobuf.Empty
-	17, // 29: ceph.Cluster.SearchConfig:output_type -> ceph.SearchConfigResponse
+	20, // 28: ceph.Cluster.DeleteUser:output_type -> google.protobuf.Empty
+	18, // 29: ceph.Cluster.SearchConfig:output_type -> ceph.SearchConfigResponse
 	22, // [22:30] is the sub-list for method output_type
 	14, // [14:22] is the sub-list for method input_type
 	14, // [14:14] is the sub-list for extension type_name
@@ -1313,15 +1361,15 @@ func file_cluster_proto_init() {
 	if File_cluster_proto != nil {
 		return
 	}
-	file_cluster_proto_msgTypes[9].OneofWrappers = []any{}
 	file_cluster_proto_msgTypes[10].OneofWrappers = []any{}
+	file_cluster_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cluster_proto_rawDesc), len(file_cluster_proto_rawDesc)),
 			NumEnums:      6,
-			NumMessages:   13,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

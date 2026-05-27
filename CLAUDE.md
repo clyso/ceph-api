@@ -94,6 +94,17 @@ For cross-release diffs, `make ceph-ref-versions` fetches `v18.2.7` and `v20.0.0
 - **Mock mode is offline-dev convenience, not contract.** `CGO_ENABLED=0` builds make `make check` runnable without ceph libs, but the mock JSON in `pkg/rados/mock-data/` is hand-curated and routinely lags real Ceph. Wire-format bugs are caught by `make e2e-test` against a real cluster, not by `make check`. New endpoint work must be validated against `make e2e-test`. Updating `mock-data/` for new endpoints is **not** required.
 - **Tests live in two places.** Unit tests next to the code they test (`pkg/**/*_test.go`). E2E tests in `test/`. Test harness in `test/testenv/`. Anything in `test/` runs against a real Ceph started by `testenv.NewCephEnv` — no mocks.
 
+## Parity vs API quality
+
+The dashboard parity tests in `test/parity/` exist to keep ceph-api a drop-in replacement for the dashboard's REST surface. They do **not** dictate the gRPC type system. When the two collide, pick the well-typed proto and absorb the wire-shape divergence in the matcher (`test/parity/diff.go`) — not by regressing the proto and not by adding repetitive per-endpoint ignores.
+
+- **Use `google.protobuf.Timestamp`** for timestamps, not `int32`/`int64` unix seconds. gRPC clients get a typed value; the matcher already coerces RFC3339 strings to unix seconds (within `timestampSkewTolerance`) so the dashboard's integer-form response still compares equal.
+- **Use `int64`** for any field whose source-of-truth C++ type is `int64_t` / `uint64_t` / `__u64` (verify in `third_party/ceph/` before choosing — `int32` is only correct when the upstream type is narrower, e.g. `__u8` for CRUSH rule ids). `int64` serializes as a JSON string under protojson; the matcher coerces int64-as-string ↔ JSON number so parity still passes.
+- **Before narrowing a proto field to fit a dashboard JSON shape**, grep `third_party/ceph/` for the source C++ type and confirm the narrower form is precision-safe. If unsure, keep the wider type and let the matcher handle the JSON encoding diff.
+- **New shape-class divergences** (e.g. a third protojson convention not yet covered) belong in `coerceEqual` in `test/parity/diff.go` with a unit test, not in `api_diff.yaml`. Reserve `api_diff.yaml` for genuinely endpoint-specific divergences (a particular field that's deliberately different from the dashboard).
+
+The matcher also treats `null` on one side and absent on the other as equivalent — protojson's `EmitUnpopulated` emits unset proto3-optional fields as `null` while the dashboard's hand-rolled JSON omits them.
+
 ## Comments
 
 Default to **zero comments**. Only keep one when removing it would leave a future reader unable to derive a non-obvious invariant, workaround, or external constraint. Before finishing any edit, re-scan every comment added; if you can't justify it under one of the three tests below, delete it.

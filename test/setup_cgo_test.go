@@ -135,6 +135,14 @@ func runSetup(m *testing.M) (int, error) {
 	}
 	admConn = c.Conn()
 
+	// Dashboard caches its user table at startup and doesn't observe writes
+	// ceph-api made to mgr/dashboard/accessdb_v2 (e.g. the bootstrap admin
+	// above). Reload it so the parity user-list pass sees the same set on
+	// both backends.
+	if err := cephEnv.ReloadDashboard(bootCtx); err != nil {
+		return 1, fmt.Errorf("reload dashboard: %w", err)
+	}
+
 	// Dashboard /api/auth requires the v1.0 versioned media type; ceph-api
 	// tolerates any Accept (gateway registered under MIMEWildcard) so we
 	// send the same header to both sides to keep requests cloned.

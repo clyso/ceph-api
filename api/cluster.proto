@@ -15,8 +15,8 @@ service Cluster {
     rpc UpdateStatus (ClusterStatus) returns (google.protobuf.Empty);
 
     rpc GetUsers (google.protobuf.Empty) returns (ClusterUsers);
-    rpc UpdateUser (UpdateClusterUserReq) returns (google.protobuf.Empty);
-    rpc CreateUser (CreateClusterUserReq) returns (google.protobuf.Empty);
+    rpc UpdateUser (UpdateClusterUserReq) returns (ClusterUserStatusResp);
+    rpc CreateUser (CreateClusterUserReq) returns (ClusterUserStatusResp);
     rpc ExportUser (ExportClusterUserReq) returns (ExportClusterUserResp);
     rpc DeleteUser (DeleteClusterUserReq) returns (google.protobuf.Empty);
     rpc SearchConfig (SearchConfigRequest) returns (SearchConfigResponse);
@@ -59,7 +59,7 @@ message CreateClusterUserReq{
     repeated ClusterUserCap capabilities = 1;
     string user_entity = 2 [json_name = "user_entity"];
     // keyring file format - if import_data is set then other fields ignored
-    bytes import_data = 3 [json_name = "import_data"];
+    string import_data = 3 [json_name = "import_data"];
 }
 
 message ExportClusterUserReq{
@@ -73,6 +73,11 @@ message DeleteClusterUserReq{
 message ExportClusterUserResp{
     // User key and capabilities in Ceph config file format
     string data = 1;
+}
+
+message ClusterUserStatusResp{
+    // Dashboard-compatible status string, e.g. "Successfully created user 'client.x'".
+    string status = 1;
 }
 
 // Config Param Search 

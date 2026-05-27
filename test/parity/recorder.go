@@ -206,7 +206,7 @@ func (r *Recorder) Backends(c Call) []Backend {
 // coverage. Use for prep/cleanup calls (e.g. deleting leftover state).
 func (r *Recorder) Do(b Backend, c Call) (*http.Response, []byte) {
 	r.t.Helper()
-	return r.send(b, c, false)
+	return r.send(b, c, false, nil)
 }
 
 // DoRecord sends call to backend b and records the response for
@@ -214,10 +214,18 @@ func (r *Recorder) Do(b Backend, c Call) (*http.Response, []byte) {
 // same endpoint id.
 func (r *Recorder) DoRecord(b Backend, c Call) (*http.Response, []byte) {
 	r.t.Helper()
-	return r.send(b, c, true)
+	return r.send(b, c, true, nil)
 }
 
-func (r *Recorder) send(b Backend, c Call, recordIt bool) (*http.Response, []byte) {
+// DoRecordAs is like DoRecord but uses the given client instead of the
+// backend's package-level client. Use for endpoints whose semantics
+// require a non-admin identity (e.g. self-change_password).
+func (r *Recorder) DoRecordAs(b Backend, c Call, client *Client) (*http.Response, []byte) {
+	r.t.Helper()
+	return r.send(b, c, true, client)
+}
+
+func (r *Recorder) send(b Backend, c Call, recordIt bool, override *Client) (*http.Response, []byte) {
 	r.t.Helper()
 
 	method := strings.ToUpper(strings.TrimSpace(c.Method))
@@ -247,7 +255,10 @@ func (r *Recorder) send(b Backend, c Call, recordIt bool) (*http.Response, []byt
 		r.t.Fatalf("parity: marshal body for %s %s: %v", method, c.Path, err)
 	}
 
-	client := pickClient(b)
+	client := override
+	if client == nil {
+		client = pickClient(b)
+	}
 	resp, respBody, err := client.Do(context.Background(), method, pathRaw, c.Accept, bytesReader(bodyBytes), c.Headers)
 	if err != nil {
 		r.t.Fatalf("parity: %s %s on %s: %v", method, pathRaw, b, err)
@@ -309,6 +320,13 @@ func pickClient(b Backend) *Client {
 	default:
 		panic(fmt.Sprintf("parity: unknown Backend %d", b))
 	}
+}
+
+// ClientFor returns the package-level Client wired by Init for backend b,
+// so tests that need to log in as a non-admin user can reuse the same
+// BaseURL + transport (the dashboard's self-signed cert in particular).
+func ClientFor(b Backend) *Client {
+	return pickClient(b)
 }
 
 func otherBackend(b Backend) Backend {

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/netip"
 	"os"
 	"path/filepath"
@@ -284,6 +285,51 @@ func (e *CephEnv) MappedURL(ctx context.Context, scheme string, port int) (strin
 		return "", fmt.Errorf("get mapped port %d: %w", port, err)
 	}
 	return fmt.Sprintf("%s://%s:%s", scheme, host, mp.Port()), nil
+}
+
+// ReloadDashboard disables and re-enables the dashboard mgr module so its
+// in-memory access-control DB is reloaded from mgr/dashboard/accessdb_v2.
+// Use after writing users/roles to that key from outside the dashboard
+// (e.g. ceph-api's bootstrap admin) to defeat the dashboard's startup-time
+// user-table cache.
+func (e *CephEnv) ReloadDashboard(ctx context.Context) error {
+	if err := e.execOK(ctx, []string{"ceph", "mgr", "module", "disable", "dashboard"}); err != nil {
+		return fmt.Errorf("disable dashboard: %w", err)
+	}
+	if err := e.execOK(ctx, []string{"ceph", "mgr", "module", "enable", "dashboard"}); err != nil {
+		return fmt.Errorf("enable dashboard: %w", err)
+	}
+	if err := e.waitMgrService(ctx, "dashboard"); err != nil {
+		return err
+	}
+	return e.waitDashboardListening(ctx)
+}
+
+func (e *CephEnv) waitDashboardListening(ctx context.Context) error {
+	host, err := e.container.Host(ctx)
+	if err != nil {
+		return fmt.Errorf("get container host: %w", err)
+	}
+	mp, err := e.container.MappedPort(ctx, fmt.Sprintf("%d/tcp", DashboardPort))
+	if err != nil {
+		return fmt.Errorf("get mapped port %d: %w", DashboardPort, err)
+	}
+	addr := host + ":" + mp.Port()
+	deadline := time.Now().Add(moduleEnableWait)
+	var dialer net.Dialer
+	for time.Now().Before(deadline) {
+		conn, err := dialer.DialContext(ctx, "tcp", addr)
+		if err == nil {
+			_ = conn.Close()
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(500 * time.Millisecond):
+		}
+	}
+	return fmt.Errorf("dashboard %s not listening within %s", addr, moduleEnableWait)
 }
 
 // Dashboard returns the dashboard HTTPS URL and administrator credentials.

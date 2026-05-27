@@ -334,10 +334,9 @@
         "operationId": "Cluster_CreateUser",
         "responses": {
           "200": {
-            "description": "A successful response.",
+            "description": "Dashboard-compatible status string, e.g. \"Successfully created user 'client.x'\".",
             "schema": {
-              "type": "object",
-              "properties": {}
+              "type": "string"
             }
           },
           "default": {
@@ -365,10 +364,9 @@
         "operationId": "Cluster_UpdateUser",
         "responses": {
           "200": {
-            "description": "A successful response.",
+            "description": "Dashboard-compatible status string, e.g. \"Successfully created user 'client.x'\".",
             "schema": {
-              "type": "object",
-              "properties": {}
+              "type": "string"
             }
           },
           "default": {
@@ -603,8 +601,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "type": "object",
-              "properties": {}
+              "$ref": "#/definitions/cephRole"
             }
           },
           "default": {
@@ -693,8 +690,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "type": "object",
-              "properties": {}
+              "$ref": "#/definitions/cephRole"
             }
           },
           "default": {
@@ -871,8 +867,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "type": "object",
-              "properties": {}
+              "$ref": "#/definitions/cephUser"
             }
           },
           "default": {
@@ -998,8 +993,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "type": "object",
-              "properties": {}
+              "$ref": "#/definitions/cephUser"
             }
           },
           "default": {
@@ -2333,6 +2327,15 @@
         }
       }
     },
+    "cephClusterUserStatusResp": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Dashboard-compatible status string, e.g. \"Successfully created user 'client.x'\"."
+        }
+      }
+    },
     "cephClusterUsers": {
       "type": "object",
       "properties": {
@@ -2427,7 +2430,6 @@
         },
         "import_data": {
           "type": "string",
-          "format": "byte",
           "title": "keyring file format - if import_data is set then other fields ignored"
         }
       }
@@ -2471,11 +2473,11 @@
         "password": {
           "type": "string"
         },
-        "pwd_expiration_date": {
+        "pwdExpirationDate": {
           "type": "string",
           "format": "date-time"
         },
-        "pwd_update_required": {
+        "pwdUpdateRequired": {
           "type": "boolean"
         },
         "roles": {
@@ -4321,27 +4323,27 @@
       "type": "object",
       "properties": {
         "rule_id": {
-          "type": "string",
-          "format": "int64"
+          "type": "integer",
+          "format": "int32"
         },
         "rule_name": {
           "type": "string"
         },
         "ruleset": {
-          "type": "string",
-          "format": "int64"
+          "type": "integer",
+          "format": "int32"
         },
         "type": {
-          "type": "string",
-          "format": "int64"
+          "type": "integer",
+          "format": "int32"
         },
         "min_size": {
-          "type": "string",
-          "format": "int64"
+          "type": "integer",
+          "format": "int32"
         },
         "max_size": {
-          "type": "string",
-          "format": "int64"
+          "type": "integer",
+          "format": "int32"
         },
         "steps": {
           "type": "array",
@@ -4367,11 +4369,22 @@
     "cephStep": {
       "type": "object",
       "properties": {
-        "entries": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
+        "op": {
+          "type": "string"
+        },
+        "item": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "item_name": {
+          "type": "string"
+        },
+        "num": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "type": {
+          "type": "string"
         }
       }
     },
@@ -4437,15 +4450,15 @@
         "name": {
           "type": "string"
         },
-        "last_update": {
+        "lastUpdate": {
           "type": "string",
           "format": "date-time"
         },
-        "pwd_expiration_date": {
+        "pwdExpirationDate": {
           "type": "string",
           "format": "date-time"
         },
-        "pwd_update_required": {
+        "pwdUpdateRequired": {
           "type": "boolean"
         },
         "roles": {
@@ -4486,11 +4499,11 @@
         "password": {
           "type": "string"
         },
-        "pwd_expiration_date": {
+        "pwdExpirationDate": {
           "type": "string",
           "format": "date-time"
         },
-        "pwd_update_required": {
+        "pwdUpdateRequired": {
           "type": "boolean"
         },
         "roles": {

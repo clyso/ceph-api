@@ -21,7 +21,8 @@ func Test_Parity_CrushRule_List(t *testing.T) {
 	r := parity.New(t)
 	call := parity.Call{Method: "GET", Path: "/api/crush_rule", Accept: crushRuleReadAccept}
 	for _, b := range r.Backends(call) {
-		r.DoRecord(b, call)
+		resp, _ := r.DoRecord(b, call)
+		require.True(t, resp.StatusCode/100 == 2, "%s: list crush rules: status %d", b, resp.StatusCode)
 	}
 }
 
@@ -33,7 +34,8 @@ func Test_Parity_CrushRule_Get(t *testing.T) {
 		Accept:     crushRuleReadAccept,
 	}
 	for _, b := range r.Backends(get) {
-		r.DoRecord(b, get)
+		resp, _ := r.DoRecord(b, get)
+		require.True(t, resp.StatusCode/100 == 2, "%s: get crush rule: status %d", b, resp.StatusCode)
 	}
 }
 

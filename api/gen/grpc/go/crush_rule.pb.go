@@ -70,12 +70,12 @@ func (PoolType) EnumDescriptor() ([]byte, []int) {
 
 type Rule struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RuleId        int64                  `protobuf:"varint,1,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
+	RuleId        int32                  `protobuf:"varint,1,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
 	RuleName      string                 `protobuf:"bytes,2,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
-	Ruleset       int64                  `protobuf:"varint,3,opt,name=ruleset,proto3" json:"ruleset,omitempty"`
-	Type          int64                  `protobuf:"varint,4,opt,name=type,proto3" json:"type,omitempty"`
-	MinSize       int64                  `protobuf:"varint,5,opt,name=min_size,json=minSize,proto3" json:"min_size,omitempty"`
-	MaxSize       int64                  `protobuf:"varint,6,opt,name=max_size,json=maxSize,proto3" json:"max_size,omitempty"`
+	Ruleset       *int32                 `protobuf:"varint,3,opt,name=ruleset,proto3,oneof" json:"ruleset,omitempty"`
+	Type          int32                  `protobuf:"varint,4,opt,name=type,proto3" json:"type,omitempty"`
+	MinSize       *int32                 `protobuf:"varint,5,opt,name=min_size,json=minSize,proto3,oneof" json:"min_size,omitempty"`
+	MaxSize       *int32                 `protobuf:"varint,6,opt,name=max_size,json=maxSize,proto3,oneof" json:"max_size,omitempty"`
 	Steps         []*Step                `protobuf:"bytes,7,rep,name=steps,proto3" json:"steps,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -111,7 +111,7 @@ func (*Rule) Descriptor() ([]byte, []int) {
 	return file_crush_rule_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Rule) GetRuleId() int64 {
+func (x *Rule) GetRuleId() int32 {
 	if x != nil {
 		return x.RuleId
 	}
@@ -125,30 +125,30 @@ func (x *Rule) GetRuleName() string {
 	return ""
 }
 
-func (x *Rule) GetRuleset() int64 {
-	if x != nil {
-		return x.Ruleset
+func (x *Rule) GetRuleset() int32 {
+	if x != nil && x.Ruleset != nil {
+		return *x.Ruleset
 	}
 	return 0
 }
 
-func (x *Rule) GetType() int64 {
+func (x *Rule) GetType() int32 {
 	if x != nil {
 		return x.Type
 	}
 	return 0
 }
 
-func (x *Rule) GetMinSize() int64 {
-	if x != nil {
-		return x.MinSize
+func (x *Rule) GetMinSize() int32 {
+	if x != nil && x.MinSize != nil {
+		return *x.MinSize
 	}
 	return 0
 }
 
-func (x *Rule) GetMaxSize() int64 {
-	if x != nil {
-		return x.MaxSize
+func (x *Rule) GetMaxSize() int32 {
+	if x != nil && x.MaxSize != nil {
+		return *x.MaxSize
 	}
 	return 0
 }
@@ -162,7 +162,11 @@ func (x *Rule) GetSteps() []*Step {
 
 type Step struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entries       map[string]string      `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Op            string                 `protobuf:"bytes,1,opt,name=op,proto3" json:"op,omitempty"`
+	Item          *int32                 `protobuf:"varint,2,opt,name=item,proto3,oneof" json:"item,omitempty"`
+	ItemName      *string                `protobuf:"bytes,3,opt,name=item_name,json=itemName,proto3,oneof" json:"item_name,omitempty"`
+	Num           *int32                 `protobuf:"varint,4,opt,name=num,proto3,oneof" json:"num,omitempty"`
+	Type          *string                `protobuf:"bytes,5,opt,name=type,proto3,oneof" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -197,11 +201,39 @@ func (*Step) Descriptor() ([]byte, []int) {
 	return file_crush_rule_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Step) GetEntries() map[string]string {
+func (x *Step) GetOp() string {
 	if x != nil {
-		return x.Entries
+		return x.Op
 	}
-	return nil
+	return ""
+}
+
+func (x *Step) GetItem() int32 {
+	if x != nil && x.Item != nil {
+		return *x.Item
+	}
+	return 0
+}
+
+func (x *Step) GetItemName() string {
+	if x != nil && x.ItemName != nil {
+		return *x.ItemName
+	}
+	return ""
+}
+
+func (x *Step) GetNum() int32 {
+	if x != nil && x.Num != nil {
+		return *x.Num
+	}
+	return 0
+}
+
+func (x *Step) GetType() string {
+	if x != nil && x.Type != nil {
+		return *x.Type
+	}
+	return ""
 }
 
 // CREATE RULE
@@ -428,21 +460,31 @@ var File_crush_rule_proto protoreflect.FileDescriptor
 
 const file_crush_rule_proto_rawDesc = "" +
 	"\n" +
-	"\x10crush_rule.proto\x12\x04ceph\x1a\x1bgoogle/protobuf/empty.proto\"\xc2\x01\n" +
+	"\x10crush_rule.proto\x12\x04ceph\x1a\x1bgoogle/protobuf/empty.proto\"\xf7\x01\n" +
 	"\x04Rule\x12\x17\n" +
-	"\arule_id\x18\x01 \x01(\x03R\x06ruleId\x12\x1b\n" +
-	"\trule_name\x18\x02 \x01(\tR\bruleName\x12\x18\n" +
-	"\aruleset\x18\x03 \x01(\x03R\aruleset\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\x03R\x04type\x12\x19\n" +
-	"\bmin_size\x18\x05 \x01(\x03R\aminSize\x12\x19\n" +
-	"\bmax_size\x18\x06 \x01(\x03R\amaxSize\x12 \n" +
+	"\arule_id\x18\x01 \x01(\x05R\x06ruleId\x12\x1b\n" +
+	"\trule_name\x18\x02 \x01(\tR\bruleName\x12\x1d\n" +
+	"\aruleset\x18\x03 \x01(\x05H\x00R\aruleset\x88\x01\x01\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\x05R\x04type\x12\x1e\n" +
+	"\bmin_size\x18\x05 \x01(\x05H\x01R\aminSize\x88\x01\x01\x12\x1e\n" +
+	"\bmax_size\x18\x06 \x01(\x05H\x02R\amaxSize\x88\x01\x01\x12 \n" +
 	"\x05steps\x18\a \x03(\v2\n" +
-	".ceph.StepR\x05steps\"u\n" +
-	"\x04Step\x121\n" +
-	"\aentries\x18\x01 \x03(\v2\x17.ceph.Step.EntriesEntryR\aentries\x1a:\n" +
-	"\fEntriesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x81\x02\n" +
+	".ceph.StepR\x05stepsB\n" +
+	"\n" +
+	"\b_rulesetB\v\n" +
+	"\t_min_sizeB\v\n" +
+	"\t_max_size\"\xa9\x01\n" +
+	"\x04Step\x12\x0e\n" +
+	"\x02op\x18\x01 \x01(\tR\x02op\x12\x17\n" +
+	"\x04item\x18\x02 \x01(\x05H\x00R\x04item\x88\x01\x01\x12 \n" +
+	"\titem_name\x18\x03 \x01(\tH\x01R\bitemName\x88\x01\x01\x12\x15\n" +
+	"\x03num\x18\x04 \x01(\x05H\x02R\x03num\x88\x01\x01\x12\x17\n" +
+	"\x04type\x18\x05 \x01(\tH\x03R\x04type\x88\x01\x01B\a\n" +
+	"\x05_itemB\f\n" +
+	"\n" +
+	"_item_nameB\x06\n" +
+	"\x04_numB\a\n" +
+	"\x05_type\"\x81\x02\n" +
 	"\x11CreateRuleRequest\x12&\n" +
 	"\fdevice_class\x18\x01 \x01(\tH\x00R\vdeviceClass\x88\x01\x01\x12%\n" +
 	"\x0efailure_domain\x18\x02 \x01(\tR\rfailureDomain\x12\x12\n" +
@@ -486,7 +528,7 @@ func file_crush_rule_proto_rawDescGZIP() []byte {
 }
 
 var file_crush_rule_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_crush_rule_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_crush_rule_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_crush_rule_proto_goTypes = []any{
 	(PoolType)(0),             // 0: ceph.PoolType
 	(*Rule)(nil),              // 1: ceph.Rule
@@ -495,27 +537,25 @@ var file_crush_rule_proto_goTypes = []any{
 	(*DeleteRuleRequest)(nil), // 4: ceph.DeleteRuleRequest
 	(*GetRuleRequest)(nil),    // 5: ceph.GetRuleRequest
 	(*ListRulesResponse)(nil), // 6: ceph.ListRulesResponse
-	nil,                       // 7: ceph.Step.EntriesEntry
-	(*emptypb.Empty)(nil),     // 8: google.protobuf.Empty
+	(*emptypb.Empty)(nil),     // 7: google.protobuf.Empty
 }
 var file_crush_rule_proto_depIdxs = []int32{
 	2, // 0: ceph.Rule.steps:type_name -> ceph.Step
-	7, // 1: ceph.Step.entries:type_name -> ceph.Step.EntriesEntry
-	0, // 2: ceph.CreateRuleRequest.pool_type:type_name -> ceph.PoolType
-	1, // 3: ceph.ListRulesResponse.rules:type_name -> ceph.Rule
-	3, // 4: ceph.CrushRule.CreateRule:input_type -> ceph.CreateRuleRequest
-	4, // 5: ceph.CrushRule.DeleteRule:input_type -> ceph.DeleteRuleRequest
-	5, // 6: ceph.CrushRule.GetRule:input_type -> ceph.GetRuleRequest
-	8, // 7: ceph.CrushRule.ListRules:input_type -> google.protobuf.Empty
-	8, // 8: ceph.CrushRule.CreateRule:output_type -> google.protobuf.Empty
-	8, // 9: ceph.CrushRule.DeleteRule:output_type -> google.protobuf.Empty
-	1, // 10: ceph.CrushRule.GetRule:output_type -> ceph.Rule
-	6, // 11: ceph.CrushRule.ListRules:output_type -> ceph.ListRulesResponse
-	8, // [8:12] is the sub-list for method output_type
-	4, // [4:8] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	0, // 1: ceph.CreateRuleRequest.pool_type:type_name -> ceph.PoolType
+	1, // 2: ceph.ListRulesResponse.rules:type_name -> ceph.Rule
+	3, // 3: ceph.CrushRule.CreateRule:input_type -> ceph.CreateRuleRequest
+	4, // 4: ceph.CrushRule.DeleteRule:input_type -> ceph.DeleteRuleRequest
+	5, // 5: ceph.CrushRule.GetRule:input_type -> ceph.GetRuleRequest
+	7, // 6: ceph.CrushRule.ListRules:input_type -> google.protobuf.Empty
+	7, // 7: ceph.CrushRule.CreateRule:output_type -> google.protobuf.Empty
+	7, // 8: ceph.CrushRule.DeleteRule:output_type -> google.protobuf.Empty
+	1, // 9: ceph.CrushRule.GetRule:output_type -> ceph.Rule
+	6, // 10: ceph.CrushRule.ListRules:output_type -> ceph.ListRulesResponse
+	7, // [7:11] is the sub-list for method output_type
+	3, // [3:7] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_crush_rule_proto_init() }
@@ -523,6 +563,8 @@ func file_crush_rule_proto_init() {
 	if File_crush_rule_proto != nil {
 		return
 	}
+	file_crush_rule_proto_msgTypes[0].OneofWrappers = []any{}
+	file_crush_rule_proto_msgTypes[1].OneofWrappers = []any{}
 	file_crush_rule_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -530,7 +572,7 @@ func file_crush_rule_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_crush_rule_proto_rawDesc), len(file_crush_rule_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

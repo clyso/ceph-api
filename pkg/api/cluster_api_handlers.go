@@ -61,18 +61,18 @@ func (c *clusterAPI) ExportUser(ctx context.Context, req *pb.ExportClusterUserRe
 	return &pb.ExportClusterUserResp{Data: buf.String()}, nil
 }
 
-func (c *clusterAPI) CreateUser(ctx context.Context, req *pb.CreateClusterUserReq) (*emptypb.Empty, error) {
+func (c *clusterAPI) CreateUser(ctx context.Context, req *pb.CreateClusterUserReq) (*pb.ClusterUserStatusResp, error) {
 	if err := user.HasPermissions(ctx, user.ScopeConfigOpt, user.PermCreate); err != nil {
 		return nil, err
 	}
-	if len(req.ImportData) != 0 {
+	if req.ImportData != "" {
 		zerolog.Ctx(ctx).Debug().Msg("import user data")
 		const monCmd = `{"prefix": "auth import"}`
-		_, err := c.radosSvc.ExecMonWithInputBuff(ctx, monCmd, req.ImportData)
+		_, err := c.radosSvc.ExecMonWithInputBuff(ctx, monCmd, []byte(req.ImportData))
 		if err != nil {
 			return nil, err
 		}
-		return &emptypb.Empty{}, nil
+		return &pb.ClusterUserStatusResp{Status: "Successfully imported user"}, nil
 	}
 
 	const cmdTempl = `{"prefix": "auth add", "entity": "%s", "caps": [%s]}`
@@ -85,7 +85,7 @@ func (c *clusterAPI) CreateUser(ctx context.Context, req *pb.CreateClusterUserRe
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, nil
+	return &pb.ClusterUserStatusResp{Status: fmt.Sprintf("Successfully created user '%s'", req.UserEntity)}, nil
 }
 
 // GetUsers implements pb.ClusterServer.
@@ -115,7 +115,7 @@ func (c *clusterAPI) GetUsers(ctx context.Context, _ *emptypb.Empty) (*pb.Cluste
 	return &pb.ClusterUsers{Users: res.AuthDump}, nil
 }
 
-func (c *clusterAPI) UpdateUser(ctx context.Context, req *pb.UpdateClusterUserReq) (*emptypb.Empty, error) {
+func (c *clusterAPI) UpdateUser(ctx context.Context, req *pb.UpdateClusterUserReq) (*pb.ClusterUserStatusResp, error) {
 	if err := user.HasPermissions(ctx, user.ScopeConfigOpt, user.PermUpdate); err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (c *clusterAPI) UpdateUser(ctx context.Context, req *pb.UpdateClusterUserRe
 		}
 		return nil, err
 	}
-	return &emptypb.Empty{}, nil
+	return &pb.ClusterUserStatusResp{Status: fmt.Sprintf("Successfully edited user '%s'", req.UserEntity)}, nil
 }
 
 func (c *clusterAPI) GetStatus(ctx context.Context, _ *emptypb.Empty) (*pb.ClusterStatus, error) {

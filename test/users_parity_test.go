@@ -3,6 +3,7 @@
 package test
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -18,13 +19,11 @@ func Test_Parity_User_List(t *testing.T) {
 	r := parity.New(t)
 	call := parity.Call{Method: "GET", Path: "/api/user", Accept: userAccept}
 	for _, b := range r.Backends(call) {
-		r.DoRecord(b, call)
+		resp, _ := r.DoRecord(b, call)
+		require.True(t, resp.StatusCode/100 == 2, "%s: list users: status %d", b, resp.StatusCode)
 	}
 }
 
-// Uses the dashboard's own admin: ceph-api's admin is added to
-// accessdb_v2 after the dashboard caches its user table, so the
-// dashboard backend doesn't see it.
 func Test_Parity_User_Get(t *testing.T) {
 	r := parity.New(t)
 	get := parity.Call{
@@ -33,7 +32,8 @@ func Test_Parity_User_Get(t *testing.T) {
 		Accept:     userAccept,
 	}
 	for _, b := range r.Backends(get) {
-		r.DoRecord(b, get)
+		resp, _ := r.DoRecord(b, get)
+		require.True(t, resp.StatusCode/100 == 2, "%s: get user: status %d", b, resp.StatusCode)
 	}
 }
 
@@ -41,16 +41,14 @@ func Test_Parity_User_CRUD(t *testing.T) {
 	r := parity.New(t)
 
 	const username = "parity-user-crud"
-	// Omits pwd_* fields: ours uses snake_case (pwd_update_required),
-	// dashboard expects camelCase (pwdUpdateRequired) — including
-	// either name 500s the opposite backend.
 	createBody := map[string]any{
-		"username": username,
-		"password": "parity-user-crud-pass",
-		"name":     "parity user crud",
-		"email":    "",
-		"roles":    []string{"administrator"},
-		"enabled":  true,
+		"username":          username,
+		"password":          "parity-user-crud-pass",
+		"name":              "parity user crud",
+		"email":             "",
+		"roles":             []string{"administrator"},
+		"enabled":           true,
+		"pwdUpdateRequired": true,
 	}
 	updateBody := map[string]any{
 		"name":    "parity user crud updated",
@@ -78,8 +76,19 @@ func Test_Parity_User_CRUD(t *testing.T) {
 		resp, _ := r.DoRecord(b, create)
 		require.True(t, resp.StatusCode/100 == 2 || resp.StatusCode == http.StatusConflict,
 			"%s: create user: status %d", b, resp.StatusCode)
-		r.DoRecord(b, update)
-		r.DoRecord(b, changePass)
+		resp, _ = r.DoRecord(b, update)
+		require.True(t, resp.StatusCode/100 == 2, "%s: update user: status %d", b, resp.StatusCode)
+
+		// Dashboard's change_password rejects calls where the JWT subject
+		// differs from {username}, so log in as the created user first and
+		// drive the call from that identity on both backends.
+		backend := parity.ClientFor(b)
+		userClient, err := parity.Login(context.Background(), backend.BaseURL, backend.HTTP,
+			userAccept, username, "parity-user-crud-pass")
+		require.NoError(t, err, "%s: login as %s", b, username)
+		resp, _ = r.DoRecordAs(b, changePass, userClient)
+		require.True(t, resp.StatusCode/100 == 2, "%s: change_password: status %d", b, resp.StatusCode)
+
 		resp, _ = r.DoRecord(b, del)
 		require.True(t, resp.StatusCode/100 == 2,
 			"%s: delete user: status %d", b, resp.StatusCode)
@@ -90,7 +99,8 @@ func Test_Parity_Role_List(t *testing.T) {
 	r := parity.New(t)
 	call := parity.Call{Method: "GET", Path: "/api/role", Accept: roleAccept}
 	for _, b := range r.Backends(call) {
-		r.DoRecord(b, call)
+		resp, _ := r.DoRecord(b, call)
+		require.True(t, resp.StatusCode/100 == 2, "%s: list roles: status %d", b, resp.StatusCode)
 	}
 }
 
@@ -102,7 +112,8 @@ func Test_Parity_Role_Get(t *testing.T) {
 		Accept:     roleAccept,
 	}
 	for _, b := range r.Backends(get) {
-		r.DoRecord(b, get)
+		resp, _ := r.DoRecord(b, get)
+		require.True(t, resp.StatusCode/100 == 2, "%s: get role: status %d", b, resp.StatusCode)
 	}
 }
 
@@ -132,7 +143,8 @@ func Test_Parity_Role_CRUD(t *testing.T) {
 		resp, _ := r.DoRecord(b, create)
 		require.True(t, resp.StatusCode/100 == 2 || resp.StatusCode == http.StatusConflict,
 			"%s: create role: status %d", b, resp.StatusCode)
-		r.DoRecord(b, update)
+		resp, _ = r.DoRecord(b, update)
+		require.True(t, resp.StatusCode/100 == 2, "%s: update role: status %d", b, resp.StatusCode)
 		resp, _ = r.DoRecord(b, delRole)
 		require.True(t, resp.StatusCode/100 == 2,
 			"%s: delete role: status %d", b, resp.StatusCode)
@@ -176,6 +188,7 @@ func Test_Parity_Role_Clone(t *testing.T) {
 	resp, _ := r.Do(parity.Ours, create)
 	require.True(t, resp.StatusCode/100 == 2, "create role: status %d", resp.StatusCode)
 	for _, b := range r.Backends(clone) {
-		r.DoRecord(b, clone)
+		resp, _ := r.DoRecord(b, clone)
+		require.True(t, resp.StatusCode/100 == 2, "%s: clone role: status %d", b, resp.StatusCode)
 	}
 }

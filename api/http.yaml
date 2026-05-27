@@ -14,9 +14,11 @@ http:
     - selector: ceph.Cluster.CreateUser
       post: /api/cluster/user
       body: "*"
+      response_body: "status"
     - selector: ceph.Cluster.UpdateUser
       put: /api/cluster/user
       body: "*"
+      response_body: "status"
     - selector: ceph.Cluster.ExportUser
       post: /api/cluster/user/export
       body: "*"

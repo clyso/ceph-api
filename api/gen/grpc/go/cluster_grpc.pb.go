@@ -39,8 +39,8 @@ type ClusterClient interface {
 	// Update cluster status
 	UpdateStatus(ctx context.Context, in *ClusterStatus, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetUsers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ClusterUsers, error)
-	UpdateUser(ctx context.Context, in *UpdateClusterUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	CreateUser(ctx context.Context, in *CreateClusterUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdateUser(ctx context.Context, in *UpdateClusterUserReq, opts ...grpc.CallOption) (*ClusterUserStatusResp, error)
+	CreateUser(ctx context.Context, in *CreateClusterUserReq, opts ...grpc.CallOption) (*ClusterUserStatusResp, error)
 	ExportUser(ctx context.Context, in *ExportClusterUserReq, opts ...grpc.CallOption) (*ExportClusterUserResp, error)
 	DeleteUser(ctx context.Context, in *DeleteClusterUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	SearchConfig(ctx context.Context, in *SearchConfigRequest, opts ...grpc.CallOption) (*SearchConfigResponse, error)
@@ -84,9 +84,9 @@ func (c *clusterClient) GetUsers(ctx context.Context, in *emptypb.Empty, opts ..
 	return out, nil
 }
 
-func (c *clusterClient) UpdateUser(ctx context.Context, in *UpdateClusterUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *clusterClient) UpdateUser(ctx context.Context, in *UpdateClusterUserReq, opts ...grpc.CallOption) (*ClusterUserStatusResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(ClusterUserStatusResp)
 	err := c.cc.Invoke(ctx, Cluster_UpdateUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -94,9 +94,9 @@ func (c *clusterClient) UpdateUser(ctx context.Context, in *UpdateClusterUserReq
 	return out, nil
 }
 
-func (c *clusterClient) CreateUser(ctx context.Context, in *CreateClusterUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *clusterClient) CreateUser(ctx context.Context, in *CreateClusterUserReq, opts ...grpc.CallOption) (*ClusterUserStatusResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(ClusterUserStatusResp)
 	err := c.cc.Invoke(ctx, Cluster_CreateUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -143,8 +143,8 @@ type ClusterServer interface {
 	// Update cluster status
 	UpdateStatus(context.Context, *ClusterStatus) (*emptypb.Empty, error)
 	GetUsers(context.Context, *emptypb.Empty) (*ClusterUsers, error)
-	UpdateUser(context.Context, *UpdateClusterUserReq) (*emptypb.Empty, error)
-	CreateUser(context.Context, *CreateClusterUserReq) (*emptypb.Empty, error)
+	UpdateUser(context.Context, *UpdateClusterUserReq) (*ClusterUserStatusResp, error)
+	CreateUser(context.Context, *CreateClusterUserReq) (*ClusterUserStatusResp, error)
 	ExportUser(context.Context, *ExportClusterUserReq) (*ExportClusterUserResp, error)
 	DeleteUser(context.Context, *DeleteClusterUserReq) (*emptypb.Empty, error)
 	SearchConfig(context.Context, *SearchConfigRequest) (*SearchConfigResponse, error)
@@ -166,10 +166,10 @@ func (UnimplementedClusterServer) UpdateStatus(context.Context, *ClusterStatus) 
 func (UnimplementedClusterServer) GetUsers(context.Context, *emptypb.Empty) (*ClusterUsers, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUsers not implemented")
 }
-func (UnimplementedClusterServer) UpdateUser(context.Context, *UpdateClusterUserReq) (*emptypb.Empty, error) {
+func (UnimplementedClusterServer) UpdateUser(context.Context, *UpdateClusterUserReq) (*ClusterUserStatusResp, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateUser not implemented")
 }
-func (UnimplementedClusterServer) CreateUser(context.Context, *CreateClusterUserReq) (*emptypb.Empty, error) {
+func (UnimplementedClusterServer) CreateUser(context.Context, *CreateClusterUserReq) (*ClusterUserStatusResp, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateUser not implemented")
 }
 func (UnimplementedClusterServer) ExportUser(context.Context, *ExportClusterUserReq) (*ExportClusterUserResp, error) {

@@ -40,15 +40,15 @@ const (
 type UsersClient interface {
 	ListUsers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UsersResp, error)
 	GetUser(ctx context.Context, in *GetUserReq, opts ...grpc.CallOption) (*User, error)
-	CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*User, error)
 	DeleteUser(ctx context.Context, in *GetUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	UpdateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*User, error)
 	UserChangePassword(ctx context.Context, in *UserChangePasswordReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListRoles(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RolesResp, error)
 	GetRole(ctx context.Context, in *GetRoleReq, opts ...grpc.CallOption) (*Role, error)
-	CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*Role, error)
 	DeleteRole(ctx context.Context, in *GetRoleReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	UpdateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*Role, error)
 	CloneRole(ctx context.Context, in *CloneRoleReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -80,9 +80,9 @@ func (c *usersClient) GetUser(ctx context.Context, in *GetUserReq, opts ...grpc.
 	return out, nil
 }
 
-func (c *usersClient) CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*User, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(User)
 	err := c.cc.Invoke(ctx, Users_CreateUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -100,9 +100,9 @@ func (c *usersClient) DeleteUser(ctx context.Context, in *GetUserReq, opts ...gr
 	return out, nil
 }
 
-func (c *usersClient) UpdateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) UpdateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*User, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(User)
 	err := c.cc.Invoke(ctx, Users_UpdateUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -140,9 +140,9 @@ func (c *usersClient) GetRole(ctx context.Context, in *GetRoleReq, opts ...grpc.
 	return out, nil
 }
 
-func (c *usersClient) CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*Role, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(Role)
 	err := c.cc.Invoke(ctx, Users_CreateRole_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -160,9 +160,9 @@ func (c *usersClient) DeleteRole(ctx context.Context, in *GetRoleReq, opts ...gr
 	return out, nil
 }
 
-func (c *usersClient) UpdateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) UpdateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*Role, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(Role)
 	err := c.cc.Invoke(ctx, Users_UpdateRole_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -186,15 +186,15 @@ func (c *usersClient) CloneRole(ctx context.Context, in *CloneRoleReq, opts ...g
 type UsersServer interface {
 	ListUsers(context.Context, *emptypb.Empty) (*UsersResp, error)
 	GetUser(context.Context, *GetUserReq) (*User, error)
-	CreateUser(context.Context, *CreateUserReq) (*emptypb.Empty, error)
+	CreateUser(context.Context, *CreateUserReq) (*User, error)
 	DeleteUser(context.Context, *GetUserReq) (*emptypb.Empty, error)
-	UpdateUser(context.Context, *CreateUserReq) (*emptypb.Empty, error)
+	UpdateUser(context.Context, *CreateUserReq) (*User, error)
 	UserChangePassword(context.Context, *UserChangePasswordReq) (*emptypb.Empty, error)
 	ListRoles(context.Context, *emptypb.Empty) (*RolesResp, error)
 	GetRole(context.Context, *GetRoleReq) (*Role, error)
-	CreateRole(context.Context, *Role) (*emptypb.Empty, error)
+	CreateRole(context.Context, *Role) (*Role, error)
 	DeleteRole(context.Context, *GetRoleReq) (*emptypb.Empty, error)
-	UpdateRole(context.Context, *Role) (*emptypb.Empty, error)
+	UpdateRole(context.Context, *Role) (*Role, error)
 	CloneRole(context.Context, *CloneRoleReq) (*emptypb.Empty, error)
 }
 
@@ -211,13 +211,13 @@ func (UnimplementedUsersServer) ListUsers(context.Context, *emptypb.Empty) (*Use
 func (UnimplementedUsersServer) GetUser(context.Context, *GetUserReq) (*User, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUser not implemented")
 }
-func (UnimplementedUsersServer) CreateUser(context.Context, *CreateUserReq) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) CreateUser(context.Context, *CreateUserReq) (*User, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateUser not implemented")
 }
 func (UnimplementedUsersServer) DeleteUser(context.Context, *GetUserReq) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteUser not implemented")
 }
-func (UnimplementedUsersServer) UpdateUser(context.Context, *CreateUserReq) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) UpdateUser(context.Context, *CreateUserReq) (*User, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateUser not implemented")
 }
 func (UnimplementedUsersServer) UserChangePassword(context.Context, *UserChangePasswordReq) (*emptypb.Empty, error) {
@@ -229,13 +229,13 @@ func (UnimplementedUsersServer) ListRoles(context.Context, *emptypb.Empty) (*Rol
 func (UnimplementedUsersServer) GetRole(context.Context, *GetRoleReq) (*Role, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRole not implemented")
 }
-func (UnimplementedUsersServer) CreateRole(context.Context, *Role) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) CreateRole(context.Context, *Role) (*Role, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateRole not implemented")
 }
 func (UnimplementedUsersServer) DeleteRole(context.Context, *GetRoleReq) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteRole not implemented")
 }
-func (UnimplementedUsersServer) UpdateRole(context.Context, *Role) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) UpdateRole(context.Context, *Role) (*Role, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateRole not implemented")
 }
 func (UnimplementedUsersServer) CloneRole(context.Context, *CloneRoleReq) (*emptypb.Empty, error) {

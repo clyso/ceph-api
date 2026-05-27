@@ -114,7 +114,7 @@ func Test_ClusterUsers(t *testing.T) {
 	}
 	r.Nil(created, "user was removed from list")
 
-	_, err = client.CreateUser(tstCtx, &pb.CreateClusterUserReq{ImportData: []byte(exp.Data)})
+	_, err = client.CreateUser(tstCtx, &pb.CreateClusterUserReq{ImportData: exp.Data})
 	r.NoError(err, "user was imported back from export data")
 
 	users2, err = client.GetUsers(tstCtx, &emptypb.Empty{})

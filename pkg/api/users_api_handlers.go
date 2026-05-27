@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"sort"
 
 	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
 	xctx "github.com/clyso/ceph-api/pkg/ctx"
@@ -33,15 +34,18 @@ func (u *usersAPI) CloneRole(ctx context.Context, req *pb.CloneRoleReq) (*emptyp
 	return &emptypb.Empty{}, nil
 }
 
-func (u *usersAPI) CreateRole(ctx context.Context, req *pb.Role) (*emptypb.Empty, error) {
+func (u *usersAPI) CreateRole(ctx context.Context, req *pb.Role) (*pb.Role, error) {
 	if err := user.HasPermissions(ctx, user.ScopeUser, user.PermCreate); err != nil {
 		return nil, err
 	}
-	err := u.svc.CreateRole(ctx, roleFromPb(req))
+	if err := u.svc.CreateRole(ctx, roleFromPb(req)); err != nil {
+		return nil, err
+	}
+	role, err := u.svc.GetRole(ctx, req.Name)
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, nil
+	return roleToPb(role), nil
 }
 
 func roleFromPb(r *pb.Role) user.Role {
@@ -50,6 +54,10 @@ func roleFromPb(r *pb.Role) user.Role {
 		for _, p := range v.Values {
 			permissions[k] = append(permissions[k], p.GetStringValue())
 		}
+		// Dashboard's Role.set_scope_permissions sorts permissions alphabetically
+		// before storing, so the GET round-trip emits them in sorted order. Mirror
+		// that here to keep the wire shape identical.
+		sort.Strings(permissions[k])
 	}
 
 	return user.Role{
@@ -113,15 +121,18 @@ func (u *usersAPI) ListRoles(ctx context.Context, _ *emptypb.Empty) (*pb.RolesRe
 	return &pb.RolesResp{Roles: res}, nil
 }
 
-func (u *usersAPI) UpdateRole(ctx context.Context, req *pb.Role) (*emptypb.Empty, error) {
+func (u *usersAPI) UpdateRole(ctx context.Context, req *pb.Role) (*pb.Role, error) {
 	if err := user.HasPermissions(ctx, user.ScopeUser, user.PermUpdate); err != nil {
 		return nil, err
 	}
-	err := u.svc.UpdateRole(ctx, roleFromPb(req))
+	if err := u.svc.UpdateRole(ctx, roleFromPb(req)); err != nil {
+		return nil, err
+	}
+	role, err := u.svc.GetRole(ctx, req.Name)
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, nil
+	return roleToPb(role), nil
 }
 
 func (u *usersAPI) UserChangePassword(ctx context.Context, req *pb.UserChangePasswordReq) (*emptypb.Empty, error) {
@@ -135,7 +146,7 @@ func (u *usersAPI) UserChangePassword(ctx context.Context, req *pb.UserChangePas
 	return &emptypb.Empty{}, nil
 }
 
-func (u *usersAPI) CreateUser(ctx context.Context, req *pb.CreateUserReq) (*emptypb.Empty, error) {
+func (u *usersAPI) CreateUser(ctx context.Context, req *pb.CreateUserReq) (*pb.User, error) {
 	if err := user.HasPermissions(ctx, user.ScopeUser, user.PermCreate); err != nil {
 		return nil, err
 	}
@@ -146,17 +157,20 @@ func (u *usersAPI) CreateUser(ctx context.Context, req *pb.CreateUserReq) (*empt
 		Name:              req.Name,
 		Email:             req.Email,
 		Enabled:           req.Enabled,
-		PwdUpdateRequired: false,
+		PwdUpdateRequired: req.PwdUpdateRequired,
 	}
 	if req.PwdExpirationDate != nil {
 		expIn := int(req.PwdExpirationDate.Seconds)
 		usr.PwdExpirationDate = &expIn
 	}
-	err := u.svc.CreateUser(ctx, usr)
+	if err := u.svc.CreateUser(ctx, usr); err != nil {
+		return nil, err
+	}
+	created, err := u.svc.GetUser(ctx, req.Username)
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, nil
+	return userToPb(created), nil
 }
 
 func (u *usersAPI) DeleteUser(ctx context.Context, req *pb.GetUserReq) (*emptypb.Empty, error) {
@@ -212,7 +226,7 @@ func (u *usersAPI) ListUsers(ctx context.Context, _ *emptypb.Empty) (*pb.UsersRe
 	return &pb.UsersResp{Users: res}, nil
 }
 
-func (u *usersAPI) UpdateUser(ctx context.Context, req *pb.CreateUserReq) (*emptypb.Empty, error) {
+func (u *usersAPI) UpdateUser(ctx context.Context, req *pb.CreateUserReq) (*pb.User, error) {
 	if err := user.HasPermissions(ctx, user.ScopeUser, user.PermUpdate); err != nil {
 		return nil, err
 	}
@@ -229,9 +243,12 @@ func (u *usersAPI) UpdateUser(ctx context.Context, req *pb.CreateUserReq) (*empt
 		expIn := int(req.PwdExpirationDate.Seconds)
 		usr.PwdExpirationDate = &expIn
 	}
-	err := u.svc.UpdateUser(ctx, usr)
+	if err := u.svc.UpdateUser(ctx, usr); err != nil {
+		return nil, err
+	}
+	updated, err := u.svc.GetUser(ctx, req.Username)
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, nil
+	return userToPb(updated), nil
 }

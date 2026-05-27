@@ -281,9 +281,9 @@ type User struct {
 	Email             *string                `protobuf:"bytes,1,opt,name=email,proto3,oneof" json:"email,omitempty"`
 	Enabled           bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	Name              *string                `protobuf:"bytes,3,opt,name=name,proto3,oneof" json:"name,omitempty"`
-	LastUpdate        *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_update,json=lastUpdate,proto3" json:"last_update,omitempty"`
-	PwdExpirationDate *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=pwd_expiration_date,json=pwdExpirationDate,proto3,oneof" json:"pwd_expiration_date,omitempty"`
-	PwdUpdateRequired bool                   `protobuf:"varint,6,opt,name=pwd_update_required,json=pwdUpdateRequired,proto3" json:"pwd_update_required,omitempty"`
+	LastUpdate        *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=lastUpdate,proto3" json:"lastUpdate,omitempty"`
+	PwdExpirationDate *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=pwdExpirationDate,proto3,oneof" json:"pwdExpirationDate,omitempty"`
+	PwdUpdateRequired bool                   `protobuf:"varint,6,opt,name=pwdUpdateRequired,proto3" json:"pwdUpdateRequired,omitempty"`
 	Roles             []string               `protobuf:"bytes,7,rep,name=roles,proto3" json:"roles,omitempty"`
 	Username          string                 `protobuf:"bytes,8,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields     protoimpl.UnknownFields
@@ -426,8 +426,8 @@ type CreateUserReq struct {
 	Enabled           bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	Name              *string                `protobuf:"bytes,3,opt,name=name,proto3,oneof" json:"name,omitempty"`
 	Password          string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
-	PwdExpirationDate *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=pwd_expiration_date,json=pwdExpirationDate,proto3,oneof" json:"pwd_expiration_date,omitempty"`
-	PwdUpdateRequired bool                   `protobuf:"varint,6,opt,name=pwd_update_required,json=pwdUpdateRequired,proto3" json:"pwd_update_required,omitempty"`
+	PwdExpirationDate *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=pwdExpirationDate,proto3,oneof" json:"pwdExpirationDate,omitempty"`
+	PwdUpdateRequired bool                   `protobuf:"varint,6,opt,name=pwdUpdateRequired,proto3" json:"pwdUpdateRequired,omitempty"`
 	Roles             []string               `protobuf:"bytes,7,rep,name=roles,proto3" json:"roles,omitempty"`
 	Username          string                 `protobuf:"bytes,8,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields     protoimpl.UnknownFields
@@ -584,7 +584,7 @@ var File_users_proto protoreflect.FileDescriptor
 
 const file_users_proto_rawDesc = "" +
 	"\n" +
-	"\vusers.proto\x12\x04ceph\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"-\n" +
+	"\vusers.proto\x12\x04ceph\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"-\n" +
 	"\tRolesResp\x12 \n" +
 	"\x05roles\x18\x01 \x03(\v2\n" +
 	".ceph.RoleR\x05roles\"\x9e\x02\n" +
@@ -605,61 +605,66 @@ const file_users_proto_rawDesc = "" +
 	"\bnew_name\x18\x02 \x01(\tR\bnew_name\"-\n" +
 	"\tUsersResp\x12 \n" +
 	"\x05users\x18\x01 \x03(\v2\n" +
-	".ceph.UserR\x05users\"\xef\x02\n" +
+	".ceph.UserR\x05users\"\xe8\x02\n" +
 	"\x04User\x12\x19\n" +
 	"\x05email\x18\x01 \x01(\tH\x00R\x05email\x88\x01\x01\x12\x18\n" +
 	"\aenabled\x18\x02 \x01(\bR\aenabled\x12\x17\n" +
-	"\x04name\x18\x03 \x01(\tH\x01R\x04name\x88\x01\x01\x12;\n" +
-	"\vlast_update\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"lastUpdate\x12O\n" +
-	"\x13pwd_expiration_date\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x02R\x11pwdExpirationDate\x88\x01\x01\x12.\n" +
-	"\x13pwd_update_required\x18\x06 \x01(\bR\x11pwdUpdateRequired\x12\x14\n" +
+	"\x04name\x18\x03 \x01(\tH\x01R\x04name\x88\x01\x01\x12:\n" +
+	"\n" +
+	"lastUpdate\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"lastUpdate\x12M\n" +
+	"\x11pwdExpirationDate\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x02R\x11pwdExpirationDate\x88\x01\x01\x12,\n" +
+	"\x11pwdUpdateRequired\x18\x06 \x01(\bR\x11pwdUpdateRequired\x12\x14\n" +
 	"\x05roles\x18\a \x03(\tR\x05roles\x12\x1a\n" +
 	"\busername\x18\b \x01(\tR\busernameB\b\n" +
 	"\x06_emailB\a\n" +
-	"\x05_nameB\x16\n" +
-	"\x14_pwd_expiration_date\"(\n" +
+	"\x05_nameB\x14\n" +
+	"\x12_pwdExpirationDate\"(\n" +
 	"\n" +
 	"GetUserReq\x12\x1a\n" +
-	"\busername\x18\x01 \x01(\tR\busername\"\xd7\x02\n" +
+	"\busername\x18\x01 \x01(\tR\busername\"\xd1\x02\n" +
 	"\rCreateUserReq\x12\x19\n" +
 	"\x05email\x18\x01 \x01(\tH\x00R\x05email\x88\x01\x01\x12\x18\n" +
 	"\aenabled\x18\x02 \x01(\bR\aenabled\x12\x17\n" +
 	"\x04name\x18\x03 \x01(\tH\x01R\x04name\x88\x01\x01\x12\x1a\n" +
-	"\bpassword\x18\x04 \x01(\tR\bpassword\x12O\n" +
-	"\x13pwd_expiration_date\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x02R\x11pwdExpirationDate\x88\x01\x01\x12.\n" +
-	"\x13pwd_update_required\x18\x06 \x01(\bR\x11pwdUpdateRequired\x12\x14\n" +
+	"\bpassword\x18\x04 \x01(\tR\bpassword\x12M\n" +
+	"\x11pwdExpirationDate\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x02R\x11pwdExpirationDate\x88\x01\x01\x12,\n" +
+	"\x11pwdUpdateRequired\x18\x06 \x01(\bR\x11pwdUpdateRequired\x12\x14\n" +
 	"\x05roles\x18\a \x03(\tR\x05roles\x12\x1a\n" +
 	"\busername\x18\b \x01(\tR\busernameB\b\n" +
 	"\x06_emailB\a\n" +
-	"\x05_nameB\x16\n" +
-	"\x14_pwd_expiration_date\"{\n" +
+	"\x05_nameB\x14\n" +
+	"\x12_pwdExpirationDate\"{\n" +
 	"\x15UserChangePasswordReq\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\"\n" +
 	"\fold_password\x18\x02 \x01(\tR\fold_password\x12\"\n" +
-	"\fnew_password\x18\x03 \x01(\tR\fnew_password2\x93\x05\n" +
+	"\fnew_password\x18\x03 \x01(\tR\fnew_password2\xe3\x04\n" +
 	"\x05Users\x124\n" +
 	"\tListUsers\x12\x16.google.protobuf.Empty\x1a\x0f.ceph.UsersResp\x12'\n" +
 	"\aGetUser\x12\x10.ceph.GetUserReq\x1a\n" +
-	".ceph.User\x129\n" +
+	".ceph.User\x12-\n" +
 	"\n" +
-	"CreateUser\x12\x13.ceph.CreateUserReq\x1a\x16.google.protobuf.Empty\x126\n" +
+	"CreateUser\x12\x13.ceph.CreateUserReq\x1a\n" +
+	".ceph.User\x126\n" +
 	"\n" +
-	"DeleteUser\x12\x10.ceph.GetUserReq\x1a\x16.google.protobuf.Empty\x129\n" +
+	"DeleteUser\x12\x10.ceph.GetUserReq\x1a\x16.google.protobuf.Empty\x12-\n" +
 	"\n" +
-	"UpdateUser\x12\x13.ceph.CreateUserReq\x1a\x16.google.protobuf.Empty\x12I\n" +
+	"UpdateUser\x12\x13.ceph.CreateUserReq\x1a\n" +
+	".ceph.User\x12I\n" +
 	"\x12UserChangePassword\x12\x1b.ceph.UserChangePasswordReq\x1a\x16.google.protobuf.Empty\x124\n" +
 	"\tListRoles\x12\x16.google.protobuf.Empty\x1a\x0f.ceph.RolesResp\x12'\n" +
 	"\aGetRole\x12\x10.ceph.GetRoleReq\x1a\n" +
-	".ceph.Role\x120\n" +
+	".ceph.Role\x12$\n" +
 	"\n" +
 	"CreateRole\x12\n" +
-	".ceph.Role\x1a\x16.google.protobuf.Empty\x126\n" +
+	".ceph.Role\x1a\n" +
+	".ceph.Role\x126\n" +
 	"\n" +
-	"DeleteRole\x12\x10.ceph.GetRoleReq\x1a\x16.google.protobuf.Empty\x120\n" +
+	"DeleteRole\x12\x10.ceph.GetRoleReq\x1a\x16.google.protobuf.Empty\x12$\n" +
 	"\n" +
 	"UpdateRole\x12\n" +
-	".ceph.Role\x1a\x16.google.protobuf.Empty\x127\n" +
+	".ceph.Role\x1a\n" +
+	".ceph.Role\x127\n" +
 	"\tCloneRole\x12\x12.ceph.CloneRoleReq\x1a\x16.google.protobuf.EmptyB'Z%github.com/clyso/ceph-api/api/ceph;pbb\x06proto3"
 
 var (
@@ -694,9 +699,9 @@ var file_users_proto_depIdxs = []int32{
 	1,  // 0: ceph.RolesResp.roles:type_name -> ceph.Role
 	9,  // 1: ceph.Role.scopes_permissions:type_name -> ceph.Role.ScopesPermissionsEntry
 	5,  // 2: ceph.UsersResp.users:type_name -> ceph.User
-	10, // 3: ceph.User.last_update:type_name -> google.protobuf.Timestamp
-	10, // 4: ceph.User.pwd_expiration_date:type_name -> google.protobuf.Timestamp
-	10, // 5: ceph.CreateUserReq.pwd_expiration_date:type_name -> google.protobuf.Timestamp
+	10, // 3: ceph.User.lastUpdate:type_name -> google.protobuf.Timestamp
+	10, // 4: ceph.User.pwdExpirationDate:type_name -> google.protobuf.Timestamp
+	10, // 5: ceph.CreateUserReq.pwdExpirationDate:type_name -> google.protobuf.Timestamp
 	11, // 6: ceph.Role.ScopesPermissionsEntry.value:type_name -> google.protobuf.ListValue
 	12, // 7: ceph.Users.ListUsers:input_type -> google.protobuf.Empty
 	6,  // 8: ceph.Users.GetUser:input_type -> ceph.GetUserReq
@@ -712,15 +717,15 @@ var file_users_proto_depIdxs = []int32{
 	3,  // 18: ceph.Users.CloneRole:input_type -> ceph.CloneRoleReq
 	4,  // 19: ceph.Users.ListUsers:output_type -> ceph.UsersResp
 	5,  // 20: ceph.Users.GetUser:output_type -> ceph.User
-	12, // 21: ceph.Users.CreateUser:output_type -> google.protobuf.Empty
+	5,  // 21: ceph.Users.CreateUser:output_type -> ceph.User
 	12, // 22: ceph.Users.DeleteUser:output_type -> google.protobuf.Empty
-	12, // 23: ceph.Users.UpdateUser:output_type -> google.protobuf.Empty
+	5,  // 23: ceph.Users.UpdateUser:output_type -> ceph.User
 	12, // 24: ceph.Users.UserChangePassword:output_type -> google.protobuf.Empty
 	0,  // 25: ceph.Users.ListRoles:output_type -> ceph.RolesResp
 	1,  // 26: ceph.Users.GetRole:output_type -> ceph.Role
-	12, // 27: ceph.Users.CreateRole:output_type -> google.protobuf.Empty
+	1,  // 27: ceph.Users.CreateRole:output_type -> ceph.Role
 	12, // 28: ceph.Users.DeleteRole:output_type -> google.protobuf.Empty
-	12, // 29: ceph.Users.UpdateRole:output_type -> google.protobuf.Empty
+	1,  // 29: ceph.Users.UpdateRole:output_type -> ceph.Role
 	12, // 30: ceph.Users.CloneRole:output_type -> google.protobuf.Empty
 	19, // [19:31] is the sub-list for method output_type
 	7,  // [7:19] is the sub-list for method input_type

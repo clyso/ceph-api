@@ -29,7 +29,9 @@ func TestCompare_ScalarDiffers(t *testing.T) {
 }
 
 func TestCompare_TypeMismatch(t *testing.T) {
-	d := Compare(jsonAny(t, `1`), jsonAny(t, `"1"`), nil)
+	// Pick a string that doesn't parse as int or RFC3339 so the matcher
+	// can't coerce it to the numeric side.
+	d := Compare(jsonAny(t, `1`), jsonAny(t, `"hello"`), nil)
 	if len(d) != 1 || d[0].Kind != "type" {
 		t.Fatalf("expected type diff, got %v", d)
 	}
@@ -45,6 +47,57 @@ func TestCompare_MissingAndExtraKeys(t *testing.T) {
 	}
 	if kinds["missing"] != 1 || kinds["extra"] != 1 {
 		t.Fatalf("want 1 missing + 1 extra, got %v (%v)", kinds, d)
+	}
+}
+
+func TestCompare_TimestampStringEqualsUnixSeconds(t *testing.T) {
+	// protojson emits Timestamp as RFC3339; dashboard emits the same instant
+	// as a unix-seconds integer. Matcher should treat them as equivalent.
+	exp := jsonAny(t, `{"lastUpdate": 1700000000}`)
+	act := jsonAny(t, `{"lastUpdate": "2023-11-14T22:13:20Z"}`)
+	if d := Compare(exp, act, nil); len(d) != 0 {
+		t.Fatalf("expected RFC3339-vs-unix coercion to match, got %v", d)
+	}
+	// Within the skew tolerance — CRUD endpoints record sequentially so the
+	// two timestamps can disagree by the inter-call gap.
+	exp = jsonAny(t, `{"lastUpdate": 1700000000}`)
+	act = jsonAny(t, `{"lastUpdate": "2023-11-14T22:13:23Z"}`)
+	if d := Compare(exp, act, nil); len(d) != 0 {
+		t.Fatalf("expected 3-second skew to be within tolerance, got %v", d)
+	}
+	// Outside the tolerance → real value diff.
+	exp = jsonAny(t, `{"lastUpdate": 1700000000}`)
+	act = jsonAny(t, `{"lastUpdate": "2023-11-14T22:15:00Z"}`)
+	d := Compare(exp, act, nil)
+	if len(d) != 1 || d[0].Kind != "value" {
+		t.Fatalf("expected one value diff outside tolerance, got %v", d)
+	}
+}
+
+func TestCompare_Int64AsStringEqualsInt(t *testing.T) {
+	// protojson encodes int64 as a JSON string; if a future endpoint mixes
+	// int64 with a dashboard plain-number response, the matcher should treat
+	// them as equivalent so the proto stays well-typed.
+	exp := jsonAny(t, `{"rule_id": 7}`)
+	act := jsonAny(t, `{"rule_id": "7"}`)
+	if d := Compare(exp, act, nil); len(d) != 0 {
+		t.Fatalf("expected int-vs-int64-string coercion to match, got %v", d)
+	}
+	// Different integer values: matcher must still report a diff.
+	exp = jsonAny(t, `{"rule_id": 7}`)
+	act = jsonAny(t, `{"rule_id": "8"}`)
+	d := Compare(exp, act, nil)
+	if len(d) != 1 || d[0].Kind != "value" {
+		t.Fatalf("expected one value diff on differing ints, got %v", d)
+	}
+}
+
+func TestCompare_NullEqualsAbsent(t *testing.T) {
+	if d := Compare(jsonAny(t, `{"a":1}`), jsonAny(t, `{"a":1,"b":null}`), nil); len(d) != 0 {
+		t.Errorf("null on actual should not diff vs absent on expected, got %v", d)
+	}
+	if d := Compare(jsonAny(t, `{"a":1,"b":null}`), jsonAny(t, `{"a":1}`), nil); len(d) != 0 {
+		t.Errorf("null on expected should not diff vs absent on actual, got %v", d)
 	}
 }
 

@@ -7,7 +7,14 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
+
+// timestampSkewTolerance bounds the wall-clock difference between the two
+// recorded RFC3339-vs-unix-seconds samples. The recorder hits dashboard
+// then ours sequentially, so a CRUD response's `lastUpdate` can disagree
+// by the inter-call gap. Generous on slow CI.
+const timestampSkewTolerance = 5 * time.Second
 
 // Ignore declares a JSONPath that the diff walker should skip, with a
 // mandatory reason so the divergence catalogue stays audit-readable.
@@ -68,6 +75,18 @@ func walk(path []string, expected, actual any, patterns [][]string) []Diff {
 		return walkArray(path, e, a, patterns)
 	default:
 		if reflect.TypeOf(expected) != reflect.TypeOf(actual) {
+			// Two well-known proto-vs-dashboard JSON-shape divergences are
+			// suppressed inline rather than per-endpoint:
+			//   - google.protobuf.Timestamp ↔ unix-seconds integer
+			//   - protojson int64-as-string ↔ JSON integer
+			// Keeps api_diff.yaml from being polluted with the same boilerplate
+			// every time we expose a typed proto field. See CLAUDE.md.
+			if matched, applied := coerceEqual(expected, actual); applied {
+				if matched {
+					return nil
+				}
+				return []Diff{{Path: pathStr(path), Kind: "value", Expected: expected, Actual: actual}}
+			}
 			return typeDiff(path, expected, actual)
 		}
 		if !scalarEqual(expected, actual) {
@@ -75,6 +94,46 @@ func walk(path []string, expected, actual any, patterns [][]string) []Diff {
 		}
 		return nil
 	}
+}
+
+// coerceEqual lets the diff matcher treat protojson's idiomatic scalar
+// encodings as equivalent to the dashboard's plain-JSON encoding:
+//   - RFC3339 timestamp string ↔ unix-seconds JSON number (matches when
+//     the wall-clock difference is within timestampSkewTolerance).
+//   - int64-as-JSON-string ↔ JSON number (matches when the integer values
+//     are equal).
+//
+// `applied` is true when one side was a string the function recognised as
+// either form; only then is `matched` meaningful. If both sides have the
+// same kind, or the string isn't recognised, returns (false, false) and
+// the walker falls through to its normal type-diff behaviour.
+func coerceEqual(a, b any) (matched, applied bool) {
+	aStr, aIsStr := a.(string)
+	bStr, bIsStr := b.(string)
+	if aIsStr == bIsStr {
+		return false, false
+	}
+	str := aStr
+	other := b
+	if bIsStr {
+		str = bStr
+		other = a
+	}
+	num, ok := other.(float64)
+	if !ok {
+		return false, false
+	}
+	if t, err := time.Parse(time.RFC3339Nano, str); err == nil {
+		skew := time.Duration(int64(num)-t.Unix()) * time.Second
+		if skew < 0 {
+			skew = -skew
+		}
+		return skew <= timestampSkewTolerance, true
+	}
+	if i, err := strconv.ParseInt(str, 10, 64); err == nil {
+		return float64(i) == num, true
+	}
+	return false, false
 }
 
 func walkMap(path []string, expected, actual map[string]any, patterns [][]string) []Diff {
@@ -88,11 +147,21 @@ func walkMap(path []string, expected, actual map[string]any, patterns [][]string
 		case eok && aok:
 			diffs = append(diffs, walk(sub, ev, av, patterns)...)
 		case !aok:
+			// protojson with EmitUnpopulated emits unset proto3 optional
+			// fields as null; the dashboard's hand-rolled JSON usually
+			// omits them. Treat null on one side and absent on the other
+			// as equivalent so the matcher doesn't false-positive on that.
+			if ev == nil {
+				continue
+			}
 			if matchesAny(sub, patterns) {
 				continue
 			}
 			diffs = append(diffs, Diff{Path: pathStr(sub), Kind: "missing", Expected: ev})
 		case !eok:
+			if av == nil {
+				continue
+			}
 			if matchesAny(sub, patterns) {
 				continue
 			}
