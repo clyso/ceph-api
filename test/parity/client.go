@@ -83,7 +83,9 @@ func (c *Client) Do(ctx context.Context, method, path, accept string, body io.Re
 			req.Header.Add(k, v)
 		}
 	}
-	req.Header.Set("Authorization", "Bearer "+c.Token)
+	if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	}
 	if accept != "" {
 		req.Header.Set("Accept", accept)
 	}

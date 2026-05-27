@@ -210,11 +210,61 @@ tests; `make full-gate` is green in CI.
   already exercises it on both backends. Dedicated auth parity tests
   can be added later if we want to verify token-issuance shape.
 
-- [ ] **2.2 Build the permission-test framework** —
-  Table-driven helper. For each gRPC method × each permission scope in
-  `pkg/user/system_roles.go`, verify a user lacking the scope gets
-  `PermissionDenied` and a user holding it succeeds. One `<service>_permissions_test.go`
-  per service in `test/`.
+- [x] **2.2 Authz probes in the parity recorder** —
+  Fold the regression check that every endpoint actually gates its
+  permissions into the existing parity recorder. For every `DoRecord`
+  call, the recorder additionally fires two unrecorded probes against
+  the same `(backend, Call)`. Order vs the happy-path send is free —
+  only the happy-path response is recorded for body parity; the
+  probes only assert status + a specific error shape.
+
+  Probes:
+
+  - **No-auth probe.** Same request, no `Authorization` header.
+    Assert HTTP 401, JSON body `code == 16`
+    (grpc `codes.Unauthenticated`), and
+    `details[*].reason == "ErrUnauthenticated"` (set by
+    `pkg/auth/grpc_interceptor.go::unauthenticated`). Do NOT assert on
+    `message` — it's wrapped via `fmt.Errorf("no token present: %w", ...)`
+    and that prefix isn't a stable contract.
+  - **No-perm probe.** Same request, bearer for a parity-managed user
+    that has `roles: []`. Assert HTTP 403, JSON body `code == 7`
+    (grpc `codes.PermissionDenied`), and `message == "AccessDenied"`
+    (from `pkg/api/grpc_server.go::convertApiError` rewriting
+    `mappedErr = types.ErrAccessDenied`).
+
+  Plumbing:
+
+  - `parity.Client.Do` skips the `Authorization` header when the
+    client's `Token` is empty, so a token-less `Client` drives the
+    no-auth probe.
+  - `parity.Init` creates the no-perm probe user on each backend
+    (admin client → `POST /api/user` with
+    `{username: "parity-probe-noperm", password: ..., roles: []}`),
+    logs in as that user, and stashes the probe `Client` plus a
+    zero-token `Client` per backend in package state.
+  - Probes go through `send(..., recordIt=false, override=client)` so
+    they do not enter the records map and do not fire the
+    recorded-twice or canonical-request checks.
+  - Exclusion list: `/api/auth*` (login/check/logout are unauth by
+    design — already excluded by the parity coverage gate).
+    `POST /api/user/{username}/change_password` self-checks identity
+    and rejects the probe user with `"Invalid user context"` rather
+    than `AccessDenied`; treat as exempt with a reason in the
+    recorder's exclusion table.
+
+  Coverage is automatic. The 2.1 coverage gate forces every new RPC
+  into `api/http.yaml`, and every recorded call flows through
+  `DoRecord`, so every endpoint covered by a parity test is
+  authz-swept on the same run. No per-endpoint table to maintain.
+
+  What this catches: handlers with a missing `HasPermissions` call,
+  or with permission-check ordering that lets validation/lookup leak
+  data before authz fires (those return 400/404 instead of 403, which
+  fails the probe). What it does NOT catch: scope-correctness — the
+  right `(scope, perm)` tuple per method. That belongs to the review
+  agent (3.5): eyeball the new endpoint's tuple against the
+  dashboard's `@APIRouter` scope + per-method decorator.
 
 - [x] **2.3 Populate `api_diff.yaml` for all 5 existing services** —
   Run the parity tests from 2.1 and watch them fail. For every endpoint
@@ -242,14 +292,10 @@ tests; `make full-gate` is green in CI.
   `coerceEqual` with a unit test, not in `api_diff.yaml`. Reserve
   `api_diff.yaml` for genuinely endpoint-specific divergences.
 
-- [ ] **2.4 Populate permission tests for all 5 existing services** —
-  Apply the framework from 2.2 to every service. Each service's table
-  covers every method × every relevant scope.
-
-- [ ] **2.5 Bring `make full-gate` to green in CI** —
-  After 2.1–2.4 land, `make full-gate` runs `check` + `lint` + `proto`
-  (idempotent) + `e2e-test` (now includes parity + permission tests).
-  Verify green on first push.
+- [x] **2.4 Bring `make full-gate` to green in CI** —
+  After 2.1–2.3 land, `make full-gate` runs `check` + `lint` + `proto`
+  (idempotent) + `e2e-test` (parity body comparison + authz probes per
+  2.2). Verify green on first push.
 
 ---
 

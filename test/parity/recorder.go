@@ -66,8 +66,10 @@ var (
 		ready   bool
 		dash    *Client
 		ours    *Client
-		routes  *RouteSet // routes from api/http.yaml (ours)
-		dashRts *RouteSet // routes from dashboard openapi.yaml
+		noAuth  *Client
+		noPerm  *Client
+		routes  *RouteSet // from api/http.yaml
+		dashRts *RouteSet // from dashboard openapi.yaml
 		ignores map[string][]Ignore
 	}
 
@@ -75,10 +77,10 @@ var (
 	coverage   = map[string]bool{}
 )
 
-// Init wires the package's two backend clients and loads
-// api/http.yaml + api_diff.yaml + the dashboard openapi.yaml. Call
-// once from runSetup after the parity clients have logged in.
-func Init(dash, ours *Client, httpYAMLPath, dashboardSwaggerPath, apiDiffPath string) error {
+// Init must be called once from runSetup after dash and ours have
+// logged in. loginAccept is the versioned media type required by the
+// dashboard's /api/auth and /api/user.
+func Init(ctx context.Context, dash, ours *Client, loginAccept, httpYAMLPath, dashboardSwaggerPath, apiDiffPath string) error {
 	routes, err := LoadHTTPRoutes(httpYAMLPath)
 	if err != nil {
 		return fmt.Errorf("load http.yaml: %w", err)
@@ -91,10 +93,16 @@ func Init(dash, ours *Client, httpYAMLPath, dashboardSwaggerPath, apiDiffPath st
 	if err != nil {
 		return fmt.Errorf("load %s: %w", apiDiffPath, err)
 	}
+	noPerm, noAuth, err := bootstrapProbeClients(ctx, dash, ours, loginAccept)
+	if err != nil {
+		return fmt.Errorf("bootstrap authz probes: %w", err)
+	}
 	state.mu.Lock()
 	defer state.mu.Unlock()
 	state.dash = dash
 	state.ours = ours
+	state.noAuth = noAuth
+	state.noPerm = noPerm
 	state.routes = NewRouteSet(routes)
 	state.dashRts = NewRouteSet(dashRoutes)
 	state.ignores = diff
@@ -214,7 +222,11 @@ func (r *Recorder) Do(b Backend, c Call) (*http.Response, []byte) {
 // same endpoint id.
 func (r *Recorder) DoRecord(b Backend, c Call) (*http.Response, []byte) {
 	r.t.Helper()
-	return r.send(b, c, true, nil)
+	resp, body := r.send(b, c, true, nil)
+	if b == Ours {
+		r.runAuthzProbes(c)
+	}
+	return resp, body
 }
 
 // DoRecordAs is like DoRecord but uses the given client instead of the
@@ -222,7 +234,11 @@ func (r *Recorder) DoRecord(b Backend, c Call) (*http.Response, []byte) {
 // require a non-admin identity (e.g. self-change_password).
 func (r *Recorder) DoRecordAs(b Backend, c Call, client *Client) (*http.Response, []byte) {
 	r.t.Helper()
-	return r.send(b, c, true, client)
+	resp, body := r.send(b, c, true, client)
+	if b == Ours {
+		r.runAuthzProbes(c)
+	}
+	return resp, body
 }
 
 func (r *Recorder) send(b Backend, c Call, recordIt bool, override *Client) (*http.Response, []byte) {

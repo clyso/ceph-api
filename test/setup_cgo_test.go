@@ -165,7 +165,7 @@ func runSetup(m *testing.M) (int, error) {
 		return 1, fmt.Errorf("authenticate dashboard parity client: %w", err)
 	}
 
-	if err := parity.Init(parityDash, parityOurs, parityHTTPYAMLPath, parityDashboardYAML, parityAPIDiffPath); err != nil {
+	if err := parity.Init(tstCtx, parityDash, parityOurs, loginAccept, parityHTTPYAMLPath, parityDashboardYAML, parityAPIDiffPath); err != nil {
 		return 1, fmt.Errorf("parity.Init: %w", err)
 	}
 
