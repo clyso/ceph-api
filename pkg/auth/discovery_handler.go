@@ -21,11 +21,13 @@ type discoveryDocument struct {
 }
 
 type discoveryAuth struct {
-	Issuer         string   `json:"issuer"`
-	Audience       string   `json:"audience"`
-	TokenEndpoint  string   `json:"token_endpoint"`
-	RevokeEndpoint string   `json:"revoke_endpoint"`
-	Modes          []string `json:"modes"`
+	Issuer             string   `json:"issuer"`
+	Audience           string   `json:"audience"`
+	TokenEndpoint      string   `json:"token_endpoint"`
+	RevokeEndpoint     string   `json:"revoke_endpoint"`
+	Modes              []string `json:"modes"`
+	APIKeyPrefix       string   `json:"api_key_prefix,omitempty"`
+	APIKeyHeaderFormat string   `json:"api_key_header_format,omitempty"`
 }
 
 type jwksDocument struct {
@@ -42,14 +44,22 @@ type jwk struct {
 }
 
 func (s *Server) DiscoveryEndpoint(w http.ResponseWriter, r *http.Request) {
+	modes := []string{"password"}
+	auth := discoveryAuth{
+		Issuer:         s.issuer,
+		Audience:       s.clientID,
+		TokenEndpoint:  tokenEndpoint,
+		RevokeEndpoint: revokeEndpoint,
+		Modes:          modes,
+	}
+	if s.apiKeyStore != nil {
+		modes = append(modes, "api_key")
+		auth.Modes = modes
+		auth.APIKeyPrefix = apiKeyTokenPrefix
+		auth.APIKeyHeaderFormat = "Authorization: Bearer capi_v1_<key_id>.<secret>"
+	}
 	writeJSON(w, discoveryDocument{
-		Auth: discoveryAuth{
-			Issuer:         s.issuer,
-			Audience:       s.clientID,
-			TokenEndpoint:  tokenEndpoint,
-			RevokeEndpoint: revokeEndpoint,
-			Modes:          []string{"password"},
-		},
+		Auth:    auth,
 		JWKSURI: jwksURI,
 	})
 }

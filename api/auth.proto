@@ -14,6 +14,10 @@ service Auth {
     rpc Logout(google.protobuf.Empty) returns(google.protobuf.Empty);
     rpc Check(TokenCheckReq)returns(TokenCheckResp);
     rpc Whoami(google.protobuf.Empty) returns(WhoamiResp);
+    rpc CreateAPIKey(CreateAPIKeyReq) returns(CreateAPIKeyResp);
+    rpc ListAPIKeys(google.protobuf.Empty) returns(ListAPIKeysResp);
+    rpc GetAPIKey(GetAPIKeyReq) returns(APIKeyResp);
+    rpc RevokeAPIKey(RevokeAPIKeyReq) returns(google.protobuf.Empty);
 }
 
 message LoginReq{
@@ -48,6 +52,44 @@ message WhoamiResp{
     string api_key_id =3;
     repeated string roles =4;
     map<string,google.protobuf.ListValue> permissions=5 ;
+}
+
+message CreateAPIKeyReq{
+    string name =1;
+    string description =2;
+    optional google.protobuf.Timestamp expires_at =3;
+    repeated string scopes =4;
+}
+
+message CreateAPIKeyResp{
+    APIKeyResp key =1;
+    string token =2;
+}
+
+message ListAPIKeysResp{
+    repeated APIKeyResp keys =1;
+}
+
+message GetAPIKeyReq{
+    string key_id =1;
+}
+
+message RevokeAPIKeyReq{
+    string key_id =1;
+}
+
+message APIKeyResp{
+    string id =1;
+    string name =2;
+    string description =3;
+    string cluster_id =4;
+    bool enabled =5;
+    optional google.protobuf.Timestamp revoked_at =6;
+    optional google.protobuf.Timestamp created_at =7;
+    string created_by =8;
+    optional google.protobuf.Timestamp expires_at =9;
+    optional google.protobuf.Timestamp last_used_at =10;
+    repeated string scopes =11;
 }
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {

@@ -100,8 +100,9 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 	if err != nil {
 		return fmt.Errorf("load OAuth global secret: %w", err)
 	}
+	apiKeyStore := auth.NewAPIKeyStore(radosSvc)
 
-	authServer, err := auth.NewServer(conf.Auth, userSvc, signingKey, signingKID, globalSecret)
+	authServer, err := auth.NewServer(conf.Auth, userSvc, signingKey, signingKID, apiKeyStore, globalSecret)
 	if err != nil {
 		return err
 	}
@@ -113,7 +114,7 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 
 	statusAPI := api.NewStatusAPI(radosSvc)
 
-	authChecker := auth.AuthFunc(userSvc, authServer.Provider(), authServer.GetPublicKey)
+	authChecker := auth.AuthFunc(userSvc, authServer.Provider(), authServer.GetPublicKey, apiKeyStore)
 	grpcServer := api.NewGrpcServer(conf.Api, clusterAPI, usersAPI, authAPI, crushRuleAPI, statusAPI, authChecker, tp, conf.Log)
 
 	var metricsHandler http.HandlerFunc

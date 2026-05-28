@@ -21,7 +21,7 @@ func (s *Server) Login(ctx context.Context, username, password string) (*LoginRe
 		"password":   {password},
 		"client_id":  {s.clientID},
 	}
-	req, err := http.NewRequest("POST", "http://localhost:80/api/auth", strings.NewReader(v.Encode()))
+	req, err := http.NewRequest("POST", "http://localhost:80"+tokenEndpoint, strings.NewReader(v.Encode()))
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (s *Server) Logout(ctx context.Context) error {
 		"token":           []string{token},
 		"token_type_hint": []string{"access_token"},
 	}
-	req, err := http.NewRequest("POST", "http://localhost:80/api/auth", strings.NewReader(v.Encode()))
+	req, err := http.NewRequest("POST", "http://localhost:80"+revokeEndpoint, strings.NewReader(v.Encode()))
 	if err != nil {
 		return err
 	}

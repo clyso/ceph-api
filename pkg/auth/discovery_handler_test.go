@@ -45,6 +45,32 @@ func TestDiscoveryEndpoint(t *testing.T) {
 	if len(doc.Auth.Modes) != 1 || doc.Auth.Modes[0] != "password" {
 		t.Fatalf("modes = %v", doc.Auth.Modes)
 	}
+	if doc.Auth.APIKeyPrefix != "" || doc.Auth.APIKeyHeaderFormat != "" {
+		t.Fatalf("api key fields = %q %q, want empty without API-key store", doc.Auth.APIKeyPrefix, doc.Auth.APIKeyHeaderFormat)
+	}
+}
+
+func TestDiscoveryEndpointAdvertisesAPIKeyFormat(t *testing.T) {
+	server := newTestServer(t)
+	server.apiKeyStore = NewAPIKeyStore(newFakeMonCommander())
+	recorder := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/.well-known/ceph-api", nil)
+
+	server.DiscoveryEndpoint(recorder, req)
+
+	var doc discoveryDocument
+	if err := json.Unmarshal(recorder.Body.Bytes(), &doc); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(doc.Auth.Modes) != 2 || doc.Auth.Modes[0] != "password" || doc.Auth.Modes[1] != "api_key" {
+		t.Fatalf("modes = %v", doc.Auth.Modes)
+	}
+	if doc.Auth.APIKeyPrefix != apiKeyTokenPrefix {
+		t.Fatalf("api key prefix = %q, want %q", doc.Auth.APIKeyPrefix, apiKeyTokenPrefix)
+	}
+	if doc.Auth.APIKeyHeaderFormat != "Authorization: Bearer capi_v1_<key_id>.<secret>" {
+		t.Fatalf("api key header format = %q", doc.Auth.APIKeyHeaderFormat)
+	}
 }
 
 func TestJWKSEndpoint(t *testing.T) {
@@ -94,7 +120,7 @@ func newTestServer(t *testing.T) *Server {
 		t.Fatalf("compute kid: %v", err)
 	}
 	globalSecret := []byte("0123456789abcdef0123456789abcdef")
-	server, err := NewServer(Config{ClientID: "ceph-api", Issuer: "http://issuer.example"}, nil, priv, kid, globalSecret)
+	server, err := NewServer(Config{ClientID: "ceph-api", Issuer: "http://issuer.example"}, nil, priv, kid, nil, globalSecret)
 	if err != nil {
 		t.Fatalf("NewServer() error = %v", err)
 	}

@@ -119,7 +119,7 @@ Each API user can have `READ`, `CREATE`, `UPDATE`, `DELETE` permission to Ceph r
 
 API authenticaiton usage can be found in [test/auth_test.go](./test/auth_test.go). But in general, client authentication can be handled by any client http/gRPC library supporting OAuth2.0.
 
-There is alternative auth API under `/api/auth` path (see [open api](./api/openapi/ceph-api.swagger.json)). This API is **not** implementing OAuth spec and exists for backwards compatibility with old Ceph API. This old api also does not have refresh token feature.
+There is alternative auth API under `/api/v1/auth/login`, `/api/v1/auth/logout`, and `/api/v1/auth/check` (see [open api](./api/openapi/ceph-api.swagger.json)). This API is **not** implementing OAuth spec and exists for backwards compatibility with old Ceph API. This old api also does not have refresh token feature.
 
 ## Clients
 
@@ -180,6 +180,53 @@ Once the ceph-api is deployed, you can create a user and get an access token.
 curl -X POST -u "ceph-api:yoursecretpass" \
 -d "grant_type=password&username=admin&password=yoursecretpass" \
 http://localhost:9969/api/oauth/token
+```
+
+## API keys
+
+### Create a scoped API key
+
+using the built in CLI, you will need the API Access token from previous step
+```
+ceph-api auth api-key create \
+  --endpoint http://localhost:9969 \
+  --token "$CEPH_API_TOKEN" \
+  --name github-actions-config \
+  --description "CI key for GitOps config management" \
+  --scope config-opt:read \
+  --scope config-opt:create \
+  --scope config-opt:update \
+  --scope config-opt:delete
+```
+
+will return
+```
+capi_v1_ak_....<secret>
+```
+
+Via HTTP
+
+```
+curl -X POST http://localhost:9969/api/v1/auth/api-keys \
+  -H "Authorization: Bearer $CEPH_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "github-actions-config",
+    "description": "CI key for GitOps config management",
+    "scopes": [
+      "config-opt:read",
+      "config-opt:create",
+      "config-opt:update",
+      "config-opt:delete"
+    ]
+  }'
+```
+
+### Use the API Key
+
+```
+curl http://localhost:9969/api/v1/auth/whoami \
+  -H "Authorization: Bearer $CEPH_API_KEY"
 ```
 
 ## Test
