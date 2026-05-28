@@ -68,6 +68,9 @@ http:
     - selector: ceph.Auth.Check
       post: /api/auth/check
       body: "*"
+    - selector: ceph.Auth.Whoami
+      get: /api/v1/auth/whoami
+      response_body: "*"
     # CRUSH rules
     - selector: ceph.CrushRule.ListRules
       get: /api/crush_rule

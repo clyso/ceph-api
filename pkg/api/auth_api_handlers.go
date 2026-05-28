@@ -5,6 +5,7 @@ import (
 
 	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
 	"github.com/clyso/ceph-api/pkg/auth"
+	xctx "github.com/clyso/ceph-api/pkg/ctx"
 	"github.com/clyso/ceph-api/pkg/types"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -29,20 +30,13 @@ func (a *authAPI) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginResp, e
 	if err != nil {
 		return nil, err
 	}
-	permissions := make(map[string]*structpb.ListValue, len(res.Permissions))
-	for p, vals := range res.Permissions {
-		permissions[p] = &structpb.ListValue{}
-		for _, v := range vals {
-			permissions[p].Values = append(permissions[p].Values, structpb.NewStringValue(v))
-		}
-	}
 	return &pb.LoginResp{
 		Token:             res.Token,
 		Username:          res.User.Username,
 		PwdUpdateRequired: res.User.PwdUpdateRequired,
 		PwdExpirationDate: tsToPb(res.User.PwdExpirationDate),
 		Sso:               false,
-		Permissions:       permissions,
+		Permissions:       permissionsToPB(res.Permissions),
 	}, nil
 }
 
@@ -52,4 +46,30 @@ func (a *authAPI) Logout(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty,
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil
+}
+
+func (a *authAPI) Whoami(ctx context.Context, _ *emptypb.Empty) (*pb.WhoamiResp, error) {
+	username := xctx.GetUsername(ctx)
+	if username == "" {
+		return nil, types.ErrUnauthenticated
+	}
+
+	return &pb.WhoamiResp{
+		Subject:     username,
+		AuthType:    xctx.GetAuthType(ctx),
+		ApiKeyId:    xctx.GetAPIKeyID(ctx),
+		Roles:       xctx.GetRoles(ctx),
+		Permissions: permissionsToPB(xctx.GetPermissions(ctx)),
+	}, nil
+}
+
+func permissionsToPB(in map[string][]string) map[string]*structpb.ListValue {
+	permissions := make(map[string]*structpb.ListValue, len(in))
+	for p, vals := range in {
+		permissions[p] = &structpb.ListValue{}
+		for _, v := range vals {
+			permissions[p].Values = append(permissions[p].Values, structpb.NewStringValue(v))
+		}
+	}
+	return permissions
 }
