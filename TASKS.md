@@ -27,16 +27,6 @@ suggested execution sequence.
   git -C third_party/ceph describe   # v19.2.3
   ```
 
-## Open decisions (resolve before the phase that needs them)
-
-- **Phase 3.4** — should the impl-agent checklist require updating
-  `pkg/rados/mock-data/`? Earlier in the design we said "no, mock-data
-  routinely lags real Ceph and parity tests catch wire-format bugs".
-  Later "checklist with mock update" was raised. Pick one before
-  finalising the agent.
-
----
-
 ## Phase 1 — make/CI green
 
 Phase exit criterion: `make full-gate` exits 0 locally and CI's `test` job
@@ -347,8 +337,11 @@ pipeline to merge.
   8. Parity entry in `test/parity/parity.yaml`.
   9. `make check`, `make e2e-test`.
 
-  **Blocked on the open decision above** — does the checklist include a
-  step to update `pkg/rados/mock-data/`?
+  **`pkg/rados/mock-data/` is out of scope for the impl agent.** Mocks
+  are offline-dev convenience, not contract; parity-against-real-Ceph
+  is the wire-format truth. Auto-capturing recordings into mock-data
+  was considered and rejected — see CLAUDE.md "Mock mode is offline-dev
+  convenience, not contract."
 
 - [ ] **3.5 Build the review agent** —
   Light review. Verify: required tests exist (e2e + permission + parity),
