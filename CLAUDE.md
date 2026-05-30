@@ -1,144 +1,130 @@
 # CLAUDE.md
 
-ceph-api is a Go service exposing REST + gRPC APIs for administrating a
-Ceph cluster, as an alternative to the Ceph mgr RESTful module. It
-connects to a Ceph cluster over RADOS via `github.com/ceph/go-ceph`, so
-it can run anywhere with mon reachability.
+ceph-api is a Go service exposing REST + gRPC APIs to administrate a Ceph
+cluster, as an alternative to the Ceph mgr RESTful module. It connects to
+Ceph over RADOS via `github.com/ceph/go-ceph`, so it runs anywhere with
+mon reachability.
 
-## Where to find what
+## The porting workflow
 
-- **Build, run, test, lint:** `make help` is canonical — don't memorise
-  targets. Real-RADOS build needs `CGO_ENABLED=1` plus Ceph dev libs
-  (`librados`, `librbd`, `libcephfs`); macOS dev uses the Lima VM in
-  `lima-ceph-dev.yaml`. Mock mode (`CGO_ENABLED=0`) needs no Ceph.
-- **Upstream Ceph source + docs** (dashboard, `restful`, mon/mgr command
-  tables, RADOS surface, architecture docs, cross-release diffs, live
-  probing recipes): `.claude/skills/ceph-src/` —
-  [`SKILL.md`](./.claude/skills/ceph-src/SKILL.md) for source paths,
-  [`verify.md`](./.claude/skills/ceph-src/verify.md) for probing a
-  running dashboard. **Never derive Ceph behavior from training data
-  — read the submodule.**
-- **API source of truth:** `api/*.proto` + `api/http.yaml`. Regenerate
-  stubs and OpenAPI via `make proto`.
-- **Composition root:** `pkg/app/start.go` builds the dependency graph.
+Use these files when porting new endpoint from ceph mgr module:
+- `.claude/port-endpoint/anatomy.md` — how an endpoint maps onto
+  every layer + the porting checklist.
+- `.claude/port-endpoint/permissions.md` — dashboard → Go
+  permission mapping.
+- `test/parity/README.md` — fix/implement parity test from `make full-gate`
+- The **`ceph-src` skill** — the only source of Ceph facts. **Never
+  derive Ceph behavior from training data — read the pinned submodule.**
+
+## Build, test, gates
+
+`make help` lists targets. Key ones:
+- `make proto` — regenerate gRPC stubs + OpenAPI after any `.proto` /
+  `http.yaml` edit (runs `buf generate`).
+- `make gate` — fmt + vet + unit tests + lint. Fast, no Ceph
+  (`CGO_ENABLED=0`).
+- `make full-gate` — `gate` + `make e2e-test` (the e2e suite in a Docker
+  container with librados/librbd/libcephfs, against real Ceph from
+  `testenv.CephEnv`). The full pre-commit check; needs only Go + Docker.
+
+The real-RADOS build needs `CGO_ENABLED=1` + Ceph dev libs. For portable development, run tests in a container with all libs against a real ceph testcontainer with `-tid`.
+Only Go and Docker are needed for development and build/run/test against real ceph on ANY machine.
+**API source of truth:** `api/*.proto` + `api/http.yaml`. **Composition root:** `pkg/app/start.go`.
+
+Tests: unit tests sit next to code (`pkg/**/*_test.go`) - simple checks with no CGO; e2e tests in
+`test/` boot the full `app.Start` in-process against real Ceph. Use
+`r := require.New(t)`; table-driven for validation; script-like `t.Run`
+flows for integration. `TestMain` cleanup: `defer` does not run with
+`os.Exit` — use `exitCode := m.Run(); cleanup(); os.Exit(exitCode)`.
 
 ## Build-tag pair: cgo vs !cgo
 
-Files in `pkg/app/`, `pkg/rados/`, and `pkg/types/` come in `cgo` /
-`!cgo` pairs. Under `CGO_ENABLED=1` the real go-ceph connection
-(`production_conn.go`) compiles in; under `CGO_ENABLED=0` the mock
-(`rados_mock.go`) returns canned JSON from `pkg/rados/mock-data/`. When
-adding behavior that touches the RADOS connection, mirror it in both
-files.
-
-`mock-data/` is offline-dev convenience, not contract. New endpoint
-work is validated by `make e2e-test` against a real cluster started by
-`test/testenv/CephEnv`; updating `mock-data/` is **not** required.
-
-The same pair pattern shows up in `test/`: `main_test.go` (no tag),
-`setup_cgo_test.go` / `setup_nocgo_test.go`, and every other
-`*_test.go` in `test/` carries `//go:build cgo`.
+Files in `pkg/app/`, `pkg/rados/`, `pkg/types/` come in `cgo` / `!cgo`
+pairs. `CGO_ENABLED=1` compiles the real go-ceph connection
+(`production_conn.go`); `CGO_ENABLED=0` uses the mock (`rados_mock.go`)
+returning canned JSON from `pkg/rados/mock-data/`. Mirror new RADOS-touch
+behavior in both. `mock-data/` is offline-dev convenience, **not
+contract** — endpoint correctness is proven by `make e2e-test`, so
+updating it is not required. The same pattern is in `test/`:
+`setup_cgo_test.go` / `setup_nocgo_test.go`, and every `test/*_test.go`
+carries `//go:build cgo`.
 
 ## Architecture in one paragraph
 
 Single binary, single port (`:9969` default). gRPC and HTTP share one
 listener via `soheilhy/cmux`; the HTTP side is grpc-gateway translating
 REST → gRPC plus hand-mounted OAuth handlers. All Ceph interactions go
-through `rados.Svc`'s three primitives: `ExecMon`,
-`ExecMonWithInputBuff`, `ExecMgr` — higher-level packages
-(`pkg/api/`, `pkg/cephconfig/`, `pkg/user/`) construct JSON commands
-and parse JSON responses. Auth is OAuth 2.0 (`ory/fosite`); persistent
-state (users, OAuth clients, tokens) lives in Ceph via rados commands
-or the config-key store — no external DB. Permission model mirrors
-upstream Ceph: a fixed set of scopes/permissions in
-`pkg/user/system_roles.go`. Don't invent new scopes.
-
-## Code style
-
-- **Private by default.** Funcs, structs, vars, and consts are
-  unexported unless used outside the package.
-- **Interface naming:** capitalized interface (`Service`), lowercase
-  impl (`service`), constructor returns the interface
-  (`func NewService(...) (Service, error)`).
-- **Minimize variable scope:** declare right before first use.
-
-## Tests
-
-Unit tests live next to the code they test (`pkg/**/*_test.go`); e2e
-tests live in `test/` and boot the full `app.Start` in-process against
-the real Ceph started by `testenv.CephEnv`. `make e2e-test` runs the
-e2e suite inside a Docker container that has librados/librbd/libcephfs.
-
-- `r := require.New(t)` for concise assertions.
-- Prefer table-driven tests for validation and parameterised cases.
-- Script-like `t.Run` subtests are good for flow/integration tests
-  (see `test/`).
-- Test fixtures as `const` when stable.
-- `TestMain` cleanup: `defer` does not run with `os.Exit`. Use
-  `exitCode := m.Run(); cleanup(); os.Exit(exitCode)`.
+through `rados.Svc`'s three primitives — `ExecMon`,
+`ExecMonWithInputBuff`, `ExecMgr` — and higher-level packages (`pkg/api/`,
+`pkg/cephconfig/`, `pkg/user/`) construct JSON commands and parse JSON
+responses. Auth is OAuth 2.0 (`ory/fosite`); persistent state lives in
+Ceph via rados commands or the config-key store — no external DB.
+Permission model mirrors upstream Ceph: a fixed set of scopes/permissions
+in `pkg/user/system_roles.go`. **Don't invent new scopes.** Authorization
+is per-handler (`user.HasPermissions` as the first statement) — there is
+no central guard, so a missing call = an unprotected endpoint.
 
 ## Errors
 
 Use shared sentinels from `pkg/types/errors.go` (`ErrNotFound`,
 `ErrAlreadyExists`, `ErrInvalidArg`, `ErrAccessDenied`,
 `ErrUnauthenticated`, `ErrInternal`, `ErrNotImplemented`,
-`ErrInvalidConfig`). Don't create package-local error variables when a
-shared one exists. Compare with `errors.Is`, never `==`. RADOS-specific
-sentinels live in the `cgo` / `!cgo` pair
-`pkg/types/ceph_errors.go` / `ceph_errors_mock.go`.
-
-Errors from Ceph come back as JSON in stdout plus a status string. See
-`rados.Svc.ExecMon` — non-empty `cmdStatus` is logged but doesn't itself
-fail the call; check the response JSON for actual errors.
+`ErrInvalidConfig`). Don't make package-local errors when a shared one
+exists. Compare with `errors.Is`, never `==`. Handlers return sentinels;
+the central `ErrorInterceptor` maps them to gRPC codes. RADOS-specific
+sentinels are in the `cgo`/`!cgo` pair `pkg/types/ceph_errors.go` /
+`ceph_errors_mock.go`. Ceph errors come back as JSON in stdout plus a
+status string — non-empty `cmdStatus` from `ExecMon` is logged but does
+not fail the call; check the response JSON for the real error.
 
 ## Parity vs API quality
 
-Dashboard parity tests in `test/parity/` exist to keep ceph-api a
-drop-in replacement for the dashboard's REST surface. They do **not**
-dictate the gRPC type system. When the two collide, pick the well-typed
-proto and absorb the wire-shape divergence in the matcher
-(`test/parity/diff.go`) — not by regressing the proto and not by adding
-repetitive per-endpoint ignores in `api_diff.yaml`.
+Parity tests (`test/parity/`) keep ceph-api a drop-in replacement for the
+dashboard's REST surface. They do **not** dictate the gRPC type system.
+When the two collide, keep the well-typed proto and absorb the wire-shape
+divergence in the matcher (`coerceEqual` in `test/parity/diff.go`) — not
+by regressing the proto, not by piling per-endpoint ignores in
+`api_diff.yaml`. The matcher already coerces, for free: RFC3339 ↔
+unix-seconds (within `timestampSkewTolerance`), int64-as-string ↔ number,
+and `null` ↔ absent. So use `google.protobuf.Timestamp` for time, `int64`
+where upstream C++ is 64-bit, and `json_name` for camelCase fields. New
+shape-class divergences go in `coerceEqual` with a `diff_test.go` test;
+reserve `api_diff.yaml` for genuinely endpoint-specific divergences. See
+`test/parity/README.md`.
 
-- Use `google.protobuf.Timestamp` for timestamps, not unix-seconds ints.
-  The matcher coerces RFC3339 ↔ unix-seconds within
-  `timestampSkewTolerance`.
-- Use `int64` when the upstream C++ type is 64-bit (verify in
-  `third_party/ceph/`). protojson serializes int64 as a JSON string and
-  the matcher coerces int64-as-string ↔ JSON number.
-- The matcher treats `null` on one side and absent on the other as
-  equivalent (protojson's `EmitUnpopulated` emits unset proto3-optional
-  fields as `null` while the dashboard's hand-rolled JSON omits them).
+## Code style
 
-New shape-class divergences belong in `coerceEqual` in
-`test/parity/diff.go` with a unit test, not in `api_diff.yaml`. Reserve
-`api_diff.yaml` for genuinely endpoint-specific divergences (a
-particular field that's deliberately different from the dashboard).
+- **Private by default.** Unexported unless used outside the package.
+- **Interface naming:** capitalized interface (`Service`), lowercase impl
+  (`service`), constructor returns the interface.
+- **Minimize scope:** declare variables right before first use.
 
 ## Comments
 
-Default to **zero comments**. Only keep one when removing it would
-leave a future reader unable to derive a non-obvious invariant,
-workaround, or external constraint. Before finishing any edit, re-scan
-every comment added; if you can't justify it under one of the three
-tests below, delete it.
+Default to **zero comments**. Keep one only when removing it would leave a
+reader unable to derive a non-obvious invariant, workaround, or external
+constraint. Re-scan every comment you add; if it fails all three keep-tests
+below, delete it.
 
-**Banned:**
-- History narration (`legacy`, `previously`, `used to`, `now uses`,
-  `added for X`).
-- Internal task/session references (`tracked as #123`, `see TASKS.md
-  2.1`, `Phase 2.3 summary`).
-- Foreign-project name-drops (`from cesto`, `matches chorus pattern`).
-- Restating well-named code or paraphrasing identifiers.
-- Doc comments that just restate the function signature.
+**Banned:** history narration (`legacy`, `previously`, `now uses`);
+internal task/session references (`tracked as #123`, `Phase 2.3`);
+foreign-project name-drops; restating well-named code; doc comments that
+restate the signature.
 
-**Keep if any of:**
-1. The WHY is non-obvious from reading the surrounding code.
-2. A future agent or human couldn't re-derive it without the comment.
-3. It describes an external constraint — library contract, protocol
-   quirk, framework artifact, regulatory requirement.
+**Keep if any of:** (1) the WHY is non-obvious from the surrounding code;
+(2) a future reader couldn't re-derive it; (3) it states an external
+constraint (library contract, protocol quirk, framework artifact).
 
-Examples that pass: `// fosite sets session.Subject via SetSubject
-after Authenticate`, `// grpc-gateway emits {} for Empty proto
-responses`, `//nolint:gosec // self-signed cert on localhost-only
-listener`.
+## Repo is self-contained
+
+Everything needed to work here lives in the repo: the Ceph source
+(`third_party/ceph` submodule), skills (`.claude/skills/`), and agents
+(`.claude/agents/`). Skills, agents, and docs must **not** reference paths
+outside this repo — anyone can clone and work.
+
+**Do not use the agent memory system in this project.** Memory lives
+per-machine in each user's home directory, so it's absent for other
+contributors. Persist anything
+durable to repo files instead: pipeline state in `tasks/`, conventions
+and agent instructions in `.claude/` and this file. Don't read from or
+write to memory here.
