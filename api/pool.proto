@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/clyso/ceph-api/api/ceph;pb";
+
+package ceph;
+
+service Pool {
+  rpc CreatePool (CreatePoolRequest) returns (google.protobuf.Empty) {}
+}
+
+// CREATE POOL
+message CreatePoolRequest {
+    string pool = 1;
+    int32 pg_num = 2;
+    string pool_type = 3;
+    optional string erasure_code_profile = 4;
+    optional string rule_name = 5;
+    optional string flags = 6;
+    repeated string application_metadata = 7;
+    optional int64 quota_max_bytes = 8;
+    optional int64 quota_max_objects = 9;
+    optional string pg_autoscale_mode = 10;
+    optional string compression_mode = 11;
+}

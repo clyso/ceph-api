@@ -23,6 +23,9 @@
       "name": "CrushRule"
     },
     {
+      "name": "Pool"
+    },
+    {
       "name": "Status"
     },
     {
@@ -567,6 +570,39 @@
         ],
         "tags": [
           "CrushRule"
+        ]
+      }
+    },
+    "/api/pool": {
+      "post": {
+        "operationId": "Pool_CreatePool",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cephCreatePoolRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Pool"
         ]
       }
     },
@@ -2433,6 +2469,51 @@
           "title": "keyring file format - if import_data is set then other fields ignored"
         }
       }
+    },
+    "cephCreatePoolRequest": {
+      "type": "object",
+      "properties": {
+        "pool": {
+          "type": "string"
+        },
+        "pg_num": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pool_type": {
+          "type": "string"
+        },
+        "erasure_code_profile": {
+          "type": "string"
+        },
+        "rule_name": {
+          "type": "string"
+        },
+        "flags": {
+          "type": "string"
+        },
+        "application_metadata": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "quota_max_bytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "quota_max_objects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "pg_autoscale_mode": {
+          "type": "string"
+        },
+        "compression_mode": {
+          "type": "string"
+        }
+      },
+      "title": "CREATE POOL"
     },
     "cephCreateRuleRequest": {
       "type": "object",

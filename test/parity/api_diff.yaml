@@ -19,3 +19,15 @@
 # divergences (RFC3339-vs-unix-seconds, int64-as-string-vs-int) so they
 # do not need per-endpoint ignores. See CLAUDE.md → "Parity vs API
 # quality" for the decision rule.
+
+"POST /api/pool":
+  - path: $
+    reason: >-
+      The dashboard wraps pool creation in an async task (@pool_task,
+      wait_for=2.0): when create+follow-ups finish within 2s it returns
+      201 with a null body, otherwise 202 with a task envelope
+      {"name":"pool/create","metadata":{"pool_name":<pool>}}. Which one
+      you get is timing-dependent. ceph-api is synchronous with no task
+      queue, so it always returns 201 with an empty body once every mon
+      command has completed. Both the status class (201 vs 202) and the
+      body (empty vs task envelope) therefore diverge irreconcilably.
