@@ -45,12 +45,7 @@ provision:
     sudo microceph cluster bootstrap
     sudo microceph disk add loop,4G,3
     sudo microceph enable rgw
-    sudo apt-get update && apt-get install -y golang-go gcc g++ librbd-dev librados-dev linux-headers-generic ceph-common protobuf-compiler
-    sudo GO111MODULE=on GOBIN=/usr/local/bin go install github.com/bufbuild/buf/cmd/buf@v1.29.0 
-    sudo GO111MODULE=on GOBIN=/usr/local/bin go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
-    sudo GO111MODULE=on GOBIN=/usr/local/bin go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
-    sudo GO111MODULE=on GOBIN=/usr/local/bin go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.19.1
-    sudo GO111MODULE=on GOBIN=/usr/local/bin go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@v2.19.1
+    sudo apt-get update && apt-get install -y golang-go gcc g++ librbd-dev librados-dev linux-headers-generic ceph-common
 - mode: user
   # Link git config from host machine
   script: |

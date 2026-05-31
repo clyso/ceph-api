@@ -14,14 +14,27 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func GRPCGateway(ctx context.Context, conf Config, metricsHandler http.HandlerFunc, oauthHandlers map[string]http.HandlerFunc) (http.Handler, error) {
-	mux := runtime.NewServeMux()
+	// UseProtoNames emits proto field names (snake_case) instead of the lowerCamelCase
+	// default, matching the Ceph dashboard wire format for drop-in parity.
+	mux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+			MarshalOptions: protojson.MarshalOptions{
+				UseProtoNames:   true,
+				EmitUnpopulated: true,
+			},
+			UnmarshalOptions: protojson.UnmarshalOptions{
+				DiscardUnknown: true,
+			},
+		}),
+	)
 	var opts []grpc.DialOption
 
 	if conf.Secure {
-		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: false}))) //nolint: gosec
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	} else {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}

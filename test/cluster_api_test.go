@@ -1,3 +1,5 @@
+//go:build cgo
+
 package test
 
 import (
@@ -44,7 +46,7 @@ func Test_ClusterUsers(t *testing.T) {
 	r.NoError(err, "get all users")
 
 	_, err = client.CreateUser(tstCtx, &pb.CreateClusterUserReq{
-		Capabilities: map[string]string{"mon": "allow r"},
+		Capabilities: []*pb.ClusterUserCap{{Entity: "mon", Cap: "allow r"}},
 		UserEntity:   user,
 	})
 	r.NoError(err, "create a new test user %s", user)
@@ -69,17 +71,17 @@ func Test_ClusterUsers(t *testing.T) {
 
 	exp, err := client.ExportUser(tstCtx, &pb.ExportClusterUserReq{Entities: []string{user}})
 	r.NoError(err, "new user can be exported")
-	r.Contains(string(exp.Data), `mon = "allow r"`, "new user export conains correct caps")
+	r.Contains(exp.Data, `mon = "allow r"`, "new user export conains correct caps")
 
 	_, err = client.UpdateUser(tstCtx, &pb.UpdateClusterUserReq{
 		UserEntity:   user,
-		Capabilities: map[string]string{"mon": "allow w"}})
+		Capabilities: []*pb.ClusterUserCap{{Entity: "mon", Cap: "allow w"}}})
 	r.NoError(err, "new user caps updated")
 
 	exp, err = client.ExportUser(tstCtx, &pb.ExportClusterUserReq{Entities: []string{user}})
 	r.NoError(err)
-	r.Contains(string(exp.Data), `mon = "allow w"`, "export contains updated caps")
-	r.NotContains(string(exp.Data), `mon = "allow r"`, "export does not contains old caps")
+	r.Contains(exp.Data, `mon = "allow w"`, "export contains updated caps")
+	r.NotContains(exp.Data, `mon = "allow r"`, "export does not contains old caps")
 
 	users2, err = client.GetUsers(tstCtx, &emptypb.Empty{})
 	r.NoError(err)

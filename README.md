@@ -91,11 +91,13 @@ API config uses the following precedence order:
 
 ## Mock Mode
 
-To run Ceph API in mock mode without a real Ceph cluster:
+To run Ceph API in mock mode without a real Ceph cluster — and without needing CGO or ceph dev libraries installed:
 
 ```shell
-CFG_APP_CREATEADMIN=true CFG_APP_ADMINUSERNAME=admin CFG_APP_ADMINPASSWORD=yoursecretpass go run -tags=mock ./cmd/ceph-api/main.go
+CGO_ENABLED=0 CFG_APP_CREATEADMIN=true CFG_APP_ADMINUSERNAME=admin CFG_APP_ADMINPASSWORD=yoursecretpass go run ./cmd/ceph-api/main.go
 ```
+
+Under `CGO_ENABLED=0` the mock backend in `pkg/rados/rados_mock.go` is compiled in instead of the real go-ceph connection. Mock responses are served from canned JSON in `pkg/rados/mock-data/`.
 
 ## Security
 
@@ -174,19 +176,25 @@ http://localhost:9969/api/oauth/token
 
 ## Test
 
-Along with unit test project contains e2e test to run against real Ceph cluster.
-E2E Tests can be found in [/test/](./test/) directory.
+Unit tests live alongside their packages in `pkg/`. E2E tests are in [`test/`](./test/) and run against a real Ceph cluster started by [`test/testenv`](./test/testenv) (testcontainers).
 
-Run tests from docker-compose:
+The Makefile is the entry point. `make help` lists targets.
 
 ```shell
-docker-compose -f docker-compose-test.yaml up --build --exit-code-from api-test
-
-# teardown
-docker-compose -f docker-compose-test.yaml down -v
+make check     # fmt + vet + unit tests
+make lint      # golangci-lint
+make e2e-test  # e2e tests in Docker (-tid)
+make gate      # check + lint
+make full-gate # gate + e2e-test
 ```
 
-Test can be also run locally with `go test ./test/` if there are ceph credentials in `/etc/ceph/` directory.
+A single e2e test:
+
+```shell
+go test ./test/ -tid -run TestAuth -v
+```
+
+`-tid` (test-in-docker) builds the test binary inside a container with ceph dev libs, so the host only needs Docker. Without `-tid`, the e2e suite runs natively and requires `librados-dev`, `librbd-dev`, `libcephfs-dev` on the host.
 
 ## Develop on MacOS
 

@@ -1,0 +1,53 @@
+version: "2"
+run:
+  go: "1.26"
+  tests: true
+linters:
+  default: none
+  enable:
+    - asasalint
+    - asciicheck
+    - copyloopvar
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errorlint
+    - gocritic
+    - govet
+    - ineffassign
+    - makezero
+    - nolintlint
+    - prealloc
+    - revive
+    - staticcheck
+    - unused
+  settings:
+    gocritic:
+      disabled-checks:
+        - captLocal
+        - commentFormatting
+    nolintlint:
+      require-explanation: true
+    revive:
+      rules:
+        - name: var-naming
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+    paths:
+      - api/gen
+      - api/openapi
+      - third_party
+      - examples
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - api/gen
+      - api/openapi
+      - third_party
+      - examples

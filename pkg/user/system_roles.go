@@ -150,6 +150,12 @@ const (
 					"read",
 					"update"
 				],
+				"nvme-of": [
+					"create",
+					"delete",
+					"read",
+					"update"
+				],
 				"osd": [
 					"create",
 					"delete",
@@ -222,6 +228,12 @@ const (
 				],
 				"grafana": [
 					"read"
+				],
+				"nvme-of": [
+					"read",
+					"create",
+					"update",
+					"delete"
 				]
 			},
 			"system": true
@@ -283,6 +295,9 @@ const (
 					"delete"
 				],
 				"grafana": [
+					"read"
+				],
+				"prometheus": [
 					"read"
 				]
 			},
@@ -358,6 +373,9 @@ const (
 					"read"
 				],
 				"nfs-ganesha": [
+					"read"
+				],
+				"nvme-of": [
 					"read"
 				],
 				"osd": [

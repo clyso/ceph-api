@@ -19,17 +19,21 @@ enum PoolType {
 }
 
 message Rule {
-    int64 rule_id = 1;       
-    string rule_name = 2;    
-    int64 ruleset = 3;       
-    int64 type = 4;          
-    int64 min_size = 5;     
-    int64 max_size = 6;      
-    repeated Step steps = 7; 
+    int32 rule_id = 1;
+    string rule_name = 2;
+    optional int32 ruleset = 3;
+    int32 type = 4;
+    optional int32 min_size = 5;
+    optional int32 max_size = 6;
+    repeated Step steps = 7;
 }
 
 message Step {
-    map<string, string> entries = 1; 
+    string op = 1;
+    optional int32 item = 2;
+    optional string item_name = 3;
+    optional int32 num = 4;
+    optional string type = 5;
 }
 
 // CREATE RULE

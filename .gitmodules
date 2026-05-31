@@ -1,0 +1,5 @@
+[submodule "third_party/ceph"]
+	path = third_party/ceph
+	url = https://github.com/ceph/ceph
+	update = none
+	shallow = true

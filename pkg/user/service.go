@@ -56,7 +56,7 @@ func (s *Service) updateFromDB(ctx context.Context) error {
 	s.roles = map[string]Role{}
 	cmdRes, err := s.radosSvc.ExecMon(ctx, getDBMonCmd)
 	if err != nil {
-		if errors.Is(err, types.RadosErrorNotFound) {
+		if errors.Is(err, types.ErrRadosNotFound) {
 			return nil
 		}
 		return err

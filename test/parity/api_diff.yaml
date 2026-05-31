@@ -1,0 +1,21 @@
+# Declared divergences between the ceph dashboard and ceph-api response
+# bodies. Keys are endpoint ids in the form "<METHOD> <PATH-TEMPLATE>"
+# (as in api/http.yaml); values are lists of JSONPath ignores with
+# mandatory `reason:` strings.
+#
+# Every entry IS the migration guide for dashboard clients — something
+# a client switching from the dashboard to ceph-api would observe.
+#
+# JSONPath subset: $ root, . descent, * wildcard for "any array index
+# or map key" at a single position. See test/parity/diff.go for the
+# matcher. A `$` (root) ignore additionally suppresses the body-presence
+# and status-class checks — used as a transitional marker for endpoints
+# whose response (or request) shape is known divergent. Each one is a
+# debt: walk them in the next iteration and either match the dashboard
+# or document a hard reason why we can't.
+#
+# **Policy.** Prefer well-typed proto APIs (Timestamp, int64) for the
+# gRPC surface; the matcher already coerces the resulting JSON-shape
+# divergences (RFC3339-vs-unix-seconds, int64-as-string-vs-int) so they
+# do not need per-endpoint ignores. See CLAUDE.md → "Parity vs API
+# quality" for the decision rule.

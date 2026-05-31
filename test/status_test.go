@@ -1,3 +1,5 @@
+//go:build cgo
+
 package test
 
 import (
@@ -121,9 +123,8 @@ func Test_GetCephOsdDump(t *testing.T) {
 		r.NotEmpty(osd.State, "state array should not be empty at index %d", i)
 	}
 
-	// Check OSD XInfo
+	// Check OSD XInfo. OSD IDs start at 0, so don't assert non-zero on xinfo.Osd.
 	for i, xinfo := range res.OsdXinfo {
-		r.NotZero(xinfo.Osd, "xinfo.osd should not be zero at index %d", i)
 		r.NotNil(xinfo.DownStamp, "xinfo.down_stamp should not be nil at index %d", i)
 		r.NotZero(xinfo.Features, "xinfo.features should not be zero at index %d", i)
 	}
@@ -175,14 +176,12 @@ func Test_GetCephPgDump(t *testing.T) {
 		t.Log("pg_stats_delta is nil; skipping delta checks.")
 	}
 
+	// OSD IDs start at 0, so don't assert non-zero on osd identifiers here.
 	if len(res.PgMap.OsdStats) > 0 {
 		osdStat := res.PgMap.OsdStats[0]
-		r.NotZero(osdStat.Osd, "osd stats: osd should not be zero")
 
-		// If network_ping_times is present:
 		if len(osdStat.NetworkPingTimes) > 0 {
 			netPingTime := osdStat.NetworkPingTimes[0]
-			r.NotZero(netPingTime.Osd, "osd_stats[0].network_ping_times[0].osd should not be zero")
 			r.NotNil(netPingTime.LastUpdate, "osd_stats[0].network_ping_times[0].last_update should not be nil")
 		} else {
 			t.Log("osd_stats[0].network_ping_times is empty; skipping ping time checks.")
@@ -221,7 +220,6 @@ func Test_GetCephReport(t *testing.T) {
 	r.True(ok, "Health status field should exist")
 	// HEALTH Should be HEALTH_OK, HEALTH_WARN, HEALTH_ERR
 	r.Contains([]string{"HEALTH_OK", "HEALTH_WARN", "HEALTH_ERR"}, healthStatus.GetStringValue(), "Health status should be HEALTH_OK, HEALTH_WARN, or HEALTH_ERR")
-
 
 	monmapField, ok := res.Fields["monmap"]
 	r.True(ok, "Monmap field should exist")

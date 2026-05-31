@@ -14,9 +14,28 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: KengoTODA/actions-setup-docker-compose@v1
+      - uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
         with:
-          version: "2.14.2"
-      - name: Test
-        run: CEPH_DEMO_TAG=main-985bb830-main-centos-stream8-x86_64 docker-compose -f "docker-compose-test.yaml" up --build --exit-code-from api-test
+          go-version-file: go.mod
+      - name: make check
+        run: make check
+      - name: Check for fmt drift
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "::error::make check produced uncommitted changes (likely go fmt): $(git status --porcelain)"
+            exit 1
+          fi
+      - name: make lint
+        run: make lint
+      - name: make proto
+        run: make proto
+      - name: Check for proto drift
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "::error::make proto produced uncommitted changes: $(git status --porcelain)"
+            exit 1
+          fi
+      - name: make e2e-test
+        run: make e2e-test

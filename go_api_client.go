@@ -100,7 +100,7 @@ func New(ctx context.Context, conf ClientConfig) (*Client, error) {
 	c.httpClient = http.DefaultClient
 	if conf.Secure && conf.TLSSkipVerify {
 		customTransport := http.DefaultTransport.(*http.Transport)
-		customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint: gosec
+		customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec // honour caller opt-in to skip TLS verification
 		c.httpClient = &http.Client{Transport: customTransport}
 	}
 	oauthCtx := context.WithValue(ctx, oauth2.HTTPClient, c.httpClient)
@@ -110,10 +110,9 @@ func New(ctx context.Context, conf ClientConfig) (*Client, error) {
 	}
 	c.ts = ac.TokenSource(ctx, token)
 	if !conf.Secure {
-		c.grpcConn, err = grpc.DialContext(ctx, grpcUrl,
-			grpc.WithTransportCredentials(insecure.NewCredentials()), //nolint: gosec
+		c.grpcConn, err = grpc.NewClient(grpcUrl,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithConnectParams(grpc.ConnectParams{MinConnectTimeout: time.Second, Backoff: backoff.DefaultConfig}),
-			grpc.WithBlock(),
 			grpc.WithChainUnaryInterceptor(func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 				t, err := ac.PasswordCredentialsToken(oauthCtx, conf.Login, conf.Password)
 				if err != nil {
@@ -136,10 +135,9 @@ func New(ctx context.Context, conf ClientConfig) (*Client, error) {
 			}),
 		)
 	} else {
-		c.grpcConn, err = grpc.DialContext(ctx, grpcUrl,
-			grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: conf.TLSSkipVerify})), //nolint: gosec
+		c.grpcConn, err = grpc.NewClient(grpcUrl,
+			grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: conf.TLSSkipVerify})), //nolint:gosec // honour caller opt-in to skip TLS verification
 			grpc.WithConnectParams(grpc.ConnectParams{MinConnectTimeout: time.Second, Backoff: backoff.DefaultConfig}),
-			grpc.WithBlock(),
 			grpc.WithPerRPCCredentials(&oauth.TokenSource{TokenSource: c.ts}),
 		)
 	}

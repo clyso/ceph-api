@@ -27,7 +27,10 @@ __debug_bin
 fa-notes.md
 /tmp
 
+
 changes.patch
 logs.txt
 
 *.local
+
+/ceph-api

@@ -1,10 +1,9 @@
-//go:build mock
+//go:build !cgo
 
 package types
 
-import "fmt"
+import "errors"
 
 var (
-	// ErrNotFound is returned when an object is not found.
-	RadosErrorNotFound = fmt.Errorf("Error Not Found")
+	ErrRadosNotFound = errors.New("error not found")
 )

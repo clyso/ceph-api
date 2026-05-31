@@ -149,7 +149,7 @@ func (s *statusAPI) GetCephPgDump(ctx context.Context, body *emptypb.Empty) (*pb
 
 func convertToPbGetCephOsdDumpResponse(osdDump types.CephOsdDumpResponse) *pb.GetCephOsdDumpResponse {
 	// Convert pools
-	var osdDumpPools []*pb.OsdDumpPool
+	osdDumpPools := make([]*pb.OsdDumpPool, 0, len(osdDump.Pools))
 	for _, pool := range osdDump.Pools {
 		osdDumpPools = append(osdDumpPools, &pb.OsdDumpPool{
 			Pool:                              pool.Pool,
@@ -221,7 +221,7 @@ func convertToPbGetCephOsdDumpResponse(osdDump types.CephOsdDumpResponse) *pb.Ge
 		blocklistPb[ip] = t.Timestamp
 	}
 
-	var osdXInfo []*pb.OsdDumpOsdXInfo
+	osdXInfo := make([]*pb.OsdDumpOsdXInfo, 0, len(osdDump.OsdXinfo))
 	for _, osdX := range osdDump.OsdXinfo {
 		osdXInfo = append(osdXInfo, &pb.OsdDumpOsdXInfo{
 			Osd:                  osdX.Osd,

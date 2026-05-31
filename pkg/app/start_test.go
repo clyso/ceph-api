@@ -1,4 +1,4 @@
-//go:build !mock
+//go:build cgo
 
 package app
 

@@ -4,24 +4,24 @@ option go_package = "github.com/clyso/ceph-api/api/ceph;pb";
 
 package ceph;
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
 
 service Users {
     rpc ListUsers (google.protobuf.Empty) returns (UsersResp);
     rpc GetUser (GetUserReq) returns (User);
-    rpc CreateUser (CreateUserReq) returns (google.protobuf.Empty);
+    rpc CreateUser (CreateUserReq) returns (User);
     rpc DeleteUser (GetUserReq) returns (google.protobuf.Empty);
-    rpc UpdateUser (CreateUserReq) returns (google.protobuf.Empty);
+    rpc UpdateUser (CreateUserReq) returns (User);
     rpc UserChangePassword (UserChangePasswordReq) returns (google.protobuf.Empty);
 
     rpc ListRoles (google.protobuf.Empty) returns (RolesResp);
     rpc GetRole (GetRoleReq) returns (Role);
-    rpc CreateRole (Role) returns (google.protobuf.Empty);
+    rpc CreateRole (Role) returns (Role);
     rpc DeleteRole (GetRoleReq) returns (google.protobuf.Empty);
-    rpc UpdateRole (Role) returns (google.protobuf.Empty);
+    rpc UpdateRole (Role) returns (Role);
     rpc CloneRole (CloneRoleReq) returns (google.protobuf.Empty);
 }
 
@@ -33,6 +33,7 @@ message Role {
     string name =1;
     optional string description=2;
     map<string,google.protobuf.ListValue> scopes_permissions=3 [json_name = "scopes_permissions"];
+    bool system =4;
 }
 
 message GetRoleReq{
@@ -52,9 +53,9 @@ message User {
     optional string email =1;
     bool enabled =2;
     optional string name =3;
-    google.protobuf.Timestamp last_update =4;
-    optional google.protobuf.Timestamp pwd_expiration_date =5;
-    bool pwd_update_required =6;
+    google.protobuf.Timestamp lastUpdate =4;
+    optional google.protobuf.Timestamp pwdExpirationDate =5;
+    bool pwdUpdateRequired =6;
     repeated string roles=7;
     string username=8;
 }
@@ -68,8 +69,8 @@ message CreateUserReq {
     bool enabled =2;
     optional string name =3;
     string password =4;
-    optional google.protobuf.Timestamp pwd_expiration_date =5;
-    bool pwd_update_required =6;
+    optional google.protobuf.Timestamp pwdExpirationDate =5;
+    bool pwdUpdateRequired =6;
     repeated string roles=7;
     string username=8;
 }
