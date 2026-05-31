@@ -90,16 +90,48 @@ func walk(path []string, expected, actual any, patterns [][]string) []Diff {
 			return typeDiff(path, expected, actual)
 		}
 		if !scalarEqual(expected, actual) {
+			// Same JSON kind but unequal: a Timestamp string can still differ
+			// only in encoding (protojson "...Z" vs Ceph "...+0000").
+			if matched, applied := coerceEqual(expected, actual); applied {
+				if matched {
+					return nil
+				}
+			}
 			return []Diff{{Path: pathStr(path), Kind: "value", Expected: expected, Actual: actual}}
 		}
 		return nil
 	}
 }
 
+// cephTimeLayout is Ceph's JSON timestamp form (microseconds, numeric offset
+// without a colon, e.g. "2026-05-31T15:36:11.053927+0000"), which the
+// dashboard forwards verbatim. It is not RFC3339 (no colon in the offset), so
+// time.RFC3339Nano cannot parse it.
+const cephTimeLayout = "2006-01-02T15:04:05.999999999-0700"
+
+// parseParityTime parses either an RFC3339(Nano) string (protojson's Timestamp
+// encoding) or Ceph's numeric-offset form.
+func parseParityTime(s string) (time.Time, bool) {
+	if t, err := time.Parse(time.RFC3339Nano, s); err == nil {
+		return t, true
+	}
+	if t, err := time.Parse(cephTimeLayout, s); err == nil {
+		return t, true
+	}
+	return time.Time{}, false
+}
+
 // coerceEqual lets the diff matcher treat protojson's idiomatic scalar
 // encodings as equivalent to the dashboard's plain-JSON encoding:
 //   - RFC3339 timestamp string ↔ unix-seconds JSON number (matches when
-//     the wall-clock difference is within timestampSkewTolerance).
+//     the wall-clock difference is within timestampSkewTolerance): this is
+//     the sequential-recording case where the dashboard and ceph-api calls
+//     happen a moment apart, so the recorded instants legitimately differ.
+//   - RFC3339 timestamp string ↔ Ceph numeric-offset timestamp string:
+//     protojson emits a proto Timestamp as "...Z" where the dashboard
+//     forwards Ceph's raw "...+0000" form for the SAME stored value (e.g. a
+//     pool's create_time). Only the encoding differs, so these must match by
+//     exact instant — no skew tolerance.
 //   - int64-as-JSON-string ↔ JSON number (matches when the integer values
 //     are equal).
 //
@@ -110,6 +142,15 @@ func walk(path []string, expected, actual any, patterns [][]string) []Diff {
 func coerceEqual(a, b any) (matched, applied bool) {
 	aStr, aIsStr := a.(string)
 	bStr, bIsStr := b.(string)
+
+	if aIsStr && bIsStr {
+		at, aOk := parseParityTime(aStr)
+		bt, bOk := parseParityTime(bStr)
+		if aOk && bOk {
+			return at.Equal(bt), true
+		}
+		return false, false
+	}
 	if aIsStr == bIsStr {
 		return false, false
 	}
@@ -123,7 +164,7 @@ func coerceEqual(a, b any) (matched, applied bool) {
 	if !ok {
 		return false, false
 	}
-	if t, err := time.Parse(time.RFC3339Nano, str); err == nil {
+	if t, ok := parseParityTime(str); ok {
 		skew := time.Duration(int64(num)-t.Unix()) * time.Second
 		if skew < 0 {
 			skew = -skew

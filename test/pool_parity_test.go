@@ -9,7 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const poolWriteAccept = "application/vnd.ceph.api.v1.0+json"
+const (
+	poolWriteAccept = "application/vnd.ceph.api.v1.0+json"
+	poolReadAccept  = "application/vnd.ceph.api.v1.0+json"
+)
 
 // There is no DELETE /api/pool endpoint yet, so unlike the crush_rule parity
 // test we cannot pre-clean or t.Cleanup the pool. This is safe because
@@ -61,5 +64,14 @@ func Test_Parity_Pool_Create_Erasure(t *testing.T) {
 	for _, b := range r.Backends(create) {
 		resp, _ := r.DoRecord(b, create)
 		require.True(t, resp.StatusCode/100 == 2, "%s: create erasure pool: status %d", b, resp.StatusCode)
+	}
+}
+
+func Test_Parity_Pool_List(t *testing.T) {
+	r := parity.New(t)
+	call := parity.Call{Method: "GET", Path: "/api/pool", Accept: poolReadAccept}
+	for _, b := range r.Backends(call) {
+		resp, _ := r.DoRecord(b, call)
+		require.True(t, resp.StatusCode/100 == 2, "%s: list pools: status %d", b, resp.StatusCode)
 	}
 }

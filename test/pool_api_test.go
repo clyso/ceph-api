@@ -54,6 +54,33 @@ func Test_CreatePool(t *testing.T) {
 		r.Contains(apps, "rbd")
 	})
 
+	t.Run("list includes the created pool with shaped fields", func(t *testing.T) {
+		resp, err := client.ListPools(tstCtx, &pb.ListPoolsRequest{})
+		r.NoError(err)
+
+		var got *pb.PoolInfo
+		for _, p := range resp.Pools {
+			if p.PoolName == "e2e_pool_repl" {
+				got = p
+				break
+			}
+		}
+		r.NotNil(got, "created pool must appear in the list")
+
+		// type int->string and crush_rule id->name shaping.
+		r.Equal("replicated", got.Type)
+		r.Equal("replicated_rule", got.CrushRule)
+		// application_metadata dict->list shaping.
+		r.Equal([]string{"rbd"}, got.ApplicationMetadata)
+		r.NotNil(got.CreateTime)
+	})
+
+	t.Run("stats=true is not implemented", func(t *testing.T) {
+		_, err := client.ListPools(tstCtx, &pb.ListPoolsRequest{Stats: proto.Bool(true)})
+		r.Error(err)
+		r.Contains(err.Error(), "Unimplemented")
+	})
+
 	t.Run("create is idempotent", func(t *testing.T) {
 		_, err := client.CreatePool(tstCtx, &pb.CreatePoolRequest{
 			Pool:     "e2e_pool_repl",

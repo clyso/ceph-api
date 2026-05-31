@@ -8,7 +8,7 @@ over rados — same as cluster, crush_rule, status, users, roles).
 
 ### pool
 - [x] POST /api/pool  (**PARTIAL!**: `configuration` & `rbd_mirroring` fields deferred → ErrNotImplemented — see task §Open decisions)
-- [ ] GET /api/pool
+- [x] GET /api/pool  (**PARTIAL!**: `stats=true` → ErrNotImplemented (no mgr time-series poller), `attrs` filter ignored (full superset returned) — see task §Open decisions)
 - [ ] GET /api/pool/{pool_name}
 - [ ] PUT /api/pool/{pool_name}
 - [ ] DELETE /api/pool/{pool_name}

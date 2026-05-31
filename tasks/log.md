@@ -51,3 +51,35 @@
   against an idle cluster. `object_location_counts` (also `repeated int64`,
   dumped as objects) is the same class of latent bug but stayed empty, so it
   was left untouched as out of scope.
+
+## Implementer issues for GET /api/pool
+
+- §6/§8 Requirements listed the response fields from the openapi schema +
+  `OsdDumpPool`, but the live dashboard also emits `is_stretch_pool` (bool)
+  in every pool object. §6 noted `peering_crush_bucket_*` and
+  `is_stretch_pool` are "present in osd dump, absent from the openapi
+  schema" but only flagged the former as already-in-`OsdDumpPool`; it did
+  not state `is_stretch_pool` needs to be *added* to the new message. The
+  parity diff caught it (`missing @ $.N.is_stretch_pool`). Added
+  `bool is_stretch_pool` to `PoolInfo` (`api/pool.proto`) and parsed it on
+  the `poolListEntry` wrapper in `pkg/api/pool_api_handlers.go`.
+- The `create_time` parity divergence was not anticipated: the dashboard
+  forwards Ceph's `...+0000` timestamp string (numeric offset, no colon)
+  while protojson emits `...Z` for the same instant. The existing
+  `coerceEqual` (`test/parity/diff.go`) only coerced timestamp-string ↔
+  unix-number, and was only invoked on *type* mismatches, so two
+  same-instant timestamp *strings* fell through to a plain value diff. Added
+  a string↔string timestamp coercion (parses both RFC3339Nano and Ceph's
+  numeric-offset layout) backed by a `diff_test.go` case, per the parity
+  README's sanctioned alternative to a yaml ignore. `OsdDumpPool` itself has
+  the same `create_time`, but its `/api/status/osd_dump` route isn't in the
+  dashboard openapi so it is never cross-diffed — this is the first endpoint
+  to surface the timestamp-format divergence.
+- Two query-param divergences are unverified at the parity layer (no parity
+  case exercises them, so the "harmless" claim rests on no such case
+  existing): (a) `attrs` is ignored and the full pool object is always
+  returned — an `?attrs=` parity case would fail because `Compare` reports
+  the extra (non-whitelisted) keys; (b) `stats=true` returns
+  `ErrNotImplemented` (501) where the dashboard returns 200 with a `stats`
+  sub-object. Both are recorded in the task §Open decisions; the parity
+  suite only covers the base (`stats` absent/false, no `attrs`) list.

@@ -1,6 +1,9 @@
 syntax = "proto3";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "status.proto";
 
 option go_package = "github.com/clyso/ceph-api/api/ceph;pb";
 
@@ -8,6 +11,97 @@ package ceph;
 
 service Pool {
   rpc CreatePool (CreatePoolRequest) returns (google.protobuf.Empty) {}
+  rpc ListPools (ListPoolsRequest) returns (ListPoolsResponse) {}
+}
+
+message ListPoolsRequest {
+  optional string attrs = 1;
+  optional bool stats = 2;
+}
+
+message ListPoolsResponse {
+  repeated PoolInfo pools = 1;
+}
+
+// PoolInfo mirrors an `osd dump` pools[] entry after the dashboard's
+// _serialize_pool shaping: type and crush_rule are stringified, and
+// application_metadata is reduced to its key list. The remaining fields are
+// copied verbatim from OsdDumpPool. read_balance and options stay free-form
+// Struct: read_balance's float scores can carry the string "Infinity" and its
+// key set varies by score_type, so it is not faithfully typeable.
+message PoolInfo {
+  int32 pool = 1;
+  string pool_name = 2;
+  google.protobuf.Timestamp create_time = 3;
+  int64 flags = 4;
+  string flags_names = 5;
+  string type = 6;
+  int32 size = 7;
+  int32 min_size = 8;
+  string crush_rule = 9;
+
+  int32 peering_crush_bucket_count = 10;
+  int32 peering_crush_bucket_target = 11;
+  int32 peering_crush_bucket_barrier = 12;
+  int32 peering_crush_bucket_mandatory_member = 13;
+  int32 object_hash = 14;
+
+  string pg_autoscale_mode = 15;
+  int32 pg_num = 16;
+  int32 pg_placement_num = 17;
+  int32 pg_placement_num_target = 18;
+  int32 pg_num_target = 19;
+  int32 pg_num_pending = 20;
+
+  OsdDumpLastPgMergeMeta last_pg_merge_meta = 21;
+
+  string last_change = 22;
+  string last_force_op_resend = 23;
+  string last_force_op_resend_prenautilus = 24;
+  string last_force_op_resend_preluminous = 25;
+
+  uint64 auid = 26;
+  string snap_mode = 27;
+  uint64 snap_seq = 28;
+  uint64 snap_epoch = 29;
+
+  repeated google.protobuf.Value pool_snaps = 30;
+  string removed_snaps = 31;
+  uint64 quota_max_bytes = 32;
+  uint64 quota_max_objects = 33;
+  repeated int32 tiers = 34;
+  int32 tier_of = 35;
+  int32 read_tier = 36;
+  int32 write_tier = 37;
+  string cache_mode = 38;
+  uint64 target_max_bytes = 39;
+  uint64 target_max_objects = 40;
+  uint64 cache_target_dirty_ratio_micro = 41;
+  uint64 cache_target_dirty_high_ratio_micro = 42;
+  uint64 cache_target_full_ratio_micro = 43;
+  uint64 cache_min_flush_age = 44;
+  uint64 cache_min_evict_age = 45;
+  string erasure_code_profile = 46;
+
+  OsdDumpHitSetParams hit_set_params = 47;
+  uint64 hit_set_period = 48;
+  uint64 hit_set_count = 49;
+  bool use_gmt_hitset = 50;
+  uint64 min_read_recency_for_promote = 51;
+  uint64 min_write_recency_for_promote = 52;
+  uint64 hit_set_grade_decay_rate = 53;
+  uint64 hit_set_search_last_n = 54;
+  repeated google.protobuf.Value grade_table = 55;
+  uint64 stripe_width = 56;
+  uint64 expected_num_objects = 57;
+  bool fast_read = 58;
+
+  google.protobuf.Struct options = 59;
+  repeated string application_metadata = 60;
+
+  google.protobuf.Struct read_balance = 61;
+
+  bool is_stretch_pool = 62;
 }
 
 message CreatePoolRequest {

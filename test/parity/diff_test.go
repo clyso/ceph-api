@@ -74,6 +74,41 @@ func TestCompare_TimestampStringEqualsUnixSeconds(t *testing.T) {
 	}
 }
 
+func TestCompare_TimestampStringEncodings(t *testing.T) {
+	// protojson encodes a proto Timestamp as RFC3339 "...Z"; the dashboard
+	// forwards Ceph's raw "...+0000" form (numeric offset, no colon) for the
+	// same stored value (e.g. a pool's create_time). Only the encoding
+	// differs, so the matcher treats them as equal by exact instant.
+	exp := jsonAny(t, `{"create_time": "2026-05-31T15:36:11.053927+0000"}`)
+	act := jsonAny(t, `{"create_time": "2026-05-31T15:36:11.053927Z"}`)
+	if d := Compare(exp, act, nil); len(d) != 0 {
+		t.Fatalf("expected Ceph-offset vs RFC3339 to match, got %v", d)
+	}
+	// String↔string is a single stored value, so it compares by exact
+	// instant — the sequential-recording skew tolerance does NOT apply. A
+	// sub-tolerance (3s) difference is still a real divergence.
+	exp = jsonAny(t, `{"create_time": "2026-05-31T15:36:11.000000+0000"}`)
+	act = jsonAny(t, `{"create_time": "2026-05-31T15:36:14.000000Z"}`)
+	d := Compare(exp, act, nil)
+	if len(d) != 1 || d[0].Kind != "value" {
+		t.Fatalf("expected one value diff for a 3s string↔string difference, got %v", d)
+	}
+	// Different instants → real value diff.
+	exp = jsonAny(t, `{"create_time": "2026-05-31T15:36:11.000000+0000"}`)
+	act = jsonAny(t, `{"create_time": "2026-05-31T16:00:00.000000Z"}`)
+	d = Compare(exp, act, nil)
+	if len(d) != 1 || d[0].Kind != "value" {
+		t.Fatalf("expected one value diff for distinct instants, got %v", d)
+	}
+	// Two unrelated equal strings are still compared verbatim (not times).
+	exp = jsonAny(t, `{"cache_mode": "none"}`)
+	act = jsonAny(t, `{"cache_mode": "writeback"}`)
+	d = Compare(exp, act, nil)
+	if len(d) != 1 || d[0].Kind != "value" {
+		t.Fatalf("expected one value diff for differing strings, got %v", d)
+	}
+}
+
 func TestCompare_Int64AsStringEqualsInt(t *testing.T) {
 	// protojson encodes int64 as a JSON string; if a future endpoint mixes
 	// int64 with a dashboard plain-number response, the matcher should treat
