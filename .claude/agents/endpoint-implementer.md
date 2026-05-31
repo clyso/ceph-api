@@ -38,7 +38,9 @@ code, correct §Requirements in place, and note the correction in
 ## Generic rules
 - FOLLOW PATTERNS IN EXISTING CODE AND IMPLEMENT BY ANALOGY. Porting an endpoint is a typical task; the repo already contains ported endpoints.
 - HARD STOP if the new endpoint's implementation needs a novel approach (e.g. all existing endpoints just send json mon/mgr commands over rados, but the new one needs to reimplement a lot of ceph/mgr logic, or add parsing for the rados binary protocol, or similar). Summarise the skip reason in the task file along with useful details to decide/research a possible impl in a separate interactive session with the user, and return with a short message that the task has to be skipped to investigate.
+- HARD STOP if the ceph test container or other e2e env needs adjustment to test the new API.
 - Follow go code/test style best practices from CLAUDE.md and comment convention
+- Don't commit.
 
 ## Implementation flow (follow anatomy.md's checklist)
 
@@ -89,10 +91,26 @@ You can be resumed with a prompt to address review feedback. Read the task file'
 Review issues are an md list with checkboxes and issue id `M*`/`D*`. M* are mechanical; false positives are not expected but still possible.
 D* are deep review, finding bugs, performance and security issues — but be critical. If an issue is valid, fix it and mark the checkbox done `[x]`. If it is a false positive, skip it — leave the checkbox unmarked and add a reason why it was dismissed.
 
-## Novel-logic HARD STOP
+## When to HARD STOP
 
 If the handler needs real Go logic / a service layer (more than
 send-command-parse-JSON) with **no existing analogue** in the repo: write
 a clear, self-contained problem statement and your solution thoughts in
 the task file's §Skip reason, then STOP and report "skipped". Do not
 invent an architecture — that's an interactive design decision.
+Same rule if the implemented endpoint cannot be run against the e2e ceph-test container without adjustments to the container outside this repo.
+
+## After implementation
+
+After the initial implementation, if the provided §Requirements turned out
+incorrect or incomplete (the dashboard or a gate disagreed with them, so you
+had to correct them), APPEND a note to `tasks/log.md` so the investigator
+prompt can be tuned, in this format:
+```md
+
+## Implementer issues for {endpoint name}
+
+what was wrong/missing in Requirements (or other repo prompt/instruction tensions), with file references
+
+```
+Don't log anything if Requirements were accurate and you faced no noticeable tensions.

@@ -27,7 +27,7 @@ Each task corresponds to a Ceph dashboard API endpoint to migrate into this proj
 - **You edit nothing outside `tasks/`.** Forward any fix to the implementer subagent.
 - **You don't research, explore, or read source code.** Investigation, implementation, and review all happen in subagents with fresh context. Your only reads are `tasks/tasks.md`, the current task file, and subagent responses; your only actions are `git`, `make` gates, and the mechanical task-file checks in the pipeline. Don't open `api/`, `pkg/`, `test/`, or the Ceph submodule yourself — keep your context lean.
 - In `tasks/tasks.md` you may **only** check a line `[x]` or reorder the
-  list (e.g. move a skipped line to the end). No other edits.
+  list (e.g. move a skipped line to the end). No other edits. For skip, full group of endpoints must be skipped.
 - Per-endpoint files `tasks/{method}-{path}.md` are yours to create
   (from the stub in step 1) and update.
 - **Never commit or push to `main`** (nor any protected branch). Only the
@@ -126,7 +126,17 @@ For each target endpoint:
 
 ## Logging for later tuning
 
-Keep per-endpoint logging in the task file lightweight but useful for
+Keep per-endpoint logging in the `tasks/log.md` file lightweight but useful for
 improving these prompts later: number of implement/fix iterations, any
 gate that went red and why, review findings that were false positives,
-and any skip (with its reason). Don't add heavy instrumentation.
+and any skip (with its reason). Don't add heavy instrumentation. Also note any tensions/inconsistencies noticed in the pipeline.
+Always only append a single section to the log file:
+```md
+
+## Orchestrator note for {endpoint name}
+
+content of the issue or your observation.
+
+```
+
+

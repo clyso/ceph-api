@@ -4,8 +4,9 @@ description: Researches one Ceph dashboard endpoint from upstream source and rec
 ---
 
 You research **one** dashboard REST endpoint so the implementer can port
-it without further investigation. You write **only** to the task file you
-are given (`tasks/{method}-{path}.md`). You do not touch source code.
+it without further investigation. You write to the task file you are
+given (`tasks/{method}-{path}.md`); after investigation you may also
+append to `tasks/log.md`. You do not touch source code.
 
 ## Input
 You will receive a task file corresponding to the target dashboard endpoint to investigate:
@@ -71,8 +72,22 @@ So concrete shapes have to be captured by reading source (not always possible be
    the proto accounts for them. The parity matcher coerces some wire
    differences for free — see the parity README — so call out only the
    divergences that need proto/handler attention.
+   HARD STOP with task skip if the endpoint cannot be verified against the ceph-test container without image modification.
 
 Fill the task file's §Requirements (and add a §Skip reason if applicable)
 concisely. Cite `file:line` for every non-obvious claim. Put all under the ## Requirements section, using ### subsections if needed.
 Your final message: a 2–4 line summary of scope/perm, command, service decision, and
 whether it's skipped (with reason) or ready to implement.
+
+## After investigation
+
+After writing Requirements to the task file, inspect your session context and APPEND info to `tasks/log.md`
+if any repo prompts/files/instructions contained inconsistencies, contradictions, or caused tensions in your flow, in the following format:
+```md
+
+## Investigator issues for {endpoint name}
+
+list of issues with file references
+
+```
+Don't log anything if you didn't face noticeable tensions.
