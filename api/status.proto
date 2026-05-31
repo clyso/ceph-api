@@ -293,6 +293,7 @@ message OsdDumpReadBalance {
   double primary_affinity_weighted = 6;
   double average_primary_affinity = 7;
   double average_primary_affinity_weighted = 8;
+  string score_type = 9;
 }
 
 message OsdDumpOsdInfo {

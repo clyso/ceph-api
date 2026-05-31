@@ -1,6 +1,9 @@
 syntax = "proto3";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "status.proto";
 
 option go_package = "github.com/clyso/ceph-api/api/ceph;pb";
 
@@ -8,6 +11,7 @@ package ceph;
 
 service Pool {
   rpc CreatePool (CreatePoolRequest) returns (google.protobuf.Empty) {}
+  rpc ListPools (ListPoolsRequest) returns (ListPoolsResponse) {}
 }
 
 // CREATE POOL
@@ -23,4 +27,88 @@ message CreatePoolRequest {
     optional int64 quota_max_objects = 9;
     optional string pg_autoscale_mode = 10;
     optional string compression_mode = 11;
+}
+
+// LIST POOLS
+message ListPoolsRequest {
+    optional string attrs = 1;
+    optional bool stats = 2;
+}
+
+message ListPoolsResponse {
+    repeated PoolListItem pools = 1;
+}
+
+message PoolListItem {
+  int32 pool = 1;
+  string pool_name = 2;
+  google.protobuf.Timestamp create_time = 3;
+  int64 flags = 4;
+  string flags_names = 5;
+  string type = 6;
+  int32 size = 7;
+  int32 min_size = 8;
+  string crush_rule = 9;
+
+  int32 peering_crush_bucket_count = 10;
+  int32 peering_crush_bucket_target = 11;
+  int32 peering_crush_bucket_barrier = 12;
+  int32 peering_crush_bucket_mandatory_member = 13;
+  bool is_stretch_pool = 14;
+  int32 object_hash = 15;
+
+  string pg_autoscale_mode = 16;
+  int32 pg_num = 17;
+  int32 pg_placement_num = 18;
+  int32 pg_placement_num_target = 19;
+  int32 pg_num_target = 20;
+  int32 pg_num_pending = 21;
+
+  OsdDumpLastPgMergeMeta last_pg_merge_meta = 22;
+
+  string last_change = 23;
+  string last_force_op_resend = 24;
+  string last_force_op_resend_prenautilus = 25;
+  string last_force_op_resend_preluminous = 26;
+
+  uint64 auid = 27;
+  string snap_mode = 28;
+  uint64 snap_seq = 29;
+  uint64 snap_epoch = 30;
+
+  repeated google.protobuf.Value pool_snaps = 31;
+  string removed_snaps = 32;
+  uint64 quota_max_bytes = 33;
+  uint64 quota_max_objects = 34;
+  repeated int32 tiers = 35;
+  int32 tier_of = 36;
+  int32 read_tier = 37;
+  int32 write_tier = 38;
+  string cache_mode = 39;
+  uint64 target_max_bytes = 40;
+  uint64 target_max_objects = 41;
+  uint64 cache_target_dirty_ratio_micro = 42;
+  uint64 cache_target_dirty_high_ratio_micro = 43;
+  uint64 cache_target_full_ratio_micro = 44;
+  uint64 cache_min_flush_age = 45;
+  uint64 cache_min_evict_age = 46;
+  string erasure_code_profile = 47;
+
+  OsdDumpHitSetParams hit_set_params = 48;
+  uint64 hit_set_period = 49;
+  uint64 hit_set_count = 50;
+  bool use_gmt_hitset = 51;
+  uint64 min_read_recency_for_promote = 52;
+  uint64 min_write_recency_for_promote = 53;
+  uint64 hit_set_grade_decay_rate = 54;
+  uint64 hit_set_search_last_n = 55;
+  repeated google.protobuf.Value grade_table = 56;
+  uint64 stripe_width = 57;
+  uint64 expected_num_objects = 58;
+  bool fast_read = 59;
+
+  google.protobuf.Struct options = 60;
+  repeated string application_metadata = 61;
+
+  OsdDumpReadBalance read_balance = 62;
 }

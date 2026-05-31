@@ -74,6 +74,30 @@ func TestCompare_TimestampStringEqualsUnixSeconds(t *testing.T) {
 	}
 }
 
+func TestCompare_TimestampStringFormatsEqual(t *testing.T) {
+	// The dashboard emits Ceph's RFC3339 UTC-offset form with microseconds;
+	// protojson renders the same Timestamp instant with a "Z" suffix.
+	exp := jsonAny(t, `{"create_time": "2026-05-31T11:30:15.842225+0000"}`)
+	act := jsonAny(t, `{"create_time": "2026-05-31T11:30:15.842225Z"}`)
+	if d := Compare(exp, act, nil); len(d) != 0 {
+		t.Fatalf("expected RFC3339 offset-vs-Z forms to match, got %v", d)
+	}
+	// Different instants beyond tolerance must still diff.
+	exp = jsonAny(t, `{"create_time": "2026-05-31T11:30:15+0000"}`)
+	act = jsonAny(t, `{"create_time": "2026-05-31T12:30:15Z"}`)
+	d := Compare(exp, act, nil)
+	if len(d) != 1 || d[0].Kind != "value" {
+		t.Fatalf("expected one value diff on differing instants, got %v", d)
+	}
+	// Two non-timestamp strings still compare literally (no false coercion).
+	exp = jsonAny(t, `{"pool_name": "a"}`)
+	act = jsonAny(t, `{"pool_name": "b"}`)
+	d = Compare(exp, act, nil)
+	if len(d) != 1 || d[0].Kind != "value" {
+		t.Fatalf("expected one value diff on differing strings, got %v", d)
+	}
+}
+
 func TestCompare_Int64AsStringEqualsInt(t *testing.T) {
 	// protojson encodes int64 as a JSON string; if a future endpoint mixes
 	// int64 with a dashboard plain-number response, the matcher should treat

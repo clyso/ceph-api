@@ -10,6 +10,8 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -147,12 +149,641 @@ func (x *CreatePoolRequest) GetCompressionMode() string {
 	return ""
 }
 
+// LIST POOLS
+type ListPoolsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Attrs         *string                `protobuf:"bytes,1,opt,name=attrs,proto3,oneof" json:"attrs,omitempty"`
+	Stats         *bool                  `protobuf:"varint,2,opt,name=stats,proto3,oneof" json:"stats,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPoolsRequest) Reset() {
+	*x = ListPoolsRequest{}
+	mi := &file_pool_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPoolsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPoolsRequest) ProtoMessage() {}
+
+func (x *ListPoolsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pool_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPoolsRequest.ProtoReflect.Descriptor instead.
+func (*ListPoolsRequest) Descriptor() ([]byte, []int) {
+	return file_pool_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ListPoolsRequest) GetAttrs() string {
+	if x != nil && x.Attrs != nil {
+		return *x.Attrs
+	}
+	return ""
+}
+
+func (x *ListPoolsRequest) GetStats() bool {
+	if x != nil && x.Stats != nil {
+		return *x.Stats
+	}
+	return false
+}
+
+type ListPoolsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pools         []*PoolListItem        `protobuf:"bytes,1,rep,name=pools,proto3" json:"pools,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPoolsResponse) Reset() {
+	*x = ListPoolsResponse{}
+	mi := &file_pool_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPoolsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPoolsResponse) ProtoMessage() {}
+
+func (x *ListPoolsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pool_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPoolsResponse.ProtoReflect.Descriptor instead.
+func (*ListPoolsResponse) Descriptor() ([]byte, []int) {
+	return file_pool_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ListPoolsResponse) GetPools() []*PoolListItem {
+	if x != nil {
+		return x.Pools
+	}
+	return nil
+}
+
+type PoolListItem struct {
+	state                             protoimpl.MessageState  `protogen:"open.v1"`
+	Pool                              int32                   `protobuf:"varint,1,opt,name=pool,proto3" json:"pool,omitempty"`
+	PoolName                          string                  `protobuf:"bytes,2,opt,name=pool_name,json=poolName,proto3" json:"pool_name,omitempty"`
+	CreateTime                        *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	Flags                             int64                   `protobuf:"varint,4,opt,name=flags,proto3" json:"flags,omitempty"`
+	FlagsNames                        string                  `protobuf:"bytes,5,opt,name=flags_names,json=flagsNames,proto3" json:"flags_names,omitempty"`
+	Type                              string                  `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
+	Size                              int32                   `protobuf:"varint,7,opt,name=size,proto3" json:"size,omitempty"`
+	MinSize                           int32                   `protobuf:"varint,8,opt,name=min_size,json=minSize,proto3" json:"min_size,omitempty"`
+	CrushRule                         string                  `protobuf:"bytes,9,opt,name=crush_rule,json=crushRule,proto3" json:"crush_rule,omitempty"`
+	PeeringCrushBucketCount           int32                   `protobuf:"varint,10,opt,name=peering_crush_bucket_count,json=peeringCrushBucketCount,proto3" json:"peering_crush_bucket_count,omitempty"`
+	PeeringCrushBucketTarget          int32                   `protobuf:"varint,11,opt,name=peering_crush_bucket_target,json=peeringCrushBucketTarget,proto3" json:"peering_crush_bucket_target,omitempty"`
+	PeeringCrushBucketBarrier         int32                   `protobuf:"varint,12,opt,name=peering_crush_bucket_barrier,json=peeringCrushBucketBarrier,proto3" json:"peering_crush_bucket_barrier,omitempty"`
+	PeeringCrushBucketMandatoryMember int32                   `protobuf:"varint,13,opt,name=peering_crush_bucket_mandatory_member,json=peeringCrushBucketMandatoryMember,proto3" json:"peering_crush_bucket_mandatory_member,omitempty"`
+	IsStretchPool                     bool                    `protobuf:"varint,14,opt,name=is_stretch_pool,json=isStretchPool,proto3" json:"is_stretch_pool,omitempty"`
+	ObjectHash                        int32                   `protobuf:"varint,15,opt,name=object_hash,json=objectHash,proto3" json:"object_hash,omitempty"`
+	PgAutoscaleMode                   string                  `protobuf:"bytes,16,opt,name=pg_autoscale_mode,json=pgAutoscaleMode,proto3" json:"pg_autoscale_mode,omitempty"`
+	PgNum                             int32                   `protobuf:"varint,17,opt,name=pg_num,json=pgNum,proto3" json:"pg_num,omitempty"`
+	PgPlacementNum                    int32                   `protobuf:"varint,18,opt,name=pg_placement_num,json=pgPlacementNum,proto3" json:"pg_placement_num,omitempty"`
+	PgPlacementNumTarget              int32                   `protobuf:"varint,19,opt,name=pg_placement_num_target,json=pgPlacementNumTarget,proto3" json:"pg_placement_num_target,omitempty"`
+	PgNumTarget                       int32                   `protobuf:"varint,20,opt,name=pg_num_target,json=pgNumTarget,proto3" json:"pg_num_target,omitempty"`
+	PgNumPending                      int32                   `protobuf:"varint,21,opt,name=pg_num_pending,json=pgNumPending,proto3" json:"pg_num_pending,omitempty"`
+	LastPgMergeMeta                   *OsdDumpLastPgMergeMeta `protobuf:"bytes,22,opt,name=last_pg_merge_meta,json=lastPgMergeMeta,proto3" json:"last_pg_merge_meta,omitempty"`
+	LastChange                        string                  `protobuf:"bytes,23,opt,name=last_change,json=lastChange,proto3" json:"last_change,omitempty"`
+	LastForceOpResend                 string                  `protobuf:"bytes,24,opt,name=last_force_op_resend,json=lastForceOpResend,proto3" json:"last_force_op_resend,omitempty"`
+	LastForceOpResendPrenautilus      string                  `protobuf:"bytes,25,opt,name=last_force_op_resend_prenautilus,json=lastForceOpResendPrenautilus,proto3" json:"last_force_op_resend_prenautilus,omitempty"`
+	LastForceOpResendPreluminous      string                  `protobuf:"bytes,26,opt,name=last_force_op_resend_preluminous,json=lastForceOpResendPreluminous,proto3" json:"last_force_op_resend_preluminous,omitempty"`
+	Auid                              uint64                  `protobuf:"varint,27,opt,name=auid,proto3" json:"auid,omitempty"`
+	SnapMode                          string                  `protobuf:"bytes,28,opt,name=snap_mode,json=snapMode,proto3" json:"snap_mode,omitempty"`
+	SnapSeq                           uint64                  `protobuf:"varint,29,opt,name=snap_seq,json=snapSeq,proto3" json:"snap_seq,omitempty"`
+	SnapEpoch                         uint64                  `protobuf:"varint,30,opt,name=snap_epoch,json=snapEpoch,proto3" json:"snap_epoch,omitempty"`
+	PoolSnaps                         []*structpb.Value       `protobuf:"bytes,31,rep,name=pool_snaps,json=poolSnaps,proto3" json:"pool_snaps,omitempty"`
+	RemovedSnaps                      string                  `protobuf:"bytes,32,opt,name=removed_snaps,json=removedSnaps,proto3" json:"removed_snaps,omitempty"`
+	QuotaMaxBytes                     uint64                  `protobuf:"varint,33,opt,name=quota_max_bytes,json=quotaMaxBytes,proto3" json:"quota_max_bytes,omitempty"`
+	QuotaMaxObjects                   uint64                  `protobuf:"varint,34,opt,name=quota_max_objects,json=quotaMaxObjects,proto3" json:"quota_max_objects,omitempty"`
+	Tiers                             []int32                 `protobuf:"varint,35,rep,packed,name=tiers,proto3" json:"tiers,omitempty"`
+	TierOf                            int32                   `protobuf:"varint,36,opt,name=tier_of,json=tierOf,proto3" json:"tier_of,omitempty"`
+	ReadTier                          int32                   `protobuf:"varint,37,opt,name=read_tier,json=readTier,proto3" json:"read_tier,omitempty"`
+	WriteTier                         int32                   `protobuf:"varint,38,opt,name=write_tier,json=writeTier,proto3" json:"write_tier,omitempty"`
+	CacheMode                         string                  `protobuf:"bytes,39,opt,name=cache_mode,json=cacheMode,proto3" json:"cache_mode,omitempty"`
+	TargetMaxBytes                    uint64                  `protobuf:"varint,40,opt,name=target_max_bytes,json=targetMaxBytes,proto3" json:"target_max_bytes,omitempty"`
+	TargetMaxObjects                  uint64                  `protobuf:"varint,41,opt,name=target_max_objects,json=targetMaxObjects,proto3" json:"target_max_objects,omitempty"`
+	CacheTargetDirtyRatioMicro        uint64                  `protobuf:"varint,42,opt,name=cache_target_dirty_ratio_micro,json=cacheTargetDirtyRatioMicro,proto3" json:"cache_target_dirty_ratio_micro,omitempty"`
+	CacheTargetDirtyHighRatioMicro    uint64                  `protobuf:"varint,43,opt,name=cache_target_dirty_high_ratio_micro,json=cacheTargetDirtyHighRatioMicro,proto3" json:"cache_target_dirty_high_ratio_micro,omitempty"`
+	CacheTargetFullRatioMicro         uint64                  `protobuf:"varint,44,opt,name=cache_target_full_ratio_micro,json=cacheTargetFullRatioMicro,proto3" json:"cache_target_full_ratio_micro,omitempty"`
+	CacheMinFlushAge                  uint64                  `protobuf:"varint,45,opt,name=cache_min_flush_age,json=cacheMinFlushAge,proto3" json:"cache_min_flush_age,omitempty"`
+	CacheMinEvictAge                  uint64                  `protobuf:"varint,46,opt,name=cache_min_evict_age,json=cacheMinEvictAge,proto3" json:"cache_min_evict_age,omitempty"`
+	ErasureCodeProfile                string                  `protobuf:"bytes,47,opt,name=erasure_code_profile,json=erasureCodeProfile,proto3" json:"erasure_code_profile,omitempty"`
+	HitSetParams                      *OsdDumpHitSetParams    `protobuf:"bytes,48,opt,name=hit_set_params,json=hitSetParams,proto3" json:"hit_set_params,omitempty"`
+	HitSetPeriod                      uint64                  `protobuf:"varint,49,opt,name=hit_set_period,json=hitSetPeriod,proto3" json:"hit_set_period,omitempty"`
+	HitSetCount                       uint64                  `protobuf:"varint,50,opt,name=hit_set_count,json=hitSetCount,proto3" json:"hit_set_count,omitempty"`
+	UseGmtHitset                      bool                    `protobuf:"varint,51,opt,name=use_gmt_hitset,json=useGmtHitset,proto3" json:"use_gmt_hitset,omitempty"`
+	MinReadRecencyForPromote          uint64                  `protobuf:"varint,52,opt,name=min_read_recency_for_promote,json=minReadRecencyForPromote,proto3" json:"min_read_recency_for_promote,omitempty"`
+	MinWriteRecencyForPromote         uint64                  `protobuf:"varint,53,opt,name=min_write_recency_for_promote,json=minWriteRecencyForPromote,proto3" json:"min_write_recency_for_promote,omitempty"`
+	HitSetGradeDecayRate              uint64                  `protobuf:"varint,54,opt,name=hit_set_grade_decay_rate,json=hitSetGradeDecayRate,proto3" json:"hit_set_grade_decay_rate,omitempty"`
+	HitSetSearchLastN                 uint64                  `protobuf:"varint,55,opt,name=hit_set_search_last_n,json=hitSetSearchLastN,proto3" json:"hit_set_search_last_n,omitempty"`
+	GradeTable                        []*structpb.Value       `protobuf:"bytes,56,rep,name=grade_table,json=gradeTable,proto3" json:"grade_table,omitempty"`
+	StripeWidth                       uint64                  `protobuf:"varint,57,opt,name=stripe_width,json=stripeWidth,proto3" json:"stripe_width,omitempty"`
+	ExpectedNumObjects                uint64                  `protobuf:"varint,58,opt,name=expected_num_objects,json=expectedNumObjects,proto3" json:"expected_num_objects,omitempty"`
+	FastRead                          bool                    `protobuf:"varint,59,opt,name=fast_read,json=fastRead,proto3" json:"fast_read,omitempty"`
+	Options                           *structpb.Struct        `protobuf:"bytes,60,opt,name=options,proto3" json:"options,omitempty"`
+	ApplicationMetadata               []string                `protobuf:"bytes,61,rep,name=application_metadata,json=applicationMetadata,proto3" json:"application_metadata,omitempty"`
+	ReadBalance                       *OsdDumpReadBalance     `protobuf:"bytes,62,opt,name=read_balance,json=readBalance,proto3" json:"read_balance,omitempty"`
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
+}
+
+func (x *PoolListItem) Reset() {
+	*x = PoolListItem{}
+	mi := &file_pool_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PoolListItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PoolListItem) ProtoMessage() {}
+
+func (x *PoolListItem) ProtoReflect() protoreflect.Message {
+	mi := &file_pool_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PoolListItem.ProtoReflect.Descriptor instead.
+func (*PoolListItem) Descriptor() ([]byte, []int) {
+	return file_pool_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *PoolListItem) GetPool() int32 {
+	if x != nil {
+		return x.Pool
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetPoolName() string {
+	if x != nil {
+		return x.PoolName
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *PoolListItem) GetFlags() int64 {
+	if x != nil {
+		return x.Flags
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetFlagsNames() string {
+	if x != nil {
+		return x.FlagsNames
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetSize() int32 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetMinSize() int32 {
+	if x != nil {
+		return x.MinSize
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetCrushRule() string {
+	if x != nil {
+		return x.CrushRule
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetPeeringCrushBucketCount() int32 {
+	if x != nil {
+		return x.PeeringCrushBucketCount
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetPeeringCrushBucketTarget() int32 {
+	if x != nil {
+		return x.PeeringCrushBucketTarget
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetPeeringCrushBucketBarrier() int32 {
+	if x != nil {
+		return x.PeeringCrushBucketBarrier
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetPeeringCrushBucketMandatoryMember() int32 {
+	if x != nil {
+		return x.PeeringCrushBucketMandatoryMember
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetIsStretchPool() bool {
+	if x != nil {
+		return x.IsStretchPool
+	}
+	return false
+}
+
+func (x *PoolListItem) GetObjectHash() int32 {
+	if x != nil {
+		return x.ObjectHash
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetPgAutoscaleMode() string {
+	if x != nil {
+		return x.PgAutoscaleMode
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetPgNum() int32 {
+	if x != nil {
+		return x.PgNum
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetPgPlacementNum() int32 {
+	if x != nil {
+		return x.PgPlacementNum
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetPgPlacementNumTarget() int32 {
+	if x != nil {
+		return x.PgPlacementNumTarget
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetPgNumTarget() int32 {
+	if x != nil {
+		return x.PgNumTarget
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetPgNumPending() int32 {
+	if x != nil {
+		return x.PgNumPending
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetLastPgMergeMeta() *OsdDumpLastPgMergeMeta {
+	if x != nil {
+		return x.LastPgMergeMeta
+	}
+	return nil
+}
+
+func (x *PoolListItem) GetLastChange() string {
+	if x != nil {
+		return x.LastChange
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetLastForceOpResend() string {
+	if x != nil {
+		return x.LastForceOpResend
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetLastForceOpResendPrenautilus() string {
+	if x != nil {
+		return x.LastForceOpResendPrenautilus
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetLastForceOpResendPreluminous() string {
+	if x != nil {
+		return x.LastForceOpResendPreluminous
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetAuid() uint64 {
+	if x != nil {
+		return x.Auid
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetSnapMode() string {
+	if x != nil {
+		return x.SnapMode
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetSnapSeq() uint64 {
+	if x != nil {
+		return x.SnapSeq
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetSnapEpoch() uint64 {
+	if x != nil {
+		return x.SnapEpoch
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetPoolSnaps() []*structpb.Value {
+	if x != nil {
+		return x.PoolSnaps
+	}
+	return nil
+}
+
+func (x *PoolListItem) GetRemovedSnaps() string {
+	if x != nil {
+		return x.RemovedSnaps
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetQuotaMaxBytes() uint64 {
+	if x != nil {
+		return x.QuotaMaxBytes
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetQuotaMaxObjects() uint64 {
+	if x != nil {
+		return x.QuotaMaxObjects
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetTiers() []int32 {
+	if x != nil {
+		return x.Tiers
+	}
+	return nil
+}
+
+func (x *PoolListItem) GetTierOf() int32 {
+	if x != nil {
+		return x.TierOf
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetReadTier() int32 {
+	if x != nil {
+		return x.ReadTier
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetWriteTier() int32 {
+	if x != nil {
+		return x.WriteTier
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetCacheMode() string {
+	if x != nil {
+		return x.CacheMode
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetTargetMaxBytes() uint64 {
+	if x != nil {
+		return x.TargetMaxBytes
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetTargetMaxObjects() uint64 {
+	if x != nil {
+		return x.TargetMaxObjects
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetCacheTargetDirtyRatioMicro() uint64 {
+	if x != nil {
+		return x.CacheTargetDirtyRatioMicro
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetCacheTargetDirtyHighRatioMicro() uint64 {
+	if x != nil {
+		return x.CacheTargetDirtyHighRatioMicro
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetCacheTargetFullRatioMicro() uint64 {
+	if x != nil {
+		return x.CacheTargetFullRatioMicro
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetCacheMinFlushAge() uint64 {
+	if x != nil {
+		return x.CacheMinFlushAge
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetCacheMinEvictAge() uint64 {
+	if x != nil {
+		return x.CacheMinEvictAge
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetErasureCodeProfile() string {
+	if x != nil {
+		return x.ErasureCodeProfile
+	}
+	return ""
+}
+
+func (x *PoolListItem) GetHitSetParams() *OsdDumpHitSetParams {
+	if x != nil {
+		return x.HitSetParams
+	}
+	return nil
+}
+
+func (x *PoolListItem) GetHitSetPeriod() uint64 {
+	if x != nil {
+		return x.HitSetPeriod
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetHitSetCount() uint64 {
+	if x != nil {
+		return x.HitSetCount
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetUseGmtHitset() bool {
+	if x != nil {
+		return x.UseGmtHitset
+	}
+	return false
+}
+
+func (x *PoolListItem) GetMinReadRecencyForPromote() uint64 {
+	if x != nil {
+		return x.MinReadRecencyForPromote
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetMinWriteRecencyForPromote() uint64 {
+	if x != nil {
+		return x.MinWriteRecencyForPromote
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetHitSetGradeDecayRate() uint64 {
+	if x != nil {
+		return x.HitSetGradeDecayRate
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetHitSetSearchLastN() uint64 {
+	if x != nil {
+		return x.HitSetSearchLastN
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetGradeTable() []*structpb.Value {
+	if x != nil {
+		return x.GradeTable
+	}
+	return nil
+}
+
+func (x *PoolListItem) GetStripeWidth() uint64 {
+	if x != nil {
+		return x.StripeWidth
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetExpectedNumObjects() uint64 {
+	if x != nil {
+		return x.ExpectedNumObjects
+	}
+	return 0
+}
+
+func (x *PoolListItem) GetFastRead() bool {
+	if x != nil {
+		return x.FastRead
+	}
+	return false
+}
+
+func (x *PoolListItem) GetOptions() *structpb.Struct {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *PoolListItem) GetApplicationMetadata() []string {
+	if x != nil {
+		return x.ApplicationMetadata
+	}
+	return nil
+}
+
+func (x *PoolListItem) GetReadBalance() *OsdDumpReadBalance {
+	if x != nil {
+		return x.ReadBalance
+	}
+	return nil
+}
+
 var File_pool_proto protoreflect.FileDescriptor
 
 const file_pool_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"pool.proto\x12\x04ceph\x1a\x1bgoogle/protobuf/empty.proto\"\xc7\x04\n" +
+	"pool.proto\x12\x04ceph\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fstatus.proto\"\xc7\x04\n" +
 	"\x11CreatePoolRequest\x12\x12\n" +
 	"\x04pool\x18\x01 \x01(\tR\x04pool\x12\x15\n" +
 	"\x06pg_num\x18\x02 \x01(\x05R\x05pgNum\x12\x1b\n" +
@@ -173,10 +804,92 @@ const file_pool_proto_rawDesc = "" +
 	"\x10_quota_max_bytesB\x14\n" +
 	"\x12_quota_max_objectsB\x14\n" +
 	"\x12_pg_autoscale_modeB\x13\n" +
-	"\x11_compression_mode2G\n" +
+	"\x11_compression_mode\"\\\n" +
+	"\x10ListPoolsRequest\x12\x19\n" +
+	"\x05attrs\x18\x01 \x01(\tH\x00R\x05attrs\x88\x01\x01\x12\x19\n" +
+	"\x05stats\x18\x02 \x01(\bH\x01R\x05stats\x88\x01\x01B\b\n" +
+	"\x06_attrsB\b\n" +
+	"\x06_stats\"=\n" +
+	"\x11ListPoolsResponse\x12(\n" +
+	"\x05pools\x18\x01 \x03(\v2\x12.ceph.PoolListItemR\x05pools\"\xd3\x15\n" +
+	"\fPoolListItem\x12\x12\n" +
+	"\x04pool\x18\x01 \x01(\x05R\x04pool\x12\x1b\n" +
+	"\tpool_name\x18\x02 \x01(\tR\bpoolName\x12;\n" +
+	"\vcreate_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12\x14\n" +
+	"\x05flags\x18\x04 \x01(\x03R\x05flags\x12\x1f\n" +
+	"\vflags_names\x18\x05 \x01(\tR\n" +
+	"flagsNames\x12\x12\n" +
+	"\x04type\x18\x06 \x01(\tR\x04type\x12\x12\n" +
+	"\x04size\x18\a \x01(\x05R\x04size\x12\x19\n" +
+	"\bmin_size\x18\b \x01(\x05R\aminSize\x12\x1d\n" +
+	"\n" +
+	"crush_rule\x18\t \x01(\tR\tcrushRule\x12;\n" +
+	"\x1apeering_crush_bucket_count\x18\n" +
+	" \x01(\x05R\x17peeringCrushBucketCount\x12=\n" +
+	"\x1bpeering_crush_bucket_target\x18\v \x01(\x05R\x18peeringCrushBucketTarget\x12?\n" +
+	"\x1cpeering_crush_bucket_barrier\x18\f \x01(\x05R\x19peeringCrushBucketBarrier\x12P\n" +
+	"%peering_crush_bucket_mandatory_member\x18\r \x01(\x05R!peeringCrushBucketMandatoryMember\x12&\n" +
+	"\x0fis_stretch_pool\x18\x0e \x01(\bR\risStretchPool\x12\x1f\n" +
+	"\vobject_hash\x18\x0f \x01(\x05R\n" +
+	"objectHash\x12*\n" +
+	"\x11pg_autoscale_mode\x18\x10 \x01(\tR\x0fpgAutoscaleMode\x12\x15\n" +
+	"\x06pg_num\x18\x11 \x01(\x05R\x05pgNum\x12(\n" +
+	"\x10pg_placement_num\x18\x12 \x01(\x05R\x0epgPlacementNum\x125\n" +
+	"\x17pg_placement_num_target\x18\x13 \x01(\x05R\x14pgPlacementNumTarget\x12\"\n" +
+	"\rpg_num_target\x18\x14 \x01(\x05R\vpgNumTarget\x12$\n" +
+	"\x0epg_num_pending\x18\x15 \x01(\x05R\fpgNumPending\x12I\n" +
+	"\x12last_pg_merge_meta\x18\x16 \x01(\v2\x1c.ceph.OsdDumpLastPgMergeMetaR\x0flastPgMergeMeta\x12\x1f\n" +
+	"\vlast_change\x18\x17 \x01(\tR\n" +
+	"lastChange\x12/\n" +
+	"\x14last_force_op_resend\x18\x18 \x01(\tR\x11lastForceOpResend\x12F\n" +
+	" last_force_op_resend_prenautilus\x18\x19 \x01(\tR\x1clastForceOpResendPrenautilus\x12F\n" +
+	" last_force_op_resend_preluminous\x18\x1a \x01(\tR\x1clastForceOpResendPreluminous\x12\x12\n" +
+	"\x04auid\x18\x1b \x01(\x04R\x04auid\x12\x1b\n" +
+	"\tsnap_mode\x18\x1c \x01(\tR\bsnapMode\x12\x19\n" +
+	"\bsnap_seq\x18\x1d \x01(\x04R\asnapSeq\x12\x1d\n" +
+	"\n" +
+	"snap_epoch\x18\x1e \x01(\x04R\tsnapEpoch\x125\n" +
+	"\n" +
+	"pool_snaps\x18\x1f \x03(\v2\x16.google.protobuf.ValueR\tpoolSnaps\x12#\n" +
+	"\rremoved_snaps\x18  \x01(\tR\fremovedSnaps\x12&\n" +
+	"\x0fquota_max_bytes\x18! \x01(\x04R\rquotaMaxBytes\x12*\n" +
+	"\x11quota_max_objects\x18\" \x01(\x04R\x0fquotaMaxObjects\x12\x14\n" +
+	"\x05tiers\x18# \x03(\x05R\x05tiers\x12\x17\n" +
+	"\atier_of\x18$ \x01(\x05R\x06tierOf\x12\x1b\n" +
+	"\tread_tier\x18% \x01(\x05R\breadTier\x12\x1d\n" +
+	"\n" +
+	"write_tier\x18& \x01(\x05R\twriteTier\x12\x1d\n" +
+	"\n" +
+	"cache_mode\x18' \x01(\tR\tcacheMode\x12(\n" +
+	"\x10target_max_bytes\x18( \x01(\x04R\x0etargetMaxBytes\x12,\n" +
+	"\x12target_max_objects\x18) \x01(\x04R\x10targetMaxObjects\x12B\n" +
+	"\x1ecache_target_dirty_ratio_micro\x18* \x01(\x04R\x1acacheTargetDirtyRatioMicro\x12K\n" +
+	"#cache_target_dirty_high_ratio_micro\x18+ \x01(\x04R\x1ecacheTargetDirtyHighRatioMicro\x12@\n" +
+	"\x1dcache_target_full_ratio_micro\x18, \x01(\x04R\x19cacheTargetFullRatioMicro\x12-\n" +
+	"\x13cache_min_flush_age\x18- \x01(\x04R\x10cacheMinFlushAge\x12-\n" +
+	"\x13cache_min_evict_age\x18. \x01(\x04R\x10cacheMinEvictAge\x120\n" +
+	"\x14erasure_code_profile\x18/ \x01(\tR\x12erasureCodeProfile\x12?\n" +
+	"\x0ehit_set_params\x180 \x01(\v2\x19.ceph.OsdDumpHitSetParamsR\fhitSetParams\x12$\n" +
+	"\x0ehit_set_period\x181 \x01(\x04R\fhitSetPeriod\x12\"\n" +
+	"\rhit_set_count\x182 \x01(\x04R\vhitSetCount\x12$\n" +
+	"\x0euse_gmt_hitset\x183 \x01(\bR\fuseGmtHitset\x12>\n" +
+	"\x1cmin_read_recency_for_promote\x184 \x01(\x04R\x18minReadRecencyForPromote\x12@\n" +
+	"\x1dmin_write_recency_for_promote\x185 \x01(\x04R\x19minWriteRecencyForPromote\x126\n" +
+	"\x18hit_set_grade_decay_rate\x186 \x01(\x04R\x14hitSetGradeDecayRate\x120\n" +
+	"\x15hit_set_search_last_n\x187 \x01(\x04R\x11hitSetSearchLastN\x127\n" +
+	"\vgrade_table\x188 \x03(\v2\x16.google.protobuf.ValueR\n" +
+	"gradeTable\x12!\n" +
+	"\fstripe_width\x189 \x01(\x04R\vstripeWidth\x120\n" +
+	"\x14expected_num_objects\x18: \x01(\x04R\x12expectedNumObjects\x12\x1b\n" +
+	"\tfast_read\x18; \x01(\bR\bfastRead\x121\n" +
+	"\aoptions\x18< \x01(\v2\x17.google.protobuf.StructR\aoptions\x121\n" +
+	"\x14application_metadata\x18= \x03(\tR\x13applicationMetadata\x12;\n" +
+	"\fread_balance\x18> \x01(\v2\x18.ceph.OsdDumpReadBalanceR\vreadBalance2\x87\x01\n" +
 	"\x04Pool\x12?\n" +
 	"\n" +
-	"CreatePool\x12\x17.ceph.CreatePoolRequest\x1a\x16.google.protobuf.Empty\"\x00B'Z%github.com/clyso/ceph-api/api/ceph;pbb\x06proto3"
+	"CreatePool\x12\x17.ceph.CreatePoolRequest\x1a\x16.google.protobuf.Empty\"\x00\x12>\n" +
+	"\tListPools\x12\x16.ceph.ListPoolsRequest\x1a\x17.ceph.ListPoolsResponse\"\x00B'Z%github.com/clyso/ceph-api/api/ceph;pbb\x06proto3"
 
 var (
 	file_pool_proto_rawDescOnce sync.Once
@@ -190,19 +903,38 @@ func file_pool_proto_rawDescGZIP() []byte {
 	return file_pool_proto_rawDescData
 }
 
-var file_pool_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_pool_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_pool_proto_goTypes = []any{
-	(*CreatePoolRequest)(nil), // 0: ceph.CreatePoolRequest
-	(*emptypb.Empty)(nil),     // 1: google.protobuf.Empty
+	(*CreatePoolRequest)(nil),      // 0: ceph.CreatePoolRequest
+	(*ListPoolsRequest)(nil),       // 1: ceph.ListPoolsRequest
+	(*ListPoolsResponse)(nil),      // 2: ceph.ListPoolsResponse
+	(*PoolListItem)(nil),           // 3: ceph.PoolListItem
+	(*timestamppb.Timestamp)(nil),  // 4: google.protobuf.Timestamp
+	(*OsdDumpLastPgMergeMeta)(nil), // 5: ceph.OsdDumpLastPgMergeMeta
+	(*structpb.Value)(nil),         // 6: google.protobuf.Value
+	(*OsdDumpHitSetParams)(nil),    // 7: ceph.OsdDumpHitSetParams
+	(*structpb.Struct)(nil),        // 8: google.protobuf.Struct
+	(*OsdDumpReadBalance)(nil),     // 9: ceph.OsdDumpReadBalance
+	(*emptypb.Empty)(nil),          // 10: google.protobuf.Empty
 }
 var file_pool_proto_depIdxs = []int32{
-	0, // 0: ceph.Pool.CreatePool:input_type -> ceph.CreatePoolRequest
-	1, // 1: ceph.Pool.CreatePool:output_type -> google.protobuf.Empty
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	3,  // 0: ceph.ListPoolsResponse.pools:type_name -> ceph.PoolListItem
+	4,  // 1: ceph.PoolListItem.create_time:type_name -> google.protobuf.Timestamp
+	5,  // 2: ceph.PoolListItem.last_pg_merge_meta:type_name -> ceph.OsdDumpLastPgMergeMeta
+	6,  // 3: ceph.PoolListItem.pool_snaps:type_name -> google.protobuf.Value
+	7,  // 4: ceph.PoolListItem.hit_set_params:type_name -> ceph.OsdDumpHitSetParams
+	6,  // 5: ceph.PoolListItem.grade_table:type_name -> google.protobuf.Value
+	8,  // 6: ceph.PoolListItem.options:type_name -> google.protobuf.Struct
+	9,  // 7: ceph.PoolListItem.read_balance:type_name -> ceph.OsdDumpReadBalance
+	0,  // 8: ceph.Pool.CreatePool:input_type -> ceph.CreatePoolRequest
+	1,  // 9: ceph.Pool.ListPools:input_type -> ceph.ListPoolsRequest
+	10, // 10: ceph.Pool.CreatePool:output_type -> google.protobuf.Empty
+	2,  // 11: ceph.Pool.ListPools:output_type -> ceph.ListPoolsResponse
+	10, // [10:12] is the sub-list for method output_type
+	8,  // [8:10] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_pool_proto_init() }
@@ -210,14 +942,16 @@ func file_pool_proto_init() {
 	if File_pool_proto != nil {
 		return
 	}
+	file_status_proto_init()
 	file_pool_proto_msgTypes[0].OneofWrappers = []any{}
+	file_pool_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pool_proto_rawDesc), len(file_pool_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

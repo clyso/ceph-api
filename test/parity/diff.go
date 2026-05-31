@@ -74,19 +74,20 @@ func walk(path []string, expected, actual any, patterns [][]string) []Diff {
 		}
 		return walkArray(path, e, a, patterns)
 	default:
-		if reflect.TypeOf(expected) != reflect.TypeOf(actual) {
-			// Two well-known proto-vs-dashboard JSON-shape divergences are
-			// suppressed inline rather than per-endpoint:
-			//   - google.protobuf.Timestamp ↔ unix-seconds integer
-			//   - protojson int64-as-string ↔ JSON integer
-			// Keeps api_diff.yaml from being polluted with the same boilerplate
-			// every time we expose a typed proto field. See CLAUDE.md.
-			if matched, applied := coerceEqual(expected, actual); applied {
-				if matched {
-					return nil
-				}
-				return []Diff{{Path: pathStr(path), Kind: "value", Expected: expected, Actual: actual}}
+		// Well-known proto-vs-dashboard JSON-shape divergences are suppressed
+		// inline rather than per-endpoint:
+		//   - google.protobuf.Timestamp ↔ unix-seconds integer
+		//   - protojson int64-as-string ↔ JSON integer
+		//   - protojson Timestamp "Z" form ↔ Ceph's "+0000" RFC3339 spelling
+		// Keeps api_diff.yaml from being polluted with the same boilerplate
+		// every time we expose a typed proto field. See CLAUDE.md.
+		if matched, applied := coerceEqual(expected, actual); applied {
+			if matched {
+				return nil
 			}
+			return []Diff{{Path: pathStr(path), Kind: "value", Expected: expected, Actual: actual}}
+		}
+		if reflect.TypeOf(expected) != reflect.TypeOf(actual) {
 			return typeDiff(path, expected, actual)
 		}
 		if !scalarEqual(expected, actual) {
@@ -110,6 +111,22 @@ func walk(path []string, expected, actual any, patterns [][]string) []Diff {
 func coerceEqual(a, b any) (matched, applied bool) {
 	aStr, aIsStr := a.(string)
 	bStr, bIsStr := b.(string)
+	if aIsStr && bIsStr {
+		// Both RFC3339 strings: the dashboard emits Ceph's UTC offset form
+		// ("...+0000", microsecond precision) while protojson renders a
+		// google.protobuf.Timestamp with a "Z" suffix. Same instant, different
+		// spelling — match within the same skew tolerance as the string↔unix case.
+		at, aOK := parseCephTime(aStr)
+		bt, bOK := parseCephTime(bStr)
+		if aOK && bOK {
+			skew := at.Sub(bt)
+			if skew < 0 {
+				skew = -skew
+			}
+			return skew <= timestampSkewTolerance, true
+		}
+		return false, false
+	}
 	if aIsStr == bIsStr {
 		return false, false
 	}
@@ -123,7 +140,7 @@ func coerceEqual(a, b any) (matched, applied bool) {
 	if !ok {
 		return false, false
 	}
-	if t, err := time.Parse(time.RFC3339Nano, str); err == nil {
+	if t, ok := parseCephTime(str); ok {
 		skew := time.Duration(int64(num)-t.Unix()) * time.Second
 		if skew < 0 {
 			skew = -skew
@@ -134,6 +151,17 @@ func coerceEqual(a, b any) (matched, applied bool) {
 		return float64(i) == num, true
 	}
 	return false, false
+}
+
+// parseCephTime accepts both protojson's RFC3339 ("...Z" / "+00:00") and
+// Ceph's numeric-offset spelling without a colon ("...+0000").
+func parseCephTime(s string) (time.Time, bool) {
+	for _, layout := range []string{time.RFC3339Nano, "2006-01-02T15:04:05.999999999-0700"} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t, true
+		}
+	}
+	return time.Time{}, false
 }
 
 func walkMap(path []string, expected, actual map[string]any, patterns [][]string) []Diff {

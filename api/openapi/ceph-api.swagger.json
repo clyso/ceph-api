@@ -23,10 +23,10 @@
       "name": "CrushRule"
     },
     {
-      "name": "Pool"
+      "name": "Status"
     },
     {
-      "name": "Status"
+      "name": "Pool"
     },
     {
       "name": "Users"
@@ -574,6 +574,44 @@
       }
     },
     "/api/pool": {
+      "get": {
+        "operationId": "Pool_ListPools",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "$ref": "#/definitions/cephPoolListItem"
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "attrs",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "stats",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Pool"
+        ]
+      },
       "post": {
         "operationId": "Pool_CreatePool",
         "responses": {
@@ -2815,6 +2853,18 @@
         }
       }
     },
+    "cephListPoolsResponse": {
+      "type": "object",
+      "properties": {
+        "pools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cephPoolListItem"
+          }
+        }
+      }
+    },
     "cephListRulesResponse": {
       "type": "object",
       "properties": {
@@ -3626,6 +3676,9 @@
         "average_primary_affinity_weighted": {
           "type": "number",
           "format": "double"
+        },
+        "score_type": {
+          "type": "string"
         }
       }
     },
@@ -4262,6 +4315,244 @@
         "num_store_stats": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "cephPoolListItem": {
+      "type": "object",
+      "properties": {
+        "pool": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pool_name": {
+          "type": "string"
+        },
+        "create_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "flags": {
+          "type": "string",
+          "format": "int64"
+        },
+        "flags_names": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "min_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "crush_rule": {
+          "type": "string"
+        },
+        "peering_crush_bucket_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "peering_crush_bucket_target": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "peering_crush_bucket_barrier": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "peering_crush_bucket_mandatory_member": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "is_stretch_pool": {
+          "type": "boolean"
+        },
+        "object_hash": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pg_autoscale_mode": {
+          "type": "string"
+        },
+        "pg_num": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pg_placement_num": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pg_placement_num_target": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pg_num_target": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pg_num_pending": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "last_pg_merge_meta": {
+          "$ref": "#/definitions/cephOsdDumpLastPgMergeMeta"
+        },
+        "last_change": {
+          "type": "string"
+        },
+        "last_force_op_resend": {
+          "type": "string"
+        },
+        "last_force_op_resend_prenautilus": {
+          "type": "string"
+        },
+        "last_force_op_resend_preluminous": {
+          "type": "string"
+        },
+        "auid": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "snap_mode": {
+          "type": "string"
+        },
+        "snap_seq": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "snap_epoch": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "pool_snaps": {
+          "type": "array",
+          "items": {}
+        },
+        "removed_snaps": {
+          "type": "string"
+        },
+        "quota_max_bytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "quota_max_objects": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "tiers": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "tier_of": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "read_tier": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "write_tier": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "cache_mode": {
+          "type": "string"
+        },
+        "target_max_bytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "target_max_objects": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "cache_target_dirty_ratio_micro": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "cache_target_dirty_high_ratio_micro": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "cache_target_full_ratio_micro": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "cache_min_flush_age": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "cache_min_evict_age": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "erasure_code_profile": {
+          "type": "string"
+        },
+        "hit_set_params": {
+          "$ref": "#/definitions/cephOsdDumpHitSetParams"
+        },
+        "hit_set_period": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "hit_set_count": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "use_gmt_hitset": {
+          "type": "boolean"
+        },
+        "min_read_recency_for_promote": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "min_write_recency_for_promote": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "hit_set_grade_decay_rate": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "hit_set_search_last_n": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "grade_table": {
+          "type": "array",
+          "items": {}
+        },
+        "stripe_width": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "expected_num_objects": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "fast_read": {
+          "type": "boolean"
+        },
+        "options": {
+          "type": "object"
+        },
+        "application_metadata": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "read_balance": {
+          "$ref": "#/definitions/cephOsdDumpReadBalance"
         }
       }
     },

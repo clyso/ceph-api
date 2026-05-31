@@ -2166,6 +2166,7 @@ type OsdDumpReadBalance struct {
 	PrimaryAffinityWeighted        float64                `protobuf:"fixed64,6,opt,name=primary_affinity_weighted,json=primaryAffinityWeighted,proto3" json:"primary_affinity_weighted,omitempty"`
 	AveragePrimaryAffinity         float64                `protobuf:"fixed64,7,opt,name=average_primary_affinity,json=averagePrimaryAffinity,proto3" json:"average_primary_affinity,omitempty"`
 	AveragePrimaryAffinityWeighted float64                `protobuf:"fixed64,8,opt,name=average_primary_affinity_weighted,json=averagePrimaryAffinityWeighted,proto3" json:"average_primary_affinity_weighted,omitempty"`
+	ScoreType                      string                 `protobuf:"bytes,9,opt,name=score_type,json=scoreType,proto3" json:"score_type,omitempty"`
 	unknownFields                  protoimpl.UnknownFields
 	sizeCache                      protoimpl.SizeCache
 }
@@ -2254,6 +2255,13 @@ func (x *OsdDumpReadBalance) GetAveragePrimaryAffinityWeighted() float64 {
 		return x.AveragePrimaryAffinityWeighted
 	}
 	return 0
+}
+
+func (x *OsdDumpReadBalance) GetScoreType() string {
+	if x != nil {
+		return x.ScoreType
+	}
+	return ""
 }
 
 type OsdDumpOsdInfo struct {
@@ -7512,7 +7520,7 @@ const file_status_proto_rawDesc = "" +
 	"\x0esource_version\x18\x05 \x01(\tR\rsourceVersion\x12%\n" +
 	"\x0etarget_version\x18\x06 \x01(\tR\rtargetVersion\")\n" +
 	"\x13OsdDumpHitSetParams\x12\x12\n" +
-	"\x04type\x18\x01 \x01(\tR\x04type\"\x94\x03\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\"\xb3\x03\n" +
 	"\x12OsdDumpReadBalance\x12!\n" +
 	"\fscore_acting\x18\x01 \x01(\x01R\vscoreActing\x12!\n" +
 	"\fscore_stable\x18\x02 \x01(\x01R\vscoreStable\x12#\n" +
@@ -7521,7 +7529,9 @@ const file_status_proto_rawDesc = "" +
 	"\x10raw_score_stable\x18\x05 \x01(\x01R\x0erawScoreStable\x12:\n" +
 	"\x19primary_affinity_weighted\x18\x06 \x01(\x01R\x17primaryAffinityWeighted\x128\n" +
 	"\x18average_primary_affinity\x18\a \x01(\x01R\x16averagePrimaryAffinity\x12I\n" +
-	"!average_primary_affinity_weighted\x18\b \x01(\x01R\x1eaveragePrimaryAffinityWeighted\"\xa6\x06\n" +
+	"!average_primary_affinity_weighted\x18\b \x01(\x01R\x1eaveragePrimaryAffinityWeighted\x12\x1d\n" +
+	"\n" +
+	"score_type\x18\t \x01(\tR\tscoreType\"\xa6\x06\n" +
 	"\x0eOsdDumpOsdInfo\x12\x10\n" +
 	"\x03osd\x18\x01 \x01(\x05R\x03osd\x12\x12\n" +
 	"\x04uuid\x18\x02 \x01(\tR\x04uuid\x12\x0e\n" +

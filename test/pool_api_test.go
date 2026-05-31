@@ -54,6 +54,30 @@ func Test_CreatePool(t *testing.T) {
 	r.NotNil(found.ApplicationMetadata, "application_metadata follow-up must land")
 	r.Contains(found.ApplicationMetadata.AsMap(), "rbd", "rbd application must be enabled")
 
+	// ListPools reconstructs the dashboard's GET /api/pool from osd dump +
+	// osd crush dump, applying the dashboard transforms.
+	listed, err := client.ListPools(tstCtx, &pb.ListPoolsRequest{})
+	r.NoError(err)
+	var item *pb.PoolListItem
+	for _, p := range listed.Pools {
+		if p.PoolName == name {
+			item = p
+			break
+		}
+	}
+	r.NotNil(item, "created pool must appear in ListPools")
+	r.Equal("replicated", item.Type, "type int must be serialized to a name")
+	r.Equal("replicated_rule", item.CrushRule, "crush_rule id must be resolved to its name")
+	r.Contains(item.ApplicationMetadata, "rbd", "application_metadata dict must become a list of keys")
+	r.Equal(uint64(quotaBytes), item.QuotaMaxBytes)
+	r.Equal(uint64(quotaObjects), item.QuotaMaxObjects)
+
+	// stats=true is not reproducible from mon commands, so it is rejected
+	// rather than silently returning the base list.
+	_, err = client.ListPools(tstCtx, &pb.ListPoolsRequest{Stats: proto.Bool(true)})
+	r.Error(err)
+	r.Contains(err.Error(), "Unimplemented")
+
 	// osd pool create is idempotent at the mon: recreating must not error.
 	_, err = client.CreatePool(tstCtx, &pb.CreatePoolRequest{
 		Pool:     name,
