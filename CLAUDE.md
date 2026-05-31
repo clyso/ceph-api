@@ -5,11 +5,23 @@ cluster, as an alternative to the Ceph mgr RESTful module. It connects to
 Ceph over RADOS via `github.com/ceph/go-ceph`, so it runs anywhere with
 mon reachability.
 
+## Goal: replace the mgr dashboard/restful modules
+
+ceph-api **replaces** the mgr dashboard and restful modules. Reimplement
+their logic in Go from mon/mgr commands — never call into or depend on
+those two modules. Issuing commands to *other* mgr modules (balancer,
+pg_autoscaler, prometheus, …) is fine for now; reimplementing those in Go
+is a later, separate task. Hard-stop a port only when faithful
+reimplementation is **both** substantial (a new stateful component —
+cache, poller, time-series — or major logic beyond send-command/parse) **and**
+forced onto an unstable internal contract or a hack; such cases become
+separate design tasks rather than ad-hoc code.
+
 ## The porting workflow
 
 Use these files when porting new endpoint from ceph mgr module:
 - `.claude/port-endpoint/anatomy.md` — how an endpoint maps onto
-  every layer + the porting checklist.
+  every layer (the layer-by-layer reference).
 - `.claude/port-endpoint/permissions.md` — dashboard → Go
   permission mapping.
 - `test/parity/README.md` — fix/implement parity test from `make full-gate`
@@ -80,17 +92,12 @@ not fail the call; check the response JSON for the real error.
 ## Parity vs API quality
 
 Parity tests (`test/parity/`) keep ceph-api a drop-in replacement for the
-dashboard's REST surface. They do **not** dictate the gRPC type system.
-When the two collide, keep the well-typed proto and absorb the wire-shape
-divergence in the matcher (`coerceEqual` in `test/parity/diff.go`) — not
-by regressing the proto, not by piling per-endpoint ignores in
-`api_diff.yaml`. The matcher already coerces, for free: RFC3339 ↔
-unix-seconds (within `timestampSkewTolerance`), int64-as-string ↔ number,
-and `null` ↔ absent. So use `google.protobuf.Timestamp` for time, `int64`
-where upstream C++ is 64-bit, and `json_name` for camelCase fields. New
-shape-class divergences go in `coerceEqual` with a `diff_test.go` test;
-reserve `api_diff.yaml` for genuinely endpoint-specific divergences. See
-`test/parity/README.md`.
+dashboard's REST surface, but do **not** dictate the gRPC type system.
+When they collide, keep the well-typed proto (`Timestamp`, `int64`,
+`json_name`) and absorb the wire divergence in the matcher (`coerceEqual`)
+— never regress the proto or pile per-endpoint `api_diff.yaml` ignores.
+The full free-coercion list, the allowed-vs-forbidden parity edits, and
+the status-class divergence policy live in `test/parity/README.md`.
 
 ## Code style
 

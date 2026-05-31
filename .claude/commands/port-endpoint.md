@@ -19,15 +19,20 @@ either:
 
 ## State
 
-`tasks/tasks.md` is a plain checkbox list of `{method} {path}` lines with a status checkbox: `[ ]` = todo, `[x]` = done. Nothing else.
-Each task corresponds to a Ceph dashboard API endpoint to migrate into this project, and gets a corresponding file `tasks/{method}-{path}.md` once any implementation attempt is made. The filename is sanitized: lowercase, with every non-alphanumeric char replaced by a dash `-`.
+`tasks/tasks.md` lists the endpoints to migrate as `{method} {path}`
+checkbox lines (`[ ]` todo, `[x]` done), grouped under `## Tier` /
+`### resource` headings (CRUD groups, create first). Each endpoint gets a
+`tasks/{method}-{path}.md` file once any attempt is made; the filename is
+sanitized per the algorithm in step 1.
 
 ## Hard rules
 
 - **You edit nothing outside `tasks/`.** Forward any fix to the implementer subagent.
 - **You don't research, explore, or read source code.** Investigation, implementation, and review all happen in subagents with fresh context. Your only reads are `tasks/tasks.md`, the current task file, and subagent responses; your only actions are `git`, `make` gates, and the mechanical task-file checks in the pipeline. Don't open `api/`, `pkg/`, `test/`, or the Ceph submodule yourself — keep your context lean.
-- In `tasks/tasks.md` you may **only** check a line `[x]` or reorder the
-  list (e.g. move a skipped line to the end). No other edits. For skip, full group of endpoints must be skipped.
+- In `tasks/tasks.md` you may **only** check a line `[x]`, append a
+  `(**PARTIAL!**: …)` marker to a line you just completed as a partial
+  port, or reorder the list (e.g. move a skipped line to the end). No
+  other edits. For skip, full group of endpoints must be skipped.
 - Per-endpoint files `tasks/{method}-{path}.md` are yours to create
   (from the stub in step 1) and update.
 - **Never commit or push to `main`** (nor any protected branch). Only the
@@ -69,7 +74,11 @@ For each target endpoint:
 
 2. **Investigate** — spawn the `endpoint-investigator` agent with the
    task-file path. It fills the §Requirements section. Its default prompt is tied to the file structure; no extra info needed.
-   After it returns, do a mechanical presence check on §Requirements (text only — no code reading): it must contain a request shape, a response shape, the required permission, and the target-service line (existing proto or new service name). If any is missing, resume the investigator to fill the gap.
+   After it returns, do a mechanical presence check on §Requirements (text only — no code reading): it must contain the §Data source tag, a request shape, a response shape, the §Scope & permission guard line, and the §gRPC service decision. If any is missing, resume the investigator to fill the gap.
+   - If the investigator reports a **skip / hard-stop** (data source
+     `hard-stop`, or it can't verify against the ceph-test container), STOP
+     the whole run and report to the user — don't move the group or
+     continue (unlike an implementer skip, below).
 
 3. **Implement** — spawn the `endpoint-implementer` agent with the
    task-file path. It writes proto/http.yaml/handler/e2e/parity and must
@@ -79,6 +88,16 @@ For each target endpoint:
      problem statement to §Skip reason and stops. Move the line to the
      end of the list (leave it `[ ]`) and continue to the next endpoint.
      IMPORTANT: check the next endpoints for skip — endpoints are CRUDs grouped by resource, starting from CREATE. If we skip one, we skip the full group for that resource, keeping their initial relative order when moving the group to the end of the list. No need to create task files for the rest of the skipped group.
+   - **Partial port:** if the endpoint is reproducible except for a
+     sub-feature (e.g. a field that needs mgr's accumulated state per
+     §Open decisions), the implementer ports the reproducible part with a
+     documented divergence (`api_diff.yaml` reason or `ErrNotImplemented`)
+     and records the gap. This is a *completed* port, not a skip — proceed,
+     but mark its `tasks/tasks.md` line so it's detectable at a glance:
+     ```
+     - [x] GET /api/pool  (**PARTIAL!**: <one-line gap> — see task §Open decisions)
+     ```
+     and surface the §Open decisions gap to the user in your run summary.
    - If gates are red, send the failing output back to the **same**
      implementer agent (resume it) to fix; repeat until green or stop pipeline after 3 failed attempts.
 
@@ -116,13 +135,11 @@ For each target endpoint:
 - `endpoint-reviewer-mechanical` — checklist file-to-file review (sonnet).
 - `endpoint-reviewer-deep` — design-quality review (opus).
 
-## Shared references (point agents at these; don't inline)
+## Shared references
 
-- [anatomy.md](../port-endpoint/anatomy.md) — how an endpoint maps onto every layer.
-- [permissions.md](../port-endpoint/permissions.md) — dashboard→Go permission mapping.
-- [parity README](../../test/parity/README.md) — the parity gate.
-- The `ceph-src` skill — the only source of Ceph facts (never training
-  data).
+You don't read these — the stage agents do. You pass each agent only the
+task-file path; their prompts already point them at `anatomy.md`,
+`permissions.md`, the parity README, and the `ceph-src` skill.
 
 ## Logging for later tuning
 

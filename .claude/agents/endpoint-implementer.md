@@ -13,14 +13,20 @@ Link to task file - info about your task. Contains endpoint name to port and Req
 
 ## Required reading
 
-- The task file from input
-- `.claude/port-endpoint/anatomy.md` — the layer-by-layer guide
-  and the porting checklist. Follow existing ported endpoints as the
-  template; match their style.
-- `.claude/port-endpoint/permissions.md` — the permission guard.
-- `test/parity/README.md` — how to add a parity scenario and what the
-  matcher coerces; **never edit `test/parity/*.go` framework code.** Read only when work on test or if e2e or parity tests fails.
-- The `ceph-src` skill for any Ceph fact not already in the task file.
+- The task file from input — §Requirements is your spec; the closest
+  in-repo analogue it names is your *starting* template — confirm it fits
+  and match its style.
+- `.claude/port-endpoint/anatomy.md` — the layer-by-layer reference
+  (proto / http.yaml / handler / registration conventions + Testing layers).
+- `test/parity/README.md` — how to add a parity scenario, what the matcher
+  coerces, the allowed-vs-forbidden parity edits, and the status-class
+  divergence policy. Read when working on tests or when e2e/parity fails.
+- `.claude/port-endpoint/permissions.md` — **on demand only**: the
+  §Requirements guard line is pre-derived; open this for a gotcha or if the
+  guard is missing/ambiguous.
+- The `ceph-src` skill (and its quirks list) for any Ceph fact not already
+  in the task file. A targeted openapi/controller re-read is fine when a
+  gate failure implicates a research fact — read only the relevant lines.
 
 ## Trust the research, verify at the gate
 
@@ -33,7 +39,7 @@ command, response shape, `Accept` version, or scope/perm). The parity
 test against the **real dashboard** is the actual verifier of shape and
 behavior — when it disagrees with §Requirements, the dashboard wins: fix the
 code, correct §Requirements in place, and note the correction in
-§Implementation log (so a wrong handoff is visible for later tuning).
+`tasks/log.md` (see After implementation).
 
 ## Generic rules
 - FOLLOW PATTERNS IN EXISTING CODE AND IMPLEMENT BY ANALOGY. Porting an endpoint is a typical task; the repo already contains ported endpoints.
@@ -42,13 +48,18 @@ code, correct §Requirements in place, and note the correction in
 - Follow go code/test style best practices from CLAUDE.md and comment convention
 - Don't commit.
 
-## Implementation flow (follow anatomy.md's checklist)
+## Implementation flow
 
+Follow §Data source in the task file for the handler's strategy
+(`forwards-command` vs `reconstruct`). Per-layer conventions live in
+`anatomy.md`; this is the order.
 
 1. **Proto file** (`api/<svc>.proto`) — §Requirements names the target gRPC service: either an existing `api/<svc>.proto` to extend or a new service to create (one rpc service per file, endpoints grouped like in the dashboard swagger). Use it; don't rediscover.
 2. Add the rpc and messages to the proto file for the new endpoint according to anatomy.md conventions.
    - The grpc-gateway-generated REST API should match the dashboard swagger.
    - proto timestamps have to be used instead of int32 - only deviation from dashboard allowed by default.
+   - enums: value names must match the dashboard wire strings exactly;
+     use `optional` when a required field must detect absence (anatomy §Proto).
 3. add http mappings **http.yaml** (`api/http.yaml`): selector block — path params,
    `body:"*"` for POST/PUT, `response_body` to unwrap list/single.
 4. **`make proto`** to regenerate stubs + openapi.
@@ -57,19 +68,31 @@ code, correct §Requirements in place, and note the correction in
    **first statement** → validate (wrap `types.Err*` with `%w`) → build
    the mon/mgr JSON command → `radosSvc.ExecMon`/`ExecMgr` → unmarshal
    into proto → `types.ErrNotFound` etc. on errors (let the central
-   `ErrorInterceptor` map sentinels to gRPC codes).
+   `ErrorInterceptor` map sentinels to gRPC codes). Return the
+   semantically-correct sentinel even when its status class differs from
+   the dashboard — handle that per the parity status-class policy, don't
+   degrade the code. Extract non-obvious pure transforms
+   (int→string maps, id→name, flag parsing, byte sanitizing) into
+   standalone rados-free functions so they're unit-testable.
 6. **New service only:** register in `grpc_server.go`,
-   `grpc_http_gateway.go`, `pkg/app/start.go` (see anatomy.md §5).
-7. run `make gate` lightweight check that project compiles and no lint errors.
-8. Add **E2E test** (`test/<svc>_api_test.go`, `//go:build cgo`): a
+   `grpc_http_gateway.go`, `pkg/app/start.go` (see anatomy §New gRPC
+   service registration).
+7. **Unit table tests** for the pure functions from step 5, in
+   `pkg/api/*_test.go` (no cgo, runs in `make gate`). Ground each expected
+   value in §Requirements / ceph-src, not in what your handler emits — a
+   self-confirming table just re-encodes a wrong assumption. See anatomy
+   §Testing layers; test at the lowest layer that catches the bug before
+   reaching for Docker e2e.
+8. run `make gate` — compiles, lint clean, unit tests pass.
+9. Add **E2E test** (`test/<svc>_api_test.go`, `//go:build cgo`): a
    script-like create→get→list→delete→404 flow with cleanup, against the
    real cluster via the generated client. Cover edge cases: second
    delete, idempotency, validation errors. e2e tests are imperative, script-like long flows that emulate real-world usage and complicated flows. Extend an existing relevant test to call the new endpoint, or create a new one. If it is the first endpoint of the CRUD set for a resource, a long flow isn't possible — just call create; if you're adding one of the last CRUD endpoints for a resource, extend the existing test to cover the previous endpoints.
-9. **Parity test** (`test/<svc>_parity_test.go`): record this endpoint on
+10. **Parity test** (`test/<svc>_parity_test.go`): record this endpoint on
    both backends, assert 2xx, with isolated setup/cleanup. Both coverage
    gates require the http route AND the parity test, so this is not
    optional.
-10. Make sure `make full-gate` passes — it runs the full e2e + parity suite in Docker.
+11. Make sure `make full-gate` passes — it runs the full e2e + parity suite in Docker.
 
 ### Quick test iteration (recipe)
 To run a single test without rerunning the whole suite:

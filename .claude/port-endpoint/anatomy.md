@@ -22,7 +22,7 @@ against current source.
 | Parity test | `test/<svc>_parity_test.go` |
 | Dashboard source | `third_party/ceph/src/pybind/mgr/dashboard/controllers/<res>.py` |
 
-## 1. Proto — `api/<svc>.proto`
+## Proto — `api/<svc>.proto`
 
 - `package ceph;` + `option go_package = ".../api/ceph;pb";`. The package
   prefix `ceph.` is what `http.yaml` selectors reference.
@@ -32,7 +32,13 @@ against current source.
   snake_case** (gateway mux sets `UseProtoNames: true`).
 - proto3 `optional` for nullable/omittable scalars → Go pointer
   (`*int32`, `*string`); the handler nil-checks them.
-- enums use lowercase values; the zero value is the default.
+- enums: value names must equal the dashboard wire strings **exactly**
+  (protojson parses an enum from its value name), so relax the
+  lowercase-style convention to match the wire — e.g.
+  `enum PoolType { replicated = 0; erasure = 1; }`, not `replication`. A
+  proto3 enum's zero value can't be told apart from "field absent"; when
+  the field is required and you must detect absence, make it `optional`
+  (→ pointer, nil = absent) so the handler can reject a missing value.
 - `repeated` for lists.
 - **Types:** `google.protobuf.Timestamp` for time (never unix-seconds
   ints); `int64` when the upstream C++ type is 64-bit (verify in
@@ -40,7 +46,7 @@ against current source.
   The parity matcher coerces the wire-shape differences — see
   [parity README](../../test/parity/README.md).
 
-## 2. HTTP mapping — `api/http.yaml`
+## HTTP mapping — `api/http.yaml`
 
 grpc-gateway `grpc_api_configuration` (external YAML, not in-proto
 annotations). One block per rpc:
@@ -66,7 +72,7 @@ annotations). One block per rpc:
 - `response_body: "field"` unwraps one response field so the HTTP body
   matches the dashboard's bare array/object instead of `{"field": ...}`.
 
-## 3. Codegen
+## Codegen
 
 `make proto` (runs `go tool buf generate` from `api/`). Generates the
 `.pb.go` / `_grpc.pb.go` / `.pb.gw.go` stubs and the merged openapi
@@ -74,7 +80,7 @@ spec. The grpc server iface is `pb.<Svc>Server`;
 `require_unimplemented_servers=false`, so handler structs need not embed
 `Unimplemented<Svc>Server`.
 
-## 4. Handler — `pkg/api/<svc>_api_handlers.go`
+## Handler — `pkg/api/<svc>_api_handlers.go`
 
 - Constructor returns the generated iface, impl struct is unexported:
   `func New<Svc>API(radosSvc *rados.Svc) pb.<Svc>Server`; struct holds
@@ -92,11 +98,25 @@ spec. The grpc server iface is `pb.<Svc>Server`;
 - Parse: `json.Unmarshal` into a local struct whose fields are the proto
   types, or directly into the proto message.
 - Not-found → `return nil, types.ErrNotFound` (don't hand-map to gRPC
-  codes; `ErrorInterceptor` does that centrally via `errors.Is`).
+  codes; `ErrorInterceptor` does that centrally via `errors.Is`). Return
+  the sentinel whose semantics are correct for ceph-api; when that yields
+  a different HTTP **status class** than the dashboard, handle it per the
+  status-class policy in [parity README](../../test/parity/README.md), not
+  by degrading the code.
 - Non-empty `cmdStatus` from `ExecMon` is logged, not failed — check the
   response JSON for the real error.
+- A slice built by iterating a Go map has nondeterministic order, and the
+  parity matcher compares arrays positionally — sort it, matching the
+  dashboard's emission order (don't just sort alphabetically if the
+  dashboard preserves a different order).
+- Ceph's JSON formatter can emit bare `inf`/`-inf`/`nan` tokens that Go's
+  `encoding/json` rejects — see the ceph-src skill's quirks list; sanitize
+  before unmarshalling numeric-heavy mon output.
+- Extract non-obvious pure transforms (int→string maps, id→name lookups,
+  flag-string parsing, byte sanitizing) into standalone functions with no
+  rados/ctx dependency, table-tested in `make gate` — see §Testing layers.
 
-## 5. New gRPC service registration
+## New gRPC service registration
 
 A **new rpc on an existing service** needs only proto + `http.yaml` +
 handler. A **brand-new service** additionally touches three files:
@@ -108,7 +128,7 @@ handler. A **brand-new service** additionally touches three files:
 3. `pkg/app/start.go` — construct `api.New<Svc>API(radosSvc)` and pass it
    into `NewGrpcServer(...)`.
 
-## 6. cgo / !cgo pair
+## cgo / !cgo pair
 
 Composing JSON commands for the **existing** rados primitives needs no
 cgo/!cgo edits — both `production_conn.go` (cgo) and `rados_mock.go`
@@ -118,7 +138,7 @@ is offline-dev convenience, **not contract** — endpoint correctness is
 proven by `make e2e-test` against real Ceph, so updating mock-data is not
 required for a port.
 
-## 7. E2E test — `test/<svc>_api_test.go`
+## E2E test — `test/<svc>_api_test.go`
 
 - `//go:build cgo` header (all real-RADOS tests carry it).
 - `TestMain` (`test/main_test.go`) re-execs in Docker on `-tid` or runs
@@ -136,22 +156,21 @@ required for a port.
   is incomplete (build red) until both the http mapping and the parity
   test exist.
 
-## Porting checklist (derived)
+## Testing layers
 
-1. Read `third_party/ceph/.../controllers/<res>.py` for routes,
-   `@APIRouter(Scope.X)`, per-method permission, the mon/mgr command, and
-   `openapi.yaml` for the per-route `Accept` version. Use the `ceph-src`
-   skill — never training data.
-2. Define/extend `api/<res>.proto` (Empty for void; optional→pointer;
-   int64/Timestamp where upstream is 64-bit/time).
-3. Add `http.yaml` blocks (path params, `body:"*"`, `response_body` for
-   list-unwrap).
-4. `make proto`.
-5. Implement `pkg/api/<res>_api_handlers.go`: `HasPermissions` first →
-   validate → build JSON cmd → `ExecMon`/`ExecMgr` → unmarshal → sentinel
-   on not-found.
-6. New service only: register in `grpc_server.go`, `grpc_http_gateway.go`,
-   `start.go`.
-7. Add the `//go:build cgo` e2e test and the parity test (both required
-   by the coverage gates). See [parity README](../../test/parity/README.md).
-8. `make gate` then `make full-gate`.
+Test at the **lowest layer** that can catch the bug; reach for Docker
+e2e/parity only for what the cheaper layers can't cover:
+
+- **Pure logic** (validation, field mapping, serialization transforms,
+  byte sanitizing — no rados/ctx/network) → idiomatic Go **table tests**
+  in `pkg/<pkg>/*_test.go`, no cgo, runs in `make gate`. Ground each
+  expected value in §Requirements / ceph-src (never in "what my handler
+  returns") — a table whose answers come from the same author's mental
+  model just re-encodes the blind spot.
+- **rados-touching handler flow** → `//go:build cgo` e2e test (§E2E test),
+  Docker + real Ceph.
+- **Wire shape vs the dashboard** → parity test
+  ([parity README](../../test/parity/README.md)).
+
+The ordered build procedure lives in the implementer agent prompt; this
+file is the per-layer reference it points back to.

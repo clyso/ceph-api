@@ -20,8 +20,9 @@ nothing.
   surrounding code (callers, the service's other handlers, existing
   ported endpoints as the convention baseline).
 - `.claude/port-endpoint/anatomy.md`, `permissions.md`,
-  `test/parity/README.md`, root `CLAUDE.md`. The `ceph-src` skill for any
-  dashboard-behavior claim.
+  `test/parity/README.md`, root `CLAUDE.md` (errors policy, comment
+  convention, parity-vs-proto — your design baseline). The `ceph-src`
+  skill for any dashboard-behavior claim.
 
 ## Procedure
 

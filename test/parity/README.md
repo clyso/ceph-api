@@ -33,16 +33,21 @@ diff. **There is no manual skip list — adding one is a regression.**
 | `recorder.go` | Per-test harness: `Call`, `New(t)`, `DoRecord`/`Do`/`DoRecordAs`, request canonicalization, coverage map, `t.Cleanup` diff (`assertAll`). | **FRAMEWORK — do not edit** |
 | `probes.go` | Authz probes: after each recorded `Ours` call, asserts 401 (no token) and 403 (no perms). | **FRAMEWORK — do not edit** |
 | `inventory.go` | Loads `http.yaml` + dashboard openapi; shape matching; coverage gate. | **FRAMEWORK — do not edit** |
-| `diff.go` | JSON comparator `Compare` + `coerceEqual` tolerances + JSONPath ignore matcher. | **FRAMEWORK — do not edit** |
+| `diff.go` | JSON comparator `Compare` + `coerceEqual` tolerances + JSONPath ignore matcher. | **structure: do not edit; but a new shape-*class* coercion in `coerceEqual` backed by a `diff_test.go` case is allowed (see below)** |
 | `api_diff.go` | Parses/validates `api_diff.yaml` (`path` + `reason` mandatory). | **FRAMEWORK — do not edit** |
 | `client.go`, `grpc.go` | Auth'd HTTP client; gRPC-routed gate. | **FRAMEWORK — do not edit** |
 | `api_diff.yaml` | Declared per-endpoint divergence ignores (data). | **editable (data only)** |
 | `test/*_parity_test.go` | The scenarios. | **editable — add tests here** |
 
-A port's **only** allowed edits in this area are: a new
-`test/<svc>_parity_test.go` scenario, and (rarely, justified)
-`api_diff.yaml`. Never modify framework code to make a port pass — that
-is how you defeat the gate, and the reviewers check for it.
+A port's allowed edits in this area are: a new `test/<svc>_parity_test.go`
+scenario; (rarely, justified) `api_diff.yaml`; and a **new shape-class
+coercion in `coerceEqual` backed by a `diff_test.go` case** (the
+project-sanctioned alternative to a yaml ignore — see the api_diff policy
+below). **Forbidden** (a high-severity review finding): weakening the
+matcher, baking per-endpoint logic into framework files, or editing
+`recorder.go` / `probes.go` / `inventory.go` / `client.go` / `grpc.go` /
+`api_diff.go`. The line: a reusable, test-backed coercion is fine; making
+*this one* port pass by loosening the framework is not.
 
 ## What the matcher coerces for free (`coerceEqual` in `diff.go`)
 
@@ -61,6 +66,25 @@ Only status **class** (`/100`) is compared, not exact codes. What you
 must still make match: differing scalar values, non-coercible type
 mismatches, array length, missing/extra non-null keys, and field-name
 casing (snake vs camel — fix with proto `json_name`, not a yaml ignore).
+
+### Status-class divergence policy
+
+Return the `types.Err*` sentinel whose semantics are correct for ceph-api
+and let `ErrorInterceptor` pick the code — never degrade ceph-api to
+mirror a dashboard status wart. Two distinct kinds of divergence:
+
+- **Systematic** (the same wart on every endpoint of a kind) — e.g. the
+  dashboard 500s on a missing required field (Python `TypeError`) where
+  ceph-api correctly 400s. **Do not** write a per-endpoint `api_diff.yaml`
+  entry for these (that would pile N identical ignores, against the
+  minimize-ignores rule); instead **don't record that error case as a
+  cross-backend parity scenario at all** — cover the error path in the e2e
+  test on our side. Parity scenarios assert the happy path; the systematic
+  error-status wart simply isn't diffed.
+- **Endpoint-specific** — e.g. a route the dashboard answers 202 with an
+  async-task envelope where ceph-api is synchronous and 201s. That is a
+  genuine, irreducible per-endpoint `api_diff.yaml` entry (with a
+  `reason`).
 
 ## Adding a scenario
 

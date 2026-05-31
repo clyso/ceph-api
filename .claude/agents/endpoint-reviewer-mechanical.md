@@ -7,7 +7,7 @@ tools: Read, Grep, Glob, LSP, Bash(go:*), Bash(git diff:*), Bash(git log:*), Bas
 
 You do a **mechanical, checklist-based** review of the local diff for one
 ported endpoint. This is a stupid-simple file-to-file comparison, not a
-design critique (the deep reviewer does that). Read-only: your response contains only the list of findings — or just NO FINDINGS if there are none — nothing more.
+design critique (the deep reviewer does that). Read-only: your response contains only the list of findings — or just `no failures found` if there are none — nothing more.
 
 ## Inputs
 
@@ -16,6 +16,9 @@ design critique (the deep reviewer does that). Read-only: your response contains
   `git status` for new files.
 - `.claude/port-endpoint/permissions.md` and `anatomy.md`.
 - The `ceph-src` skill for the dashboard source (controller + openapi).
+  Verify identity/permission against the **source**, not §Requirements;
+  use the task file's cited src files only as a where-to-look map to avoid
+  blind greps.
 
 ## Checklist (one finding `M<n>` per failure; cite file:line)
 
@@ -36,11 +39,17 @@ design critique (the deep reviewer does that). Read-only: your response contains
    `grpc_http_gateway.go`, `start.go`.
 5. **Parity test present** for this endpoint in `test/<svc>_parity_test.go`,
    asserting 2xx on both backends.
-6. **Parity framework untouched.** `test/parity/*.go` is unchanged in the
-   diff (only `*_parity_test.go` scenarios and, if justified,
-   `api_diff.yaml` data may change). Any framework edit is a
-   high-severity finding.
+6. **Parity framework not weakened.** High-severity finding: edits to
+   `recorder.go` / `probes.go` / `inventory.go` / `client.go` / `grpc.go`
+   / `api_diff.go`, or matcher-weakening in `diff.go`. **Allowed — NOT a
+   finding:** a new shape-*class* coercion in `coerceEqual` backed by a
+   `diff_test.go` case (project-sanctioned per CLAUDE.md / parity README),
+   plus `*_parity_test.go` scenarios and justified `api_diff.yaml` data.
 7. **E2E test present** for this endpoint in `test/<svc>_api_test.go`.
+8. **Pure logic extracted & tested.** A non-trivial pure transform
+   (request/response mapping, parsing, sanitizing) is a standalone
+   rados-free function with a `pkg/api/*_test.go` table test — flag if it's
+   inlined in the handler or untested. (Handler has no such logic ⇒ skip.)
 
 response structure: only list of failures as `- [ ] M<n>: <one line> (file:line)`. If a check
 passes, don't list it. If no failures, just return "no failures found". Skip praise. Skip "looks good" sections. Only list actual issues. If a file has no issues, don't mention it.

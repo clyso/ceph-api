@@ -30,6 +30,24 @@ git -C third_party/ceph describe    # confirm the pinned ref
 | Mon command JSON shape | `src/mon/MonCommands.h` — grep the command literal in the `COMMAND(...)` table. |
 | Mgr command JSON shape | `src/mgr/MgrCommands.h` (table) + `src/mgr/DaemonServer.cc` (dispatch). Module-specific commands in `src/pybind/mgr/<module>/`. |
 
+## Ceph JSON / command quirks (verify, don't assume)
+
+- **The dashboard's `send_command` drops `None`-valued kwargs**
+  (`src/pybind/mgr/dashboard/services/ceph_service.py`), so it *omits* an
+  optional arg rather than sending `null` — but it forwards an empty
+  string verbatim. Mirror this: omit when the proto field is nil, pass
+  `""` through. Confirm which args actually leave via `ceph.audit.log`
+  (see [verify.md](./verify.md)); never infer presence from the Python
+  signature alone.
+- **Ceph's JSON formatter emits bare `inf` / `-inf` / `nan` tokens**
+  (`src/common/Formatter.cc`) which Go's `encoding/json` rejects, failing
+  the whole unmarshal. Sanitize the raw bytes before unmarshalling
+  numeric-heavy mon output (e.g. `osd dump` read-balance scores).
+- **Swagger request/response bodies can be wrong, not merely incomplete**
+  — `openapi.yaml` may document a subclass override instead of the public
+  signature. Confirm the real shape from controller source **and** a live
+  curl ([verify.md](./verify.md)); never trust the openapi body alone.
+
 ## Cross-release diff
 
 Tags available are listed in the top-level Makefile's
