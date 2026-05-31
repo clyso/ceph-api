@@ -23,6 +23,9 @@
       "name": "CrushRule"
     },
     {
+      "name": "Pool"
+    },
+    {
       "name": "Status"
     },
     {
@@ -567,6 +570,39 @@
         ],
         "tags": [
           "CrushRule"
+        ]
+      }
+    },
+    "/api/pool": {
+      "post": {
+        "operationId": "Pool_CreatePool",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cephCreatePoolRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Pool"
         ]
       }
     },
@@ -2434,6 +2470,51 @@
         }
       }
     },
+    "cephCreatePoolRequest": {
+      "type": "object",
+      "properties": {
+        "pool": {
+          "type": "string"
+        },
+        "pg_num": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pool_type": {
+          "type": "string"
+        },
+        "erasure_code_profile": {
+          "type": "string"
+        },
+        "rule_name": {
+          "type": "string"
+        },
+        "flags": {
+          "type": "string"
+        },
+        "application_metadata": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "configuration": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "rbd_mirroring": {
+          "type": "boolean"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "cephCreateRuleRequest": {
       "type": "object",
       "properties": {
@@ -4084,9 +4165,9 @@
         "avail_no_missing": {
           "type": "array",
           "items": {
-            "type": "string",
-            "format": "int64"
-          }
+            "type": "string"
+          },
+          "description": "pg_shard_t rendered via dump_stream → JSON strings (e.g. \"0\", \"1(2)\"),\nnot integers (osd_types.cc PGStat::dump avail_no_missing)."
         },
         "object_location_counts": {
           "type": "array",

@@ -210,7 +210,7 @@ type PGStat struct {
 	StatSum                 *pb.PGStat_PGStat_StatSum `json:"stat_sum,omitempty"`
 	Up                      []int64                   `json:"up,omitempty"`
 	Acting                  []int64                   `json:"acting,omitempty"`
-	AvailNoMissing          []int64                   `json:"avail_no_missing,omitempty"`
+	AvailNoMissing          []string                  `json:"avail_no_missing,omitempty"`
 	ObjectLocationCounts    []int64                   `json:"object_location_counts,omitempty"`
 	BlockedBy               []int64                   `json:"blocked_by,omitempty"`
 	UpPrimary               int64                     `json:"up_primary,omitempty"`

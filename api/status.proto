@@ -648,7 +648,9 @@ message PGStat {
   PGStat_StatSum stat_sum = 45;
   repeated int64 up = 46;
   repeated int64 acting = 47;
-  repeated int64 avail_no_missing = 48;
+  // pg_shard_t rendered via dump_stream → JSON strings (e.g. "0", "1(2)"),
+  // not integers (osd_types.cc PGStat::dump avail_no_missing).
+  repeated string avail_no_missing = 48;
   repeated int64 object_location_counts = 49;
   repeated int64 blocked_by = 50;
   int64 up_primary = 51;

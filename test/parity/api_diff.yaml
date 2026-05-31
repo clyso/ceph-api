@@ -19,3 +19,12 @@
 # divergences (RFC3339-vs-unix-seconds, int64-as-string-vs-int) so they
 # do not need per-endpoint ignores. See CLAUDE.md → "Parity vs API
 # quality" for the decision rule.
+
+"POST /api/pool":
+  - path: $
+    reason: >-
+      dashboard wraps pool create in an async Task and returns a Task
+      descriptor body ({"name":"pool/create","metadata":{...}}) with 201/202;
+      ceph-api runs the command sequence synchronously and returns an empty
+      2xx body. The body shape (Task descriptor vs empty) is an irreducible
+      per-endpoint divergence since ceph-api has no Task queue.

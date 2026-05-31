@@ -265,6 +265,21 @@ func (e *CephEnv) execLog(ctx context.Context, cmd []string) error {
 	return nil
 }
 
+// Exec runs a command in the ceph container and returns its stdout. Used by
+// e2e tests to read cluster state back through a channel independent of the
+// API under test.
+func (e *CephEnv) Exec(ctx context.Context, cmd []string) (string, error) {
+	exitCode, reader, err := e.container.Exec(ctx, cmd, tcexec.Multiplexed())
+	if err != nil {
+		return "", fmt.Errorf("exec %v: %w", cmd, err)
+	}
+	out, _ := io.ReadAll(reader)
+	if exitCode != 0 {
+		return "", fmt.Errorf("exec %v: exit %d: %s", cmd, exitCode, bytes.TrimSpace(out))
+	}
+	return string(out), nil
+}
+
 func (e *CephEnv) writeFile(ctx context.Context, path, content string) error {
 	return e.execOK(ctx, []string{"sh", "-c", fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF\n", path, content)})
 }

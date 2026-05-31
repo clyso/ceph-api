@@ -3518,14 +3518,16 @@ type PGStat struct {
 	StatSum                 *PGStat_PGStat_StatSum `protobuf:"bytes,45,opt,name=stat_sum,json=statSum,proto3" json:"stat_sum,omitempty"`
 	Up                      []int64                `protobuf:"varint,46,rep,packed,name=up,proto3" json:"up,omitempty"`
 	Acting                  []int64                `protobuf:"varint,47,rep,packed,name=acting,proto3" json:"acting,omitempty"`
-	AvailNoMissing          []int64                `protobuf:"varint,48,rep,packed,name=avail_no_missing,json=availNoMissing,proto3" json:"avail_no_missing,omitempty"`
-	ObjectLocationCounts    []int64                `protobuf:"varint,49,rep,packed,name=object_location_counts,json=objectLocationCounts,proto3" json:"object_location_counts,omitempty"`
-	BlockedBy               []int64                `protobuf:"varint,50,rep,packed,name=blocked_by,json=blockedBy,proto3" json:"blocked_by,omitempty"`
-	UpPrimary               int64                  `protobuf:"varint,51,opt,name=up_primary,json=upPrimary,proto3" json:"up_primary,omitempty"`
-	ActingPrimary           int64                  `protobuf:"varint,52,opt,name=acting_primary,json=actingPrimary,proto3" json:"acting_primary,omitempty"`
-	PurgedSnaps             []int64                `protobuf:"varint,53,rep,packed,name=purged_snaps,json=purgedSnaps,proto3" json:"purged_snaps,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// pg_shard_t rendered via dump_stream → JSON strings (e.g. "0", "1(2)"),
+	// not integers (osd_types.cc PGStat::dump avail_no_missing).
+	AvailNoMissing       []string `protobuf:"bytes,48,rep,name=avail_no_missing,json=availNoMissing,proto3" json:"avail_no_missing,omitempty"`
+	ObjectLocationCounts []int64  `protobuf:"varint,49,rep,packed,name=object_location_counts,json=objectLocationCounts,proto3" json:"object_location_counts,omitempty"`
+	BlockedBy            []int64  `protobuf:"varint,50,rep,packed,name=blocked_by,json=blockedBy,proto3" json:"blocked_by,omitempty"`
+	UpPrimary            int64    `protobuf:"varint,51,opt,name=up_primary,json=upPrimary,proto3" json:"up_primary,omitempty"`
+	ActingPrimary        int64    `protobuf:"varint,52,opt,name=acting_primary,json=actingPrimary,proto3" json:"acting_primary,omitempty"`
+	PurgedSnaps          []int64  `protobuf:"varint,53,rep,packed,name=purged_snaps,json=purgedSnaps,proto3" json:"purged_snaps,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *PGStat) Reset() {
@@ -3887,7 +3889,7 @@ func (x *PGStat) GetActing() []int64 {
 	return nil
 }
 
-func (x *PGStat) GetAvailNoMissing() []int64 {
+func (x *PGStat) GetAvailNoMissing() []string {
 	if x != nil {
 		return x.AvailNoMissing
 	}
@@ -7868,7 +7870,7 @@ const file_status_proto_rawDesc = "" +
 	"\bstat_sum\x18- \x01(\v2\x1b.ceph.PGStat.PGStat_StatSumR\astatSum\x12\x0e\n" +
 	"\x02up\x18. \x03(\x03R\x02up\x12\x16\n" +
 	"\x06acting\x18/ \x03(\x03R\x06acting\x12(\n" +
-	"\x10avail_no_missing\x180 \x03(\x03R\x0eavailNoMissing\x124\n" +
+	"\x10avail_no_missing\x180 \x03(\tR\x0eavailNoMissing\x124\n" +
 	"\x16object_location_counts\x181 \x03(\x03R\x14objectLocationCounts\x12\x1d\n" +
 	"\n" +
 	"blocked_by\x182 \x03(\x03R\tblockedBy\x12\x1d\n" +
