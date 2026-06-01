@@ -9,4 +9,22 @@ package ceph;
 
 service Pool {
   rpc CreatePool (google.protobuf.Struct) returns (google.protobuf.Empty) {}
+  rpc ListPools (ListPoolsRequest) returns (ListPoolsResponse) {}
+}
+
+message ListPoolsRequest {
+  // CSV whitelist of pool attribute names to emit. A typed Struct response
+  // always emits every key, so this is accepted for wire-compatibility but
+  // not honored (see api_diff.yaml / §Open decisions).
+  string attrs = 1;
+  // Enrich each pool with usage stats. The rate/rates time-series is not
+  // reconstructible without an in-mgr poller; stats=true is unsupported.
+  bool stats = 2;
+}
+
+message ListPoolsResponse {
+  // Each pool is the raw `osd dump` pool object with the dashboard's
+  // _serialize_pool transforms applied; modeled as Struct because the
+  // field set is large and drifts across Ceph releases.
+  repeated google.protobuf.Struct pools = 1;
 }

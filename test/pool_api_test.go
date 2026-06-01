@@ -11,13 +11,25 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// findPool returns the pool object with pool_name == name from a ListPools
+// response, or nil if absent.
+func findPool(pools []*structpb.Struct, name string) map[string]any {
+	for _, p := range pools {
+		m := p.AsMap()
+		if m["pool_name"] == name {
+			return m
+		}
+	}
+	return nil
+}
+
 func Test_Pool_Create(t *testing.T) {
 	r := require.New(t)
 	client := pb.NewPoolClient(admConn)
 
 	const name = "e2e-pool-create"
 	cleanup := func() {
-		// rados-free CLI delete; the pool GET/DELETE endpoints are not ported.
+		// rados-free CLI delete; the pool DELETE endpoint is not ported.
 		_, _ = cephEnv.Exec(context.Background(), []string{
 			"ceph", "osd", "pool", "delete", name, name,
 			"--yes-i-really-really-mean-it",
@@ -25,6 +37,12 @@ func Test_Pool_Create(t *testing.T) {
 	}
 	cleanup()
 	t.Cleanup(cleanup)
+
+	t.Run("list before create omits the pool", func(t *testing.T) {
+		res, err := client.ListPools(tstCtx, &pb.ListPoolsRequest{})
+		r.NoError(err)
+		r.Nil(findPool(res.Pools, name))
+	})
 
 	t.Run("happy path with quotas, app, and a kwarg", func(t *testing.T) {
 		body, err := structpb.NewStruct(map[string]any{
@@ -40,22 +58,45 @@ func Test_Pool_Create(t *testing.T) {
 		r.NoError(err)
 		_, err = client.CreatePool(tstCtx, body)
 		r.NoError(err)
+	})
 
-		// TODO(crud-readback): replace with Pool Get once ported.
-		out, err := cephEnv.Exec(tstCtx, []string{"ceph", "osd", "pool", "get", name, "pg_autoscale_mode", "-f", "json"})
+	t.Run("list after create returns the pool with serialized fields", func(t *testing.T) {
+		res, err := client.ListPools(tstCtx, &pb.ListPoolsRequest{})
 		r.NoError(err)
-		r.Contains(out, "\"pg_autoscale_mode\":\"on\"")
+		pool := findPool(res.Pools, name)
+		r.NotNil(pool, "created pool must appear in the list")
 
-		// TODO(crud-readback): replace with Pool Get once ported.
-		quota, err := cephEnv.Exec(tstCtx, []string{"ceph", "osd", "pool", "get-quota", name, "-f", "json"})
-		r.NoError(err)
-		r.Contains(quota, "1073741824")
-		r.Contains(quota, "1000")
+		// _serialize_pool transforms: type int→string, crush_rule id→name,
+		// application_metadata dict→list-of-keys.
+		r.Equal("replicated", pool["type"])
+		r.Equal("replicated_rule", pool["crush_rule"])
+		r.Equal([]any{"rbd"}, pool["application_metadata"])
 
-		// TODO(crud-readback): replace with Pool Get once ported.
-		app, err := cephEnv.Exec(tstCtx, []string{"ceph", "osd", "pool", "application", "get", name, "-f", "json"})
+		// fields the create set, read back through the ported LIST.
+		r.Equal("on", pool["pg_autoscale_mode"])
+		r.EqualValues(1073741824, pool["quota_max_bytes"])
+		r.EqualValues(1000, pool["quota_max_objects"])
+
+		// read_balance is a mixed-type object preserved as-is.
+		rb, ok := pool["read_balance"].(map[string]any)
+		r.True(ok, "read_balance must be an object")
+		r.NotEmpty(rb["score_type"])
+	})
+
+	t.Run("attrs is accepted (response not field-filtered)", func(t *testing.T) {
+		// attrs cannot be honored under a typed Struct response (documented
+		// divergence); the param is accepted and the full object returned.
+		res, err := client.ListPools(tstCtx, &pb.ListPoolsRequest{Attrs: "pool_name,size"})
 		r.NoError(err)
-		r.Contains(app, "rbd")
+		pool := findPool(res.Pools, name)
+		r.NotNil(pool)
+		r.Equal("replicated", pool["type"], "full attribute set still returned")
+	})
+
+	t.Run("stats=true is not supported", func(t *testing.T) {
+		_, err := client.ListPools(tstCtx, &pb.ListPoolsRequest{Stats: true})
+		r.Error(err)
+		r.Contains(err.Error(), "NotImplemented")
 	})
 
 	t.Run("re-create existing pool is idempotent", func(t *testing.T) {

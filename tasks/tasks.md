@@ -8,7 +8,7 @@ over rados — same as cluster, crush_rule, status, users, roles).
 
 ### pool
 - [x] POST /api/pool
-- [ ] GET /api/pool
+- [x] GET /api/pool  (**PARTIAL!**: `stats=true` → ErrNotImplemented (needs mgr time-series cache); `attrs` field-whitelist not honored — see task §Open decisions)
 - [ ] GET /api/pool/{pool_name}
 - [ ] PUT /api/pool/{pool_name}
 - [ ] DELETE /api/pool/{pool_name}

@@ -41,3 +41,22 @@ addressed (D1 added mon-errno→sentinel mapping, real improvement); api-diff A1
 raised then WITHDRAWN on re-review (root `$` ignore is genuinely required — the
 parity body-presence guard fires before Compare, only `$` suppresses it). A1 was a
 reviewer false-positive corrected by implementer pushback + re-review.
+
+## Investigator issues for GET /api/pool
+
+- Task slug `get-api-pool` is ambiguous: the `/api/pool` route has both a
+  `list` (collection GET, this task) and a `get` (`/api/pool/{pool_name}`,
+  single) method on the same `Pool` controller. Resolved to `list` from the
+  openapi route `/api/pool` (no path param). A `{method}-{path}` slug can't
+  distinguish collection-vs-item on a RESTController; worth noting for future
+  tasks.
+- `openapi.yaml` documents the `list` response schema but the live body
+  carries extra keys not in `POOL_SCHEMA` (pool.py:19-88): `read_balance`,
+  `peering_crush_bucket_*`, `is_stretch_pool`. Confirms the skill's "openapi
+  body can be wrong, not just incomplete" warning — used the live curl as
+  truth.
+- CLAUDE.md / port-endpoint pipeline assumes one clean data-source class per
+  endpoint, but `GET /api/pool` is split: the default path is clean
+  `reconstruct`, while `stats=true` is a hard-stop-class subset (mgr
+  time-series). Had to record this as a §11 decision rather than a single
+  §2 classification.

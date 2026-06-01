@@ -1,12 +1,122 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
 	"github.com/clyso/ceph-api/pkg/types"
 	"github.com/stretchr/testify/require"
 )
+
+func Test_serializePool_transforms(t *testing.T) {
+	r := require.New(t)
+	ruleNames := map[int]string{0: "replicated_rule", 1: "ecrule"}
+
+	// Raw osd dump pool shape (numbers decode as float64), verified against a
+	// live `ceph osd dump`.
+	pool := map[string]any{
+		"pool":                 float64(1),
+		"pool_name":            ".rgw.root",
+		"type":                 float64(1),
+		"crush_rule":           float64(0),
+		"application_metadata": map[string]any{"rgw": map[string]any{}},
+		"size":                 float64(3),
+	}
+	r.NoError(serializePool(pool, ruleNames, []string{"rgw"}))
+
+	r.Equal("replicated", pool["type"])
+	r.Equal("replicated_rule", pool["crush_rule"])
+	r.Equal([]any{"rgw"}, pool["application_metadata"])
+	// untouched fields pass through
+	r.Equal(".rgw.root", pool["pool_name"])
+	r.Equal(float64(3), pool["size"])
+}
+
+func Test_serializePool_erasureAndMultiApp(t *testing.T) {
+	r := require.New(t)
+	ruleNames := map[int]string{5: "ecrule"}
+	pool := map[string]any{
+		"type":                 float64(3),
+		"crush_rule":           float64(5),
+		"application_metadata": map[string]any{"rbd": map[string]any{}, "cephfs": map[string]any{}},
+	}
+	// appOrder carries the osd dump source order, which the dashboard preserves
+	// via list(dict.keys()); serializePool must emit exactly that order.
+	r.NoError(serializePool(pool, ruleNames, []string{"rbd", "cephfs"}))
+	r.Equal("erasure", pool["type"])
+	r.Equal("ecrule", pool["crush_rule"])
+	r.Equal([]any{"rbd", "cephfs"}, pool["application_metadata"])
+}
+
+func Test_serializePool_unknownMappingErrors(t *testing.T) {
+	r := require.New(t)
+	// The dashboard dict-lookup raises KeyError → 500 on an unmapped type or
+	// crush_rule; we mirror that with ErrInternal instead of leaking the raw int.
+	err := serializePool(map[string]any{"type": float64(2)}, map[int]string{}, nil)
+	r.ErrorIs(err, types.ErrInternal)
+
+	err = serializePool(map[string]any{"crush_rule": float64(99)}, map[int]string{0: "replicated_rule"}, nil)
+	r.ErrorIs(err, types.ErrInternal)
+}
+
+func Test_parseCrushRuleNames(t *testing.T) {
+	r := require.New(t)
+	names, err := parseCrushRuleNames([]byte(`{"rules":[{"rule_id":0,"rule_name":"replicated_rule"},{"rule_id":7,"rule_name":"ec"}]}`))
+	r.NoError(err)
+	r.Equal(map[int]string{0: "replicated_rule", 7: "ec"}, names)
+}
+
+func Test_sanitizeCephJSON_infTokens(t *testing.T) {
+	r := require.New(t)
+	// Ceph formatter emits bare inf inside read_balance scores; Go json rejects
+	// it, so it must become a quoted token before unmarshal.
+	in := []byte(`{"read_balance":{"score_acting":inf,"raw_score_acting":-inf,"score_type":"X"}}`)
+	var out map[string]any
+	err := json.Unmarshal(sanitizeCephJSON(in), &out)
+	r.NoError(err)
+	rb := out["read_balance"].(map[string]any)
+	r.Equal("Infinity", rb["score_acting"])
+	r.Equal("Infinity", rb["raw_score_acting"])
+	r.Equal("X", rb["score_type"])
+}
+
+func Test_sanitizeCephJSON_nanDistinctFromInf(t *testing.T) {
+	r := require.New(t)
+	// The dashboard only stringifies inf→"Infinity" (read_balance, pool.py:120);
+	// nan must not be collapsed into "Infinity". It still has to be quoted so Go
+	// can unmarshal the bare token, but it stays distinct as "NaN".
+	in := []byte(`{"a":inf,"b":-inf,"c":nan}`)
+	var out map[string]any
+	err := json.Unmarshal(sanitizeCephJSON(in), &out)
+	r.NoError(err)
+	r.Equal("Infinity", out["a"])
+	r.Equal("Infinity", out["b"])
+	r.Equal("NaN", out["c"])
+}
+
+func Test_objectKeyOrder(t *testing.T) {
+	r := require.New(t)
+	// Keys must come back in source order, not sorted or map-randomized; nested
+	// object values are skipped without confusing the key stream.
+	raw := json.RawMessage(`{"pool":1,"application_metadata":{"rbd":{},"cephfs":{"x":1}},"size":3}`)
+	keys, err := objectKeyOrder(raw, "application_metadata")
+	r.NoError(err)
+	r.Equal([]string{"rbd", "cephfs"}, keys)
+
+	// Absent field → nil, no error.
+	keys, err = objectKeyOrder(json.RawMessage(`{"pool":1}`), "application_metadata")
+	r.NoError(err)
+	r.Nil(keys)
+}
+
+func Test_sanitizeCephJSON_leavesFiniteAndWords(t *testing.T) {
+	r := require.New(t)
+	// A finite float and a string containing "inf" as a substring must be left
+	// alone (the token regex only fires at a value position on a whole word).
+	in := []byte(`{"score":1.5,"name":"infrastructure","mode":"none"}`)
+	r.Equal(in, sanitizeCephJSON(in))
+}
 
 func Test_stringifyVal(t *testing.T) {
 	cases := []struct {

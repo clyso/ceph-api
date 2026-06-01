@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	Pool_CreatePool_FullMethodName = "/ceph.Pool/CreatePool"
+	Pool_ListPools_FullMethodName  = "/ceph.Pool/ListPools"
 )
 
 // PoolClient is the client API for Pool service.
@@ -29,6 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PoolClient interface {
 	CreatePool(ctx context.Context, in *structpb.Struct, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListPools(ctx context.Context, in *ListPoolsRequest, opts ...grpc.CallOption) (*ListPoolsResponse, error)
 }
 
 type poolClient struct {
@@ -49,11 +51,22 @@ func (c *poolClient) CreatePool(ctx context.Context, in *structpb.Struct, opts .
 	return out, nil
 }
 
+func (c *poolClient) ListPools(ctx context.Context, in *ListPoolsRequest, opts ...grpc.CallOption) (*ListPoolsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPoolsResponse)
+	err := c.cc.Invoke(ctx, Pool_ListPools_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PoolServer is the server API for Pool service.
 // All implementations should embed UnimplementedPoolServer
 // for forward compatibility.
 type PoolServer interface {
 	CreatePool(context.Context, *structpb.Struct) (*emptypb.Empty, error)
+	ListPools(context.Context, *ListPoolsRequest) (*ListPoolsResponse, error)
 }
 
 // UnimplementedPoolServer should be embedded to have
@@ -65,6 +78,9 @@ type UnimplementedPoolServer struct{}
 
 func (UnimplementedPoolServer) CreatePool(context.Context, *structpb.Struct) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreatePool not implemented")
+}
+func (UnimplementedPoolServer) ListPools(context.Context, *ListPoolsRequest) (*ListPoolsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPools not implemented")
 }
 func (UnimplementedPoolServer) testEmbeddedByValue() {}
 
@@ -104,6 +120,24 @@ func _Pool_CreatePool_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Pool_ListPools_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPoolsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PoolServer).ListPools(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Pool_ListPools_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PoolServer).ListPools(ctx, req.(*ListPoolsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Pool_ServiceDesc is the grpc.ServiceDesc for Pool service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +148,10 @@ var Pool_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreatePool",
 			Handler:    _Pool_CreatePool_Handler,
+		},
+		{
+			MethodName: "ListPools",
+			Handler:    _Pool_ListPools_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

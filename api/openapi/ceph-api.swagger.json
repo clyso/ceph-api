@@ -574,6 +574,45 @@
       }
     },
     "/api/pool": {
+      "get": {
+        "operationId": "Pool_ListPools",
+        "responses": {
+          "200": {
+            "description": "Each pool is the raw `osd dump` pool object with the dashboard's\n_serialize_pool transforms applied; modeled as Struct because the\nfield set is large and drifts across Ceph releases.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "attrs",
+            "description": "CSV whitelist of pool attribute names to emit. A typed Struct response\nalways emits every key, so this is accepted for wire-compatibility but\nnot honored (see api_diff.yaml / §Open decisions).",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "stats",
+            "description": "Enrich each pool with usage stats. The rate/rates time-series is not\nreconstructible without an in-mgr poller; stats=true is unsupported.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Pool"
+        ]
+      },
       "post": {
         "operationId": "Pool_CreatePool",
         "responses": {
@@ -2767,6 +2806,18 @@
         },
         "progress_events": {
           "type": "object"
+        }
+      }
+    },
+    "cephListPoolsResponse": {
+      "type": "object",
+      "properties": {
+        "pools": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Each pool is the raw `osd dump` pool object with the dashboard's\n_serialize_pool transforms applied; modeled as Struct because the\nfield set is large and drifts across Ceph releases."
         }
       }
     },

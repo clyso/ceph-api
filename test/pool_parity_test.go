@@ -10,8 +10,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Mutations use v1.0; dashboard returns 415 otherwise.
-const poolWriteAccept = "application/vnd.ceph.api.v1.0+json"
+// Both the list and create routes use v1.0; dashboard returns 415 otherwise.
+const poolAccept = "application/vnd.ceph.api.v1.0+json"
+
+func Test_Parity_Pool_List(t *testing.T) {
+	r := parity.New(t)
+	// Default request (no attrs filter, stats omitted) so every pool returns
+	// its fullest serialized body across both backends.
+	call := parity.Call{Method: "GET", Path: "/api/pool", Accept: poolAccept}
+	for _, b := range r.Backends(call) {
+		resp, _ := r.DoRecord(b, call)
+		require.True(t, resp.StatusCode/100 == 2, "%s: list pools: status %d", b, resp.StatusCode)
+	}
+}
 
 func Test_Parity_Pool_Create(t *testing.T) {
 	r := parity.New(t)
@@ -29,7 +40,7 @@ func Test_Parity_Pool_Create(t *testing.T) {
 		"quota_max_bytes":      1073741824,
 		"quota_max_objects":    1000,
 	}
-	create := parity.Call{Method: "POST", Path: "/api/pool", Body: createBody, Accept: poolWriteAccept}
+	create := parity.Call{Method: "POST", Path: "/api/pool", Body: createBody, Accept: poolAccept}
 
 	del := func() {
 		_, _ = cephEnv.Exec(context.Background(), []string{

@@ -85,6 +85,9 @@ http:
     - selector: ceph.Pool.CreatePool
       post: /api/pool
       body: "*"
+    - selector: ceph.Pool.ListPools
+      get: /api/pool
+      response_body: "pools"
     # Status
     - selector: ceph.Status.GetCephStatus
       get: /api/status/ceph
