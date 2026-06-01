@@ -12,6 +12,17 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// findPool returns the pool element with the given pool_name from a ListPools
+// response, or nil if absent.
+func findPool(pools []*structpb.Struct, name string) *structpb.Struct {
+	for _, p := range pools {
+		if pn, ok := p.Fields["pool_name"]; ok && pn.GetStringValue() == name {
+			return p
+		}
+	}
+	return nil
+}
+
 func Test_Pool_Create(t *testing.T) {
 	r := require.New(t)
 	client := pb.NewPoolClient(admConn)
@@ -35,24 +46,63 @@ func Test_Pool_Create(t *testing.T) {
 	})
 	r.NoError(err)
 
-	// CREATE is the only ported pool endpoint, so the settings can't be read
-	// back through gRPC yet — assert them via the ceph CLI.
-	// TODO(crud-readback): replace with GetPool/ListPools once ported.
-	out, err := cephEnv.Exec(tstCtx, []string{"ceph", "osd", "pool", "get", name, "size", "-f", "json"})
+	// list-after-create: the new pool is present with the settings the create
+	// applied, read back through ListPools (osd dump exposes these fields).
+	listRes, err := client.ListPools(tstCtx, &pb.ListPoolsRequest{})
 	r.NoError(err)
-	r.Contains(out, `"size":2`)
+	pool := findPool(listRes.Pools, name)
+	r.NotNil(pool, "created pool should appear in ListPools")
+	fields := pool.Fields
+	r.Equal(float64(2), fields["size"].GetNumberValue())
+	r.Equal("on", fields["pg_autoscale_mode"].GetStringValue())
+	r.Equal(float64(1000), fields["quota_max_objects"].GetNumberValue())
+	// type int->string and crush_rule id->name transforms applied.
+	r.Equal("replicated", fields["type"].GetStringValue())
+	r.Equal("replicated_rule", fields["crush_rule"].GetStringValue())
+	// application_metadata object -> list of keys.
+	r.Contains(fields["application_metadata"].GetListValue().AsSlice(), "rbd")
+}
 
-	out, err = cephEnv.Exec(tstCtx, []string{"ceph", "osd", "pool", "get", name, "pg_autoscale_mode", "-f", "json"})
-	r.NoError(err)
-	r.Contains(out, `"pg_autoscale_mode":"on"`)
+func Test_Pool_List_AttrsWhitelist(t *testing.T) {
+	r := require.New(t)
+	client := pb.NewPoolClient(admConn)
 
-	out, err = cephEnv.Exec(tstCtx, []string{"ceph", "osd", "pool", "get-quota", name, "-f", "json"})
+	res, err := client.ListPools(tstCtx, &pb.ListPoolsRequest{
+		Attrs: proto.String("size,type"),
+	})
 	r.NoError(err)
-	r.Contains(out, `"quota_max_objects":1000`)
+	r.NotEmpty(res.Pools)
+	for _, p := range res.Pools {
+		// Only the whitelisted attrs plus the always-present pool_name.
+		keys := make([]string, 0, len(p.Fields))
+		for k := range p.Fields {
+			keys = append(keys, k)
+		}
+		for _, k := range keys {
+			r.Contains([]string{"size", "type", "pool_name"}, k, "unexpected attr %q under whitelist", k)
+		}
+		r.Contains(keys, "pool_name")
+	}
+}
 
-	out, err = cephEnv.Exec(tstCtx, []string{"ceph", "osd", "pool", "application", "get", name, "-f", "json"})
+func Test_Pool_List_StatsUnsupported(t *testing.T) {
+	r := require.New(t)
+	client := pb.NewPoolClient(admConn)
+
+	_, err := client.ListPools(tstCtx, &pb.ListPoolsRequest{
+		Stats: proto.Bool(true),
+	})
+	r.Error(err)
+	r.Contains(err.Error(), "Unimplemented")
+}
+
+func Test_Pool_List_Empty(t *testing.T) {
+	// ListPools without args succeeds even when called by the bootstrap admin;
+	// the response is a (possibly empty) slice, never an error.
+	r := require.New(t)
+	client := pb.NewPoolClient(admConn)
+	_, err := client.ListPools(tstCtx, &pb.ListPoolsRequest{})
 	r.NoError(err)
-	r.Contains(out, "rbd")
 }
 
 func Test_Pool_Create_MissingRequired(t *testing.T) {

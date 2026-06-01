@@ -23,6 +23,110 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// LIST POOLS
+type ListPoolsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Comma-separated whitelist of pool attribute names to return. Absent ->
+	// all attributes. pool_name is always included regardless of the filter.
+	Attrs *string `protobuf:"bytes,1,opt,name=attrs,proto3,oneof" json:"attrs,omitempty"`
+	// Augments each pool with pg_status + stats. Out of scope (stateful mgr
+	// time-series); a true value yields ErrNotImplemented.
+	Stats         *bool `protobuf:"varint,2,opt,name=stats,proto3,oneof" json:"stats,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPoolsRequest) Reset() {
+	*x = ListPoolsRequest{}
+	mi := &file_pool_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPoolsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPoolsRequest) ProtoMessage() {}
+
+func (x *ListPoolsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pool_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPoolsRequest.ProtoReflect.Descriptor instead.
+func (*ListPoolsRequest) Descriptor() ([]byte, []int) {
+	return file_pool_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ListPoolsRequest) GetAttrs() string {
+	if x != nil && x.Attrs != nil {
+		return *x.Attrs
+	}
+	return ""
+}
+
+func (x *ListPoolsRequest) GetStats() bool {
+	if x != nil && x.Stats != nil {
+		return *x.Stats
+	}
+	return false
+}
+
+type ListPoolsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Each pool object is heterogeneous and version-variant, so it is modeled
+	// as a Struct; the response is unwrapped to a bare JSON array via
+	// response_body so the wire matches the dashboard.
+	Pools         []*structpb.Struct `protobuf:"bytes,1,rep,name=pools,proto3" json:"pools,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPoolsResponse) Reset() {
+	*x = ListPoolsResponse{}
+	mi := &file_pool_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPoolsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPoolsResponse) ProtoMessage() {}
+
+func (x *ListPoolsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pool_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPoolsResponse.ProtoReflect.Descriptor instead.
+func (*ListPoolsResponse) Descriptor() ([]byte, []int) {
+	return file_pool_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ListPoolsResponse) GetPools() []*structpb.Struct {
+	if x != nil {
+		return x.Pools
+	}
+	return nil
+}
+
 // CREATE POOL
 // The dashboard Pool.create signature carries a flat **kwargs body: every
 // key below is a top-level JSON field forwarded to osd pool create /
@@ -67,7 +171,7 @@ type CreatePoolRequest struct {
 
 func (x *CreatePoolRequest) Reset() {
 	*x = CreatePoolRequest{}
-	mi := &file_pool_proto_msgTypes[0]
+	mi := &file_pool_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -79,7 +183,7 @@ func (x *CreatePoolRequest) String() string {
 func (*CreatePoolRequest) ProtoMessage() {}
 
 func (x *CreatePoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pool_proto_msgTypes[0]
+	mi := &file_pool_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -92,7 +196,7 @@ func (x *CreatePoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePoolRequest.ProtoReflect.Descriptor instead.
 func (*CreatePoolRequest) Descriptor() ([]byte, []int) {
-	return file_pool_proto_rawDescGZIP(), []int{0}
+	return file_pool_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CreatePoolRequest) GetPool() string {
@@ -254,7 +358,14 @@ var File_pool_proto protoreflect.FileDescriptor
 const file_pool_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"pool.proto\x12\x04ceph\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xb9\n" +
+	"pool.proto\x12\x04ceph\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"\\\n" +
+	"\x10ListPoolsRequest\x12\x19\n" +
+	"\x05attrs\x18\x01 \x01(\tH\x00R\x05attrs\x88\x01\x01\x12\x19\n" +
+	"\x05stats\x18\x02 \x01(\bH\x01R\x05stats\x88\x01\x01B\b\n" +
+	"\x06_attrsB\b\n" +
+	"\x06_stats\"B\n" +
+	"\x11ListPoolsResponse\x12-\n" +
+	"\x05pools\x18\x01 \x03(\v2\x17.google.protobuf.StructR\x05pools\"\xb9\n" +
 	"\n" +
 	"\x11CreatePoolRequest\x12\x12\n" +
 	"\x04pool\x18\x01 \x01(\tR\x04pool\x12\x15\n" +
@@ -299,10 +410,11 @@ const file_pool_proto_rawDesc = "" +
 	"\x12_target_size_bytesB\x14\n" +
 	"\x12_target_size_ratioB\r\n" +
 	"\v_pg_num_minB\r\n" +
-	"\v_pg_num_max2G\n" +
+	"\v_pg_num_max2\x87\x01\n" +
 	"\x04Pool\x12?\n" +
 	"\n" +
-	"CreatePool\x12\x17.ceph.CreatePoolRequest\x1a\x16.google.protobuf.Empty\"\x00B'Z%github.com/clyso/ceph-api/api/ceph;pbb\x06proto3"
+	"CreatePool\x12\x17.ceph.CreatePoolRequest\x1a\x16.google.protobuf.Empty\"\x00\x12>\n" +
+	"\tListPools\x12\x16.ceph.ListPoolsRequest\x1a\x17.ceph.ListPoolsResponse\"\x00B'Z%github.com/clyso/ceph-api/api/ceph;pbb\x06proto3"
 
 var (
 	file_pool_proto_rawDescOnce sync.Once
@@ -316,21 +428,26 @@ func file_pool_proto_rawDescGZIP() []byte {
 	return file_pool_proto_rawDescData
 }
 
-var file_pool_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_pool_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_pool_proto_goTypes = []any{
-	(*CreatePoolRequest)(nil), // 0: ceph.CreatePoolRequest
-	(*structpb.Struct)(nil),   // 1: google.protobuf.Struct
-	(*emptypb.Empty)(nil),     // 2: google.protobuf.Empty
+	(*ListPoolsRequest)(nil),  // 0: ceph.ListPoolsRequest
+	(*ListPoolsResponse)(nil), // 1: ceph.ListPoolsResponse
+	(*CreatePoolRequest)(nil), // 2: ceph.CreatePoolRequest
+	(*structpb.Struct)(nil),   // 3: google.protobuf.Struct
+	(*emptypb.Empty)(nil),     // 4: google.protobuf.Empty
 }
 var file_pool_proto_depIdxs = []int32{
-	1, // 0: ceph.CreatePoolRequest.configuration:type_name -> google.protobuf.Struct
-	0, // 1: ceph.Pool.CreatePool:input_type -> ceph.CreatePoolRequest
-	2, // 2: ceph.Pool.CreatePool:output_type -> google.protobuf.Empty
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 0: ceph.ListPoolsResponse.pools:type_name -> google.protobuf.Struct
+	3, // 1: ceph.CreatePoolRequest.configuration:type_name -> google.protobuf.Struct
+	2, // 2: ceph.Pool.CreatePool:input_type -> ceph.CreatePoolRequest
+	0, // 3: ceph.Pool.ListPools:input_type -> ceph.ListPoolsRequest
+	4, // 4: ceph.Pool.CreatePool:output_type -> google.protobuf.Empty
+	1, // 5: ceph.Pool.ListPools:output_type -> ceph.ListPoolsResponse
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_pool_proto_init() }
@@ -339,13 +456,14 @@ func file_pool_proto_init() {
 		return
 	}
 	file_pool_proto_msgTypes[0].OneofWrappers = []any{}
+	file_pool_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pool_proto_rawDesc), len(file_pool_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -1,11 +1,13 @@
 package api
 
 import (
+	"encoding/json"
 	"testing"
 
 	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func Test_poolCreateCommands(t *testing.T) {
@@ -101,4 +103,120 @@ func Test_poolCreateCommands_ratioStringified(t *testing.T) {
 		}
 	}
 	r.Len(got, len(want))
+}
+
+func Test_serializePool_transforms(t *testing.T) {
+	r := require.New(t)
+	crushRules := map[int]string{0: "replicated_rule", 1: "ec_rule"}
+	pool := map[string]interface{}{
+		"pool":                 float64(1),
+		"pool_name":            ".rgw.root",
+		"type":                 float64(1),
+		"crush_rule":           float64(0),
+		"application_metadata": map[string]interface{}{"rgw": map[string]interface{}{}},
+		"read_balance":         map[string]interface{}{"score_acting": float64(1)},
+		"size":                 float64(3),
+	}
+
+	got := serializePool(pool, nil, crushRules)
+
+	// type int -> string (1 -> "replicated"), pool.py:111.
+	r.Equal("replicated", got["type"])
+	// crush_rule id -> name, pool.py:113.
+	r.Equal("replicated_rule", got["crush_rule"])
+	// application_metadata object -> list of keys, pool.py:115.
+	r.Equal([]interface{}{"rgw"}, got["application_metadata"])
+	// read_balance with finite values passes through unchanged, pool.py:117-124.
+	r.Equal(map[string]interface{}{"score_acting": float64(1)}, got["read_balance"])
+	// untransformed key kept as-is.
+	r.Equal(float64(3), got["size"])
+	r.Equal(".rgw.root", got["pool_name"])
+}
+
+func Test_serializePool_erasureType(t *testing.T) {
+	r := require.New(t)
+	got := serializePool(map[string]interface{}{
+		"pool_name": "ec",
+		"type":      float64(3),
+	}, nil, nil)
+	// 3 -> "erasure", pool.py:111.
+	r.Equal("erasure", got["type"])
+}
+
+func Test_serializePool_attrsWhitelist(t *testing.T) {
+	r := require.New(t)
+	pool := map[string]interface{}{
+		"pool_name":  "p",
+		"type":       float64(1),
+		"size":       float64(3),
+		"min_size":   float64(1),
+		"crush_rule": float64(0),
+	}
+	// Whitelist excludes pool_name, size, min_size; pool_name must still appear
+	// (pool.py:128-129), and transforms still apply to whitelisted keys.
+	got := serializePool(pool, []string{"type"}, map[int]string{0: "replicated_rule"})
+	r.Equal(map[string]interface{}{
+		"type":      "replicated",
+		"pool_name": "p",
+	}, got)
+}
+
+func Test_serializePool_attrsMissingKeyIgnored(t *testing.T) {
+	r := require.New(t)
+	// A whitelisted attr absent from the pool is skipped (pool.py:108-109).
+	got := serializePool(map[string]interface{}{"pool_name": "p"}, []string{"nonexistent"}, nil)
+	r.Equal(map[string]interface{}{"pool_name": "p"}, got)
+}
+
+func Test_parsePoolAttrs(t *testing.T) {
+	r := require.New(t)
+	r.Nil(parsePoolAttrs(nil))
+	r.Nil(parsePoolAttrs(proto.String("")))
+	r.Equal([]string{"size", "type"}, parsePoolAttrs(proto.String("size,type")))
+}
+
+func Test_sanitizeCephFloats(t *testing.T) {
+	r := require.New(t)
+	// Bare inf/-inf/nan/-nan tokens (src/common/Formatter.cc dump_float) are
+	// rewritten to valid JSON strings: inf/-inf -> "Infinity", nan/-nan -> "NaN".
+	raw := []byte(`{"a": inf, "b": -inf, "c": nan, "n": -nan, "arr": [inf, 1.0], "info": "x", "d": 2.0}`)
+	sanitized := sanitizeCephFloats(raw)
+
+	var out map[string]interface{}
+	r.NoError(json.Unmarshal(sanitized, &out))
+	r.Equal("Infinity", out["a"])
+	r.Equal("Infinity", out["b"])
+	r.Equal("NaN", out["c"])
+	// -nan must be sanitized too; libstdc++ emits negative NaN as bare -nan.
+	r.Equal("NaN", out["n"])
+	r.Equal([]interface{}{"Infinity", float64(1)}, out["arr"])
+	// "info" must not be corrupted by the inf match (word boundary / quoted).
+	r.Equal("x", out["info"])
+	r.Equal(float64(2), out["d"])
+}
+
+// Test_serializePool_readBalanceInf pins the end-to-end inf transform: raw osd
+// dump bytes carrying a bare inf (and -nan) read_balance score must survive
+// sanitize -> unmarshal -> serializePool with inf landing as "Infinity" and the
+// whole call never erroring on the -nan gap (D1/D6).
+func Test_serializePool_readBalanceInf(t *testing.T) {
+	r := require.New(t)
+	raw := []byte(`{"pools": [{"pool_name": "p", "type": 1, "read_balance": {"score_type": "Fair distribution", "score_acting": inf, "primary_affinity_weighted": -nan, "raw_score_acting": 1.5}}]}`)
+
+	var osdDump struct {
+		Pools []map[string]interface{} `json:"pools"`
+	}
+	r.NoError(json.Unmarshal(sanitizeCephFloats(raw), &osdDump))
+	r.Len(osdDump.Pools, 1)
+
+	got := serializePool(osdDump.Pools[0], nil, nil)
+	rb := got["read_balance"].(map[string]interface{})
+	r.Equal("Infinity", rb["score_acting"])
+	r.Equal("NaN", rb["primary_affinity_weighted"])
+	r.Equal(float64(1.5), rb["raw_score_acting"])
+	r.Equal("Fair distribution", rb["score_type"])
+
+	// The serialized pool must round-trip into a protobuf Struct (the wire type).
+	_, err := structpb.NewStruct(got)
+	r.NoError(err)
 }

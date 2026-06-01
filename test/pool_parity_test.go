@@ -12,7 +12,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const poolWriteAccept = "application/vnd.ceph.api.v1.0+json"
+const (
+	poolWriteAccept = "application/vnd.ceph.api.v1.0+json"
+	poolReadAccept  = "application/vnd.ceph.api.v1.0+json"
+)
+
+// Test_Parity_Pool_List reads the pool list on both backends and diffs the
+// bodies. attrs scopes the response to stable, transform-exercising keys
+// (type int->string, crush_rule id->name, application_metadata object->list),
+// avoiding volatile per-call fields (last_change, read_balance scores) that
+// would differ between the two sequential requests without indicating a real
+// shape divergence.
+func Test_Parity_Pool_List(t *testing.T) {
+	r := parity.New(t)
+	call := parity.Call{
+		Method: "GET", Path: "/api/pool",
+		QueryParams: map[string]string{"attrs": "pool_name,type,size,crush_rule,application_metadata"},
+		Accept:      poolReadAccept,
+	}
+	for _, b := range r.Backends(call) {
+		resp, _ := r.DoRecord(b, call)
+		require.True(t, resp.StatusCode/100 == 2, "%s: list pools: status %d", b, resp.StatusCode)
+	}
+}
 
 func Test_Parity_Pool_Create(t *testing.T) {
 	r := parity.New(t)

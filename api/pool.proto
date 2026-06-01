@@ -9,6 +9,24 @@ package ceph;
 
 service Pool {
   rpc CreatePool (CreatePoolRequest) returns (google.protobuf.Empty) {}
+  rpc ListPools (ListPoolsRequest) returns (ListPoolsResponse) {}
+}
+
+// LIST POOLS
+message ListPoolsRequest {
+  // Comma-separated whitelist of pool attribute names to return. Absent ->
+  // all attributes. pool_name is always included regardless of the filter.
+  optional string attrs = 1;
+  // Augments each pool with pg_status + stats. Out of scope (stateful mgr
+  // time-series); a true value yields ErrNotImplemented.
+  optional bool stats = 2;
+}
+
+message ListPoolsResponse {
+  // Each pool object is heterogeneous and version-variant, so it is modeled
+  // as a Struct; the response is unwrapped to a bare JSON array via
+  // response_body so the wire matches the dashboard.
+  repeated google.protobuf.Struct pools = 1;
 }
 
 // CREATE POOL

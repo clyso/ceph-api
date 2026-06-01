@@ -574,6 +574,45 @@
       }
     },
     "/api/pool": {
+      "get": {
+        "operationId": "Pool_ListPools",
+        "responses": {
+          "200": {
+            "description": "Each pool object is heterogeneous and version-variant, so it is modeled\nas a Struct; the response is unwrapped to a bare JSON array via\nresponse_body so the wire matches the dashboard.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "attrs",
+            "description": "Comma-separated whitelist of pool attribute names to return. Absent -\u003e\nall attributes. pool_name is always included regardless of the filter.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "stats",
+            "description": "Augments each pool with pg_status + stats. Out of scope (stateful mgr\ntime-series); a true value yields ErrNotImplemented.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Pool"
+        ]
+      },
       "post": {
         "operationId": "Pool_CreatePool",
         "responses": {
@@ -2862,6 +2901,18 @@
         },
         "progress_events": {
           "type": "object"
+        }
+      }
+    },
+    "cephListPoolsResponse": {
+      "type": "object",
+      "properties": {
+        "pools": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Each pool object is heterogeneous and version-variant, so it is modeled\nas a Struct; the response is unwrapped to a bare JSON array via\nresponse_body so the wire matches the dashboard."
         }
       }
     },

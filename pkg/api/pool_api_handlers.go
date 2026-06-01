@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"sort"
 	"strconv"
+	"strings"
 
 	pb "github.com/clyso/ceph-api/api/gen/grpc/go"
 	"github.com/clyso/ceph-api/pkg/rados"
@@ -12,6 +15,7 @@ import (
 	"github.com/clyso/ceph-api/pkg/user"
 
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func NewPoolAPI(radosSvc *rados.Svc) pb.PoolServer {
@@ -199,4 +203,180 @@ func poolSetQuotaCmd(pool, field, val string) map[string]interface{} {
 		"field":  field,
 		"val":    val,
 	}
+}
+
+func (p *poolAPI) ListPools(ctx context.Context, req *pb.ListPoolsRequest) (*pb.ListPoolsResponse, error) {
+	if err := user.HasPermissions(ctx, user.ScopePool, user.PermRead); err != nil {
+		return nil, err
+	}
+
+	if req.Stats != nil && *req.Stats {
+		return nil, fmt.Errorf("%w: stats are not supported", types.ErrNotImplemented)
+	}
+
+	dumpRes, err := p.radosSvc.ExecMon(ctx, `{"prefix": "osd dump", "format": "json"}`)
+	if err != nil {
+		return nil, err
+	}
+	crushRes, err := p.radosSvc.ExecMon(ctx, `{"prefix": "osd crush dump", "format": "json"}`)
+	if err != nil {
+		return nil, err
+	}
+
+	var osdDump struct {
+		Pools []map[string]interface{} `json:"pools"`
+	}
+	if err := json.Unmarshal(sanitizeCephFloats(dumpRes), &osdDump); err != nil {
+		return nil, err
+	}
+	var crushDump struct {
+		Rules []struct {
+			RuleID   int    `json:"rule_id"`
+			RuleName string `json:"rule_name"`
+		} `json:"rules"`
+	}
+	if err := json.Unmarshal(crushRes, &crushDump); err != nil {
+		return nil, err
+	}
+	crushRules := make(map[int]string, len(crushDump.Rules))
+	for _, r := range crushDump.Rules {
+		crushRules[r.RuleID] = r.RuleName
+	}
+
+	attrs := parsePoolAttrs(req.Attrs)
+
+	resp := &pb.ListPoolsResponse{Pools: make([]*structpb.Struct, 0, len(osdDump.Pools))}
+	for _, pool := range osdDump.Pools {
+		serialized, err := structpb.NewStruct(serializePool(pool, attrs, crushRules))
+		if err != nil {
+			return nil, err
+		}
+		resp.Pools = append(resp.Pools, serialized)
+	}
+	return resp, nil
+}
+
+// parsePoolAttrs splits the comma-separated attrs whitelist. A nil/empty value
+// (no filtering requested) returns nil, meaning "all attributes".
+func parsePoolAttrs(attrs *string) []string {
+	if attrs == nil || *attrs == "" {
+		return nil
+	}
+	return strings.Split(*attrs, ",")
+}
+
+// serializePool reproduces the dashboard's Pool._serialize_pool: optional
+// attribute whitelisting (pool_name always kept) plus the four field
+// transforms. crushRules maps rule_id -> rule_name for the crush_rule lookup.
+func serializePool(pool map[string]interface{}, attrs []string, crushRules map[int]string) map[string]interface{} {
+	keys := attrs
+	if len(keys) == 0 {
+		keys = make([]string, 0, len(pool))
+		for k := range pool {
+			keys = append(keys, k)
+		}
+	}
+
+	res := make(map[string]interface{}, len(keys)+1)
+	for _, attr := range keys {
+		val, ok := pool[attr]
+		if !ok {
+			continue
+		}
+		switch attr {
+		case "type":
+			res[attr] = poolTypeName(val)
+		case "crush_rule":
+			res[attr] = poolCrushRuleName(val, crushRules)
+		case "application_metadata":
+			res[attr] = applicationMetadataKeys(val)
+		default:
+			res[attr] = val
+		}
+	}
+
+	res["pool_name"] = pool["pool_name"]
+	return res
+}
+
+// poolTypeName maps the numeric pool type to its wire string, mirroring the
+// dashboard's {1: 'replicated', 3: 'erasure'} lookup. JSON numbers decode to
+// float64. Documented divergence: the dashboard's dict index raises
+// KeyError -> 500 on an unmapped type (pool.py:111); we pass the raw value
+// through instead, since Ceph only ever emits 1 or 3 here (see task §11).
+func poolTypeName(v interface{}) interface{} {
+	n, ok := v.(float64)
+	if !ok {
+		return v
+	}
+	switch int(n) {
+	case 1:
+		return "replicated"
+	case 3:
+		return "erasure"
+	default:
+		return v
+	}
+}
+
+// poolCrushRuleName looks the crush rule_id up to its name. Documented
+// divergence: the dashboard's dict index raises KeyError -> 500 when the
+// rule_id is absent from the crush dump (pool.py:113); we pass the raw id
+// through instead (see task §11).
+func poolCrushRuleName(v interface{}, crushRules map[int]string) interface{} {
+	n, ok := v.(float64)
+	if !ok {
+		return v
+	}
+	if name, ok := crushRules[int(n)]; ok {
+		return name
+	}
+	return v
+}
+
+// applicationMetadataKeys turns the {"rgw": {}} object into a sorted list of
+// its keys (["rgw"]). Go map iteration is unordered; sorting keeps the output
+// array deterministic for the positional parity matcher (the dashboard's
+// list(dict.keys()) is insertion-ordered, but a stable order is what parity
+// needs).
+func applicationMetadataKeys(v interface{}) interface{} {
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return v
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := make([]interface{}, len(keys))
+	for i, k := range keys {
+		out[i] = k
+	}
+	return out
+}
+
+// cephFloatToken matches Ceph's bare inf/-inf/nan/-nan JSON float tokens, which
+// Go's encoding/json rejects (src/common/Formatter.cc dump_float streams the
+// double via std::ostream, so libstdc++ emits negative NaN as bare -nan). They
+// appear as a value after a ':' or '[' / ',', never inside a quoted string.
+var cephFloatToken = regexp.MustCompile(`([:\[,]\s*)(-?inf|-?nan)\b`)
+
+// sanitizeCephFloats rewrites bare inf/-inf/nan/-nan tokens to valid JSON
+// strings so the response unmarshals. inf/-inf become "Infinity" to match the
+// dashboard's read_balance conversion (pool.py:120-121). nan/-nan become "NaN":
+// the dashboard keeps a real NaN float (Python json parses bare nan), but Go's
+// encoding/json can neither parse nor emit a NaN float, so "NaN" is a forced
+// valid-JSON divergence (task §11; read_balance scores are excluded from the
+// parity whitelist, so this does not flap parity).
+func sanitizeCephFloats(b []byte) []byte {
+	return cephFloatToken.ReplaceAllFunc(b, func(m []byte) []byte {
+		sub := cephFloatToken.FindSubmatch(m)
+		prefix, tok := sub[1], string(sub[2])
+		repl := `"NaN"`
+		if tok == "inf" || tok == "-inf" {
+			repl = `"Infinity"`
+		}
+		return append(append([]byte{}, prefix...), repl...)
+	})
 }
