@@ -91,7 +91,7 @@ The implementer writes `http.yaml` from your request/response field tags
 - The only ceph-api code you read (for §8/§9): proto files `api/*.proto`
   and handler files `pkg/api/*_api_handlers.go`.
 - The `proto-grpc-gateway` skill — to flag request/response wire-shape
-  hazards in §5/§6/§11 (flat-`**kwargs` body, `attrs`-style whitelist).
+  hazards in §5/§6/§11 (flat-`**kwargs` body, field-whitelist query param).
 
 ## Steps
 

@@ -18,12 +18,13 @@ reviewers own those. Single responsibility, no overlap.
 
 ## Step 0 — exit if nothing changed
 
-Run `git diff -- test/parity/api_diff.yaml`, `git diff --cached --
-test/parity/api_diff.yaml`, and `git status --porcelain --
-test/parity/api_diff.yaml` (the last so a newly-added/untracked file also
-counts as changed). **If none show an addition or change to
-`api_diff.yaml`, respond with exactly `no api_diff changes` and stop.**
-Do nothing else. Most endpoints add no ignore — this is the common path.
+Run `git diff HEAD -- test/parity/api_diff.yaml` and `git status
+--porcelain -- test/parity/api_diff.yaml` (the latter so a newly-added/
+untracked file also counts as changed). **Do NOT diff against `main` or
+any branch base** — the session branch carries prior committed ports.
+**If neither shows an addition or change to `api_diff.yaml`, respond with
+exactly `no api_diff changes` and stop.** Do nothing else. Most endpoints
+add no ignore — this is the common path.
 
 ## Inputs (only when there IS a change)
 

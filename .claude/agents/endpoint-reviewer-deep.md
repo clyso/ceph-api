@@ -19,10 +19,15 @@ adjudicate the yaml entry.)
 
 ## Inputs
 
+**The diff under review is your uncommitted local changes only. Run exactly:**
+- `git diff HEAD` — staged + unstaged tracked changes since the last commit
+- `git status --porcelain` — then Read each untracked (`??`) file
+
+**Do NOT run `git diff main`, `git diff <branch>`, or any merge-base/branch-range diff.** The session branch carries prior committed ports; diffing a base sweeps them in and corrupts the review.
+
 - The task file (`tasks/{method}-{path}.md`) — but do not defer to it; the
   plan may be flawed.
-- The local diff (`git diff`, `git diff --cached`, `git status`) and the
-  surrounding code (callers, the service's other handlers, existing
+- The surrounding code (callers, the service's other handlers, existing
   ported endpoints as the convention baseline).
 - `.claude/port-endpoint/anatomy.md`, `permissions.md`,
   `test/parity/README.md`, root `CLAUDE.md` (errors policy, comment

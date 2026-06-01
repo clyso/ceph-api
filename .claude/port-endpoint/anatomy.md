@@ -183,9 +183,9 @@ across every endpoint of the resource ported so far** — not an isolated
 call per endpoint. Each endpoint type, once it exists in the group,
 **enables** cases on its siblings; when you add an endpoint you must
 **extend the existing flow** with the newly-enabled cases, not just append
-a standalone test. Two structural gaps (flow-not-extended,
-create-only-when-siblings-exist) are blocking mechanical-review failures;
-the rest of the matrix is reviewed case-by-case. Not optional either way.
+a standalone test. **Every required case below is enforced: a missing one
+is a blocking mechanical-review failure**, waivable only as N/A with a
+concrete applicability reason (re-adjudicated on re-review).
 
 The cases each endpoint type enables (✱ = no existing in-repo example, so
 assert the **actual** observed behavior rather than copying a precedent):
@@ -225,6 +225,22 @@ assert the **actual** observed behavior rather than copying a precedent):
     list-after-delete→absent to the GET/LIST steps above.
   - ✱ double-delete → assert actual behavior (`NotFound` vs idempotent).
 
+**Retrieval params (GET/LIST/any retrieval) are exhaustively testcased.**
+When the request accepts params that shape the response:
+- **Filters** (params selecting which items/fields return): every filter
+  gets **both** a **match** case (item present) **and** a **no-match** case
+  (item absent / empty result).
+- **Other response-shaping params** (add/drop response fields, configure
+  the response): each gets a case per meaningful value.
+
+Goal: cover every case with minimal code. These belong in the resource's
+one script-like flow; to avoid many fixtures, seed **one maximal-data
+resource** and exercise the param cases against it. A **table-driven
+sub-test** over {param value → expected outcome} is fine where it cuts
+boilerplate — but don't force a table when a couple of inline assertions
+read clearer. A default-only or single-value call is not enough — a
+silently-ignored param still returns 2xx.
+
 Cross-cutting:
 - **Replace the CLI workaround when its gRPC read-back arrives.** When you
   port a GET/LIST that exposes a field a `// TODO(crud-readback)`
@@ -232,7 +248,7 @@ Cross-cutting:
   via the new gRPC call** — the CLI channel exists only until the gRPC one
   does. Grep the resource's e2e for `TODO(crud-readback)` whenever you add
   an endpoint to the group. Leaving the CLI workaround behind once the
-  gRPC read-back is available is a flow-not-extended failure (check 7).
+  gRPC read-back is available is a (blocking) check-7 failure.
 - isolate with `t.Cleanup` using `context.Background()` so cleanup runs
   even if the test ctx is cancelled (users/cluster pattern).
 - **HTTP-wire fidelity:** the e2e drives the **gRPC client**, which

@@ -103,8 +103,9 @@ For each target endpoint:
 
 4. **Review** — spawn `endpoint-reviewer-mechanical`,
    `endpoint-reviewer-deep`, and `endpoint-reviewer-api-diff` **in
-   parallel** (single message, three Agent calls), each with the task-file
-   path and told to review the local diff. They return findings to you and
+   parallel** (single message, three Agent calls), each with **only** the
+   task-file path — add no diff-scope or review hints; the diff scope and
+   checklist are fixed in each reviewer's prompt. They return findings to you and
    you append them to §Review (ids `M*`/`M!*` mechanical, `D*` deep, `A*`
    api-diff; each a checkbox). The api-diff reviewer self-exits with
    `no api_diff changes` when the endpoint added no ignore — the common
@@ -115,17 +116,17 @@ For each target endpoint:
    one-line reason for not applying — it is told to push back on
    false positives). Re-run `make gate` / `make full-gate`.
    After it returns, mechanically check §Review (text only): every `M*`/`D*` finding is either ticked `[x]` or has a one-line dismissal reason. If any is unaddressed, resume the implementer.
-   - **Blocking findings (`M!*`) can't be waved off.** A `M!*` (only the
-     two structural E2E-flow cases — flow-not-extended,
-     create-only-when-siblings-exist — and the request-body-wire-shape
-     check) is resolved by an actual fix, not a dismissal reason. The one
+   - **Blocking findings (`M!*`) can't be waved off.** A `M!*` (a missing
+     required E2E matrix case, or the request-body-wire-shape check) is
+     resolved by an actual fix, not a dismissal reason. The one
      exception: the implementer may push back that a finding is a **false
      positive / not applicable** with a concrete reason (e.g. "GET isn't
      ported, so get-after-delete is N/A") — treat that as a fix attempt,
      not a free dismissal. Either way the boss can't read code, so
-     **re-spawn `endpoint-reviewer-mechanical`** on the new diff and proceed
-     only when it returns no `M!*` (the re-review adjudicates any
-     applicability claim). Loop fix→re-review within the 3-attempt cap; if
+     **re-spawn `endpoint-reviewer-mechanical`** (it re-derives each
+     requirement independently from anatomy + the e2e — a fix changes the
+     diff, an applicability claim changes nothing) and proceed only when it
+     returns no `M!*`. Loop fix→re-review within the 3-attempt cap; if
      still present after 3, STOP the pipeline and report (don't commit).
 
 6. **Final check** — gates green, and every `A*` finding from the

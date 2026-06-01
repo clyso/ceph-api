@@ -117,6 +117,12 @@ mirror a dashboard status wart. Two distinct kinds of divergence:
 6. Invariants: recording the same endpoint twice in one test fatals
    (split tests). The Dash and Ours requests for an endpoint must be
    byte-identical except Authorization/Content-Length.
+7. **Maximize response coverage.** Design each recorded request so the
+   endpoint returns its **fullest body** (enable every response-expanding
+   param; request all fields). Never narrow a request to dodge a mismatch —
+   absorb a genuinely volatile/nondeterministic field with a narrow
+   `api_diff.yaml` path + reason instead. A request that shrinks the
+   returned body is a coverage regression.
 
 ## api_diff.yaml policy
 
