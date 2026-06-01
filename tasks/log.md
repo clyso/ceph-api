@@ -36,3 +36,26 @@
 - PARTIAL port: `configuration`/`rbd_mirroring` (librbd/mgr paths) and the
   async-task progress polling are out of scope; the former return
   ErrNotImplemented, the latter is a documented status-class/body divergence.
+
+## Orchestrator note for GET /api/pool
+
+- 1 implement pass + 1 fix pass. Both gates green.
+- Investigator correctly classified this as `reconstruct` (zero mon
+  commands; rebuilt from `osd dump` + `osd crush dump`). Modeling each pool
+  as `google.protobuf.Struct` (60+ drifting keys) worked cleanly with
+  `response_body` for the bare-array unwrap.
+- Deep reviewer was strong here: caught a real `-nan` sanitizer-regex crash
+  (D1), redundant inf-handling indirection (D2), nondeterministic
+  `application_metadata` map-iteration order (D3, dup of mechanical M1), and
+  two undocumented float/enum divergences (D4 type/crush_rule passthrough vs
+  dashboard KeyError→500; D5 nan→"NaN"). All fixed/documented, no api_diff
+  needed.
+- The mechanical reviewer was explicitly told to diff `HEAD`+untracked (not
+  `main`) to avoid the POST /api/pool M1 false-positive; no scope-creep
+  false positive this time. Confirms the prior log note's fix suggestion.
+- PARTIAL: `stats=true` (mgr time-series) returns ErrNotImplemented; the
+  default no-stats list path is fully ported.
+- Recurring: the harness emits stale compile-error diagnostics
+  (pb.ListPools* undefined, flags/ratio type mismatches) right after proto
+  edits, before `make proto` regen settles — `make gate` is green. Not a
+  real failure; boss verifies via the gate, not the diagnostics.
