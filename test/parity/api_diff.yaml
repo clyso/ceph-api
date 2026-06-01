@@ -19,3 +19,18 @@
 # divergences (RFC3339-vs-unix-seconds, int64-as-string-vs-int) so they
 # do not need per-endpoint ignores. See CLAUDE.md → "Parity vs API
 # quality" for the decision rule.
+
+"POST /api/pool":
+  - path: $
+    reason: >-
+      Dashboard wraps create in an async TaskManager job (@pool_task) and
+      returns 202 with a NON-EMPTY task envelope
+      {"name":"pool/create","metadata":{"pool_name":...}}. ceph-api runs the
+      mon commands synchronously and returns 200 with an EMPTY body
+      (grpc-gateway's default for an Empty response). Both are 2xx. A root `$`
+      ignore is required (not per-field $.name/$.metadata): the parity
+      framework's body-presence guard in recorder.go treats our `{}` as empty
+      and the dashboard envelope as non-empty, which fires a
+      "body presence diverges" error before Compare runs its field ignores;
+      only a root `$` ignore suppresses that presence check. We intentionally
+      do not reimplement the dashboard's task queue.

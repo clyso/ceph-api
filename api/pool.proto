@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/clyso/ceph-api/api/ceph;pb";
+
+package ceph;
+
+service Pool {
+  rpc CreatePool (google.protobuf.Struct) returns (google.protobuf.Empty) {}
+}
