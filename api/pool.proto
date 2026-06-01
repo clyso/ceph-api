@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/clyso/ceph-api/api/ceph;pb";
+
+package ceph;
+
+service Pool {
+  rpc CreatePool (CreatePoolRequest) returns (google.protobuf.Empty) {}
+}
+
+// CREATE POOL
+// The dashboard Pool.create signature carries a flat **kwargs body: every
+// key below is a top-level JSON field forwarded to osd pool create /
+// osd pool set / osd pool set-quota / osd pool application enable.
+message CreatePoolRequest {
+  string pool = 1;
+  int32 pg_num = 2;
+  // Wire value "replicated" or "erasure" (validated in the handler; not an
+  // enum because the existing PoolType enum's zero value is misspelled).
+  string pool_type = 3;
+  optional string erasure_code_profile = 4;
+  // The dashboard frontend sends flags as a JSON array (e.g. ["ec_overwrites"]);
+  // only the ec_overwrites entry is inspected.
+  repeated string flags = 5;
+  repeated string application_metadata = 6;
+  optional string rule_name = 7;
+
+  // Out of scope for this port (librbd / mgr rbd_support paths): supplying a
+  // present configuration object (including an empty {}) yields
+  // ErrNotImplemented rather than a silent drop.
+  google.protobuf.Struct configuration = 8;
+  optional bool rbd_mirroring = 9;
+
+  // Flat **kwargs set-keys the create dialog commonly sends.
+  optional string pg_autoscale_mode = 10;
+  optional int32 size = 11;
+  optional int64 quota_max_bytes = 12;
+  optional int64 quota_max_objects = 13;
+  optional string compression_mode = 14;
+  optional string compression_algorithm = 15;
+  // Ratio fields are sent by the frontend as JSON numbers (e.g. 0.8) and
+  // stringified in the handler for the osd pool set CephString val.
+  optional double compression_required_ratio = 16;
+  optional int64 compression_min_blob_size = 17;
+  optional int64 compression_max_blob_size = 18;
+  optional int64 target_size_bytes = 19;
+  optional double target_size_ratio = 20;
+  optional int32 pg_num_min = 21;
+  optional int32 pg_num_max = 22;
+}

@@ -81,6 +81,10 @@ http:
       body: "*"
     - selector: ceph.CrushRule.DeleteRule
       delete: /api/crush_rule/{name}
+    # Pools
+    - selector: ceph.Pool.CreatePool
+      post: /api/pool
+      body: "*"
     # Status
     - selector: ceph.Status.GetCephStatus
       get: /api/status/ceph

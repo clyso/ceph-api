@@ -19,3 +19,15 @@
 # divergences (RFC3339-vs-unix-seconds, int64-as-string-vs-int) so they
 # do not need per-endpoint ignores. See CLAUDE.md → "Parity vs API
 # quality" for the decision rule.
+
+"POST /api/pool":
+  - path: $
+    reason: >-
+      Dashboard runs pool create as a background Task and returns a non-empty
+      task-descriptor body ({"name":"pool/create","metadata":{...}}). ceph-api
+      has no async-task framework: it runs the mon command sequence
+      synchronously and returns an empty body. Only the response body
+      presence/content diverges irreducibly, and `$` is the single token that
+      suppresses that body check; no narrower per-field path applies. Status
+      class is equal (both 2xx) and is compared independently of this ignore.
+      Migration note: clients must not depend on the task-descriptor envelope.

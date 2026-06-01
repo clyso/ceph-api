@@ -7,7 +7,7 @@ over rados — same as cluster, crush_rule, status, users, roles).
 ## Tier 1 — popular Ceph, mon/mgr commands
 
 ### pool
-- [ ] POST /api/pool
+- [x] POST /api/pool  (**PARTIAL!**: `configuration` (librbd) and `rbd_mirroring` (mgr) return ErrNotImplemented; async-task progress not reproduced — see task §11 / §Open decisions)
 - [ ] GET /api/pool
 - [ ] GET /api/pool/{pool_name}
 - [ ] PUT /api/pool/{pool_name}

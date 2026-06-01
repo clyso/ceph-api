@@ -106,10 +106,12 @@ func Start(ctx context.Context, conf config.Config, build config.Build) error {
 
 	crushRuleAPI := api.NewCrushRuleAPI(radosSvc)
 
+	poolAPI := api.NewPoolAPI(radosSvc)
+
 	statusAPI := api.NewStatusAPI(radosSvc)
 
 	authChecker := auth.AuthFunc(userSvc, authServer.Provider(), authServer.GetPublicKey)
-	grpcServer := api.NewGrpcServer(conf.Api, clusterAPI, usersAPI, authAPI, crushRuleAPI, statusAPI, authChecker, tp, conf.Log)
+	grpcServer := api.NewGrpcServer(conf.Api, clusterAPI, usersAPI, authAPI, crushRuleAPI, poolAPI, statusAPI, authChecker, tp, conf.Log)
 
 	var metricsHandler http.HandlerFunc
 	if conf.Metrics.Enabled {

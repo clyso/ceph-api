@@ -23,6 +23,9 @@
       "name": "CrushRule"
     },
     {
+      "name": "Pool"
+    },
+    {
       "name": "Status"
     },
     {
@@ -567,6 +570,40 @@
         ],
         "tags": [
           "CrushRule"
+        ]
+      }
+    },
+    "/api/pool": {
+      "post": {
+        "operationId": "Pool_CreatePool",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "CREATE POOL\nThe dashboard Pool.create signature carries a flat **kwargs body: every\nkey below is a top-level JSON field forwarded to osd pool create /\nosd pool set / osd pool set-quota / osd pool application enable.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cephCreatePoolRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Pool"
         ]
       }
     },
@@ -2433,6 +2470,100 @@
           "title": "keyring file format - if import_data is set then other fields ignored"
         }
       }
+    },
+    "cephCreatePoolRequest": {
+      "type": "object",
+      "properties": {
+        "pool": {
+          "type": "string"
+        },
+        "pg_num": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pool_type": {
+          "type": "string",
+          "description": "Wire value \"replicated\" or \"erasure\" (validated in the handler; not an\nenum because the existing PoolType enum's zero value is misspelled)."
+        },
+        "erasure_code_profile": {
+          "type": "string"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The dashboard frontend sends flags as a JSON array (e.g. [\"ec_overwrites\"]);\nonly the ec_overwrites entry is inspected."
+        },
+        "application_metadata": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rule_name": {
+          "type": "string"
+        },
+        "configuration": {
+          "type": "object",
+          "description": "Out of scope for this port (librbd / mgr rbd_support paths): supplying a\npresent configuration object (including an empty {}) yields\nErrNotImplemented rather than a silent drop."
+        },
+        "rbd_mirroring": {
+          "type": "boolean"
+        },
+        "pg_autoscale_mode": {
+          "type": "string",
+          "description": "Flat **kwargs set-keys the create dialog commonly sends."
+        },
+        "size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "quota_max_bytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "quota_max_objects": {
+          "type": "string",
+          "format": "int64"
+        },
+        "compression_mode": {
+          "type": "string"
+        },
+        "compression_algorithm": {
+          "type": "string"
+        },
+        "compression_required_ratio": {
+          "type": "number",
+          "format": "double",
+          "description": "Ratio fields are sent by the frontend as JSON numbers (e.g. 0.8) and\nstringified in the handler for the osd pool set CephString val."
+        },
+        "compression_min_blob_size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "compression_max_blob_size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "target_size_bytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "target_size_ratio": {
+          "type": "number",
+          "format": "double"
+        },
+        "pg_num_min": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pg_num_max": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "CREATE POOL\nThe dashboard Pool.create signature carries a flat **kwargs body: every\nkey below is a top-level JSON field forwarded to osd pool create /\nosd pool set / osd pool set-quota / osd pool application enable."
     },
     "cephCreateRuleRequest": {
       "type": "object",
