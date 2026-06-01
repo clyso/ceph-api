@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/pkg/stdcopy"
 	mobycontainer "github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/api/types/network"
 	"github.com/testcontainers/testcontainers-go"
@@ -243,15 +244,8 @@ func (e *CephEnv) waitMgrService(ctx context.Context, moduleName string) error {
 }
 
 func (e *CephEnv) execOK(ctx context.Context, cmd []string) error {
-	exitCode, reader, err := e.container.Exec(ctx, cmd, tcexec.Multiplexed())
-	if err != nil {
-		return fmt.Errorf("exec %v: %w", cmd, err)
-	}
-	if exitCode != 0 {
-		out, _ := io.ReadAll(reader)
-		return fmt.Errorf("exec %v: exit %d: %s", cmd, exitCode, bytes.TrimSpace(out))
-	}
-	return nil
+	_, err := e.Exec(ctx, cmd)
+	return err
 }
 
 func (e *CephEnv) execLog(ctx context.Context, cmd []string) error {
@@ -271,6 +265,27 @@ func (e *CephEnv) writeFile(ctx context.Context, path, content string) error {
 
 func (e *CephEnv) Container() testcontainers.Container {
 	return e.container
+}
+
+// Exec runs cmd in the ceph container and returns its trimmed stdout (stderr is
+// captured separately and only surfaced on failure). It is an independent
+// read-back channel for e2e tests, separate from the gRPC API under test. A
+// non-zero exit code is reported as an error carrying stdout and stderr.
+func (e *CephEnv) Exec(ctx context.Context, cmd []string) (string, error) {
+	exitCode, reader, err := e.container.Exec(ctx, cmd)
+	if err != nil {
+		return "", fmt.Errorf("exec %v: %w", cmd, err)
+	}
+	var stdout, stderr bytes.Buffer
+	if _, err := stdcopy.StdCopy(&stdout, &stderr, reader); err != nil {
+		return "", fmt.Errorf("exec %v: read output: %w", cmd, err)
+	}
+	out := strings.TrimRight(stdout.String(), " \t\r\n")
+	if exitCode != 0 {
+		errOut := strings.TrimRight(stderr.String(), " \t\r\n")
+		return "", fmt.Errorf("exec %v: exit %d: stdout=%q stderr=%q", cmd, exitCode, out, errOut)
+	}
+	return out, nil
 }
 
 // MappedURL returns an http/https URL on the host that maps to the given

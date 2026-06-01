@@ -174,3 +174,71 @@ e2e/parity only for what the cheaper layers can't cover:
 
 The ordered build procedure lives in the implementer agent prompt; this
 file is the per-layer reference it points back to.
+
+## E2E flow completeness (resource group)
+
+Endpoints are CRUD groups per resource. The e2e for a resource is **one
+script-like flow** that must exercise the **maximal realistic interaction
+across every endpoint of the resource ported so far** — not an isolated
+call per endpoint. Each endpoint type, once it exists in the group,
+**enables** cases on its siblings; when you add an endpoint you must
+**extend the existing flow** with the newly-enabled cases, not just append
+a standalone test. Two structural gaps (flow-not-extended,
+create-only-when-siblings-exist) are blocking mechanical-review failures;
+the rest of the matrix is reviewed case-by-case. Not optional either way.
+
+The cases each endpoint type enables (✱ = no existing in-repo example, so
+assert the **actual** observed behavior rather than copying a precedent):
+
+- **CREATE present:**
+  - happy-path create → `NoError`
+  - missing required field → `InvalidArgument`
+  - ✱ invalid enum / out-of-range value → error.
+  - ✱ re-create when it already exists → assert what the backend actually
+    does (idempotent `NoError`, or `AlreadyExists`).
+  - if a created setting is **not yet observable** through a ported
+    GET/LIST (e.g. only CREATE exists), assert it landed through an
+    **independent channel**: `cephEnv.Exec(ctx, cmd)` runs a `ceph` CLI
+    command in the container and returns its output, e.g.
+    `out, _ := cephEnv.Exec(tstCtx, []string{"ceph","osd","pool","get",name,"size","-f","json"})`
+    then `r.Contains(out, ...)`. Don't treat the create's own 2xx as proof.
+    This CLI read-back is a **temporary workaround**, not a permanent
+    assertion — tag the exact line `// TODO(crud-readback): replace with
+    <Get/List> once ported` so it's greppable and gets migrated (see the
+    Cross-cutting replacement rule).
+- **GET-by-id present (with CREATE):**
+  - get BEFORE create / nonexistent id → `NotFound`
+    (`Test_GetNonExistingRule`).
+  - get AFTER create → entity present **and the fields the create set are
+    verified** (users `Test_Users_CRUD` checks every field).
+  - get AFTER update → the change landed (if UPDATE present).
+  - get AFTER delete → `NotFound` (if DELETE present) — crush_rule does this.
+- **LIST present (with CREATE):**
+  - list AFTER create → contains the new entity; where cheap, assert
+    `count == baseline+1` (cluster `Test_ClusterUsers`).
+  - list AFTER delete → absent / count back to baseline (if DELETE present).
+- **UPDATE/SET present:**
+  - update → GET/LIST-after verifies the change; if it mutates shared
+    cluster state, restore it in `t.Cleanup` (cluster status pattern).
+- **DELETE present — the trigger to revisit the whole flow:**
+  - delete → `NoError`; THEN add get-after-delete→`NotFound` and
+    list-after-delete→absent to the GET/LIST steps above.
+  - ✱ double-delete → assert actual behavior (`NotFound` vs idempotent).
+
+Cross-cutting:
+- **Replace the CLI workaround when its gRPC read-back arrives.** When you
+  port a GET/LIST that exposes a field a `// TODO(crud-readback)`
+  `cephEnv.Exec` assert was checking, **delete that CLI read-back and assert
+  via the new gRPC call** — the CLI channel exists only until the gRPC one
+  does. Grep the resource's e2e for `TODO(crud-readback)` whenever you add
+  an endpoint to the group. Leaving the CLI workaround behind once the
+  gRPC read-back is available is a flow-not-extended failure (check 7).
+- isolate with `t.Cleanup` using `context.Background()` so cleanup runs
+  even if the test ctx is cancelled (users/cluster pattern).
+- **HTTP-wire fidelity:** the e2e drives the **gRPC client**, which
+  **bypasses the grpc-gateway** — so a request-body-shape bug (flat keys
+  silently dropped by `DiscardUnknown`, see the `proto-grpc-gateway`
+  skill) is **invisible** to e2e. The parity test is the only layer on the
+  real HTTP wire: for a body with many keys, the parity case must send the
+  dashboard's **real (flat) body**, and a GET/LIST parity (or independent
+  read-back) must confirm the values actually landed.

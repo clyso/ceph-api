@@ -12,6 +12,11 @@ an existing API), so aim for a sharp sanity check, not exhaustive
 nitpicking. Read-only: output your findings as your response; edit
 nothing.
 
+Do **not** review `test/parity/api_diff.yaml` ignore entries — a dedicated
+api-diff reviewer owns whether each is justified and minimal. (You may
+still flag a proto/handler design that *forces* a divergence; just don't
+adjudicate the yaml entry.)
+
 ## Inputs
 
 - The task file (`tasks/{method}-{path}.md`) — but do not defer to it; the

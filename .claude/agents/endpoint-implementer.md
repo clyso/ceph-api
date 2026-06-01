@@ -17,7 +17,11 @@ Link to task file - info about your task. Contains endpoint name to port and Req
   in-repo analogue it names is your *starting* template — confirm it fits
   and match its style.
 - `.claude/port-endpoint/anatomy.md` — the layer-by-layer reference
-  (proto / http.yaml / handler / registration conventions + Testing layers).
+  (proto / http.yaml / handler / registration conventions + Testing layers
+  + §"E2E flow completeness" for the e2e you must write in step 9).
+- The `proto-grpc-gateway` skill — read before designing the proto/http
+  (steps 2–3): proto-type choice and the request/response body wire-shape
+  rules (the actionable rule is restated in step 2).
 - `test/parity/README.md` — how to add a parity scenario, what the matcher
   coerces, the allowed-vs-forbidden parity edits, and the status-class
   divergence policy. Read when working on tests or when e2e/parity fails.
@@ -60,6 +64,10 @@ Follow §Data source in the task file for the handler's strategy
    - proto timestamps have to be used instead of int32 - only deviation from dashboard allowed by default.
    - enums: value names must match the dashboard wire strings exactly;
      use `optional` when a required field must detect absence (anatomy §Proto).
+   - **request/response wire-shape** → model per the `proto-grpc-gateway`
+     skill (every dashboard body key maps to a field; flat `**kwargs` →
+     top-level fields or a `Struct` body, never a nested `map`, which the
+     gateway silently drops).
 3. add http mappings **http.yaml** (`api/http.yaml`): selector block — path params,
    `body:"*"` for POST/PUT, `response_body` to unwrap list/single.
 4. **`make proto`** to regenerate stubs + openapi.
@@ -84,14 +92,43 @@ Follow §Data source in the task file for the handler's strategy
    §Testing layers; test at the lowest layer that catches the bug before
    reaching for Docker e2e.
 8. run `make gate` — compiles, lint clean, unit tests pass.
-9. Add **E2E test** (`test/<svc>_api_test.go`, `//go:build cgo`): a
-   script-like create→get→list→delete→404 flow with cleanup, against the
-   real cluster via the generated client. Cover edge cases: second
-   delete, idempotency, validation errors. e2e tests are imperative, script-like long flows that emulate real-world usage and complicated flows. Extend an existing relevant test to call the new endpoint, or create a new one. If it is the first endpoint of the CRUD set for a resource, a long flow isn't possible — just call create; if you're adding one of the last CRUD endpoints for a resource, extend the existing test to cover the previous endpoints.
+9. Add **E2E test** (`test/<svc>_api_test.go`, `//go:build cgo`), against
+   the real cluster via the generated client. This is **one script-like
+   flow per resource**, not an isolated call. Two structural gaps are
+   **blocking** mechanical-review failures (flow-not-extended,
+   create-only-when-siblings-exist); the rest of the matrix is reviewed
+   tick-or-justify — but write the full flow now regardless. Follow
+   anatomy.md §"E2E flow completeness":
+   - If this is the **first** endpoint of the resource, the flow can't loop
+     yet — call it; if a created setting isn't observable through any
+     ported endpoint, assert it via the independent channel
+     `cephEnv.Exec(ctx, cmd)` (returns `ceph` CLI output to assert on), not
+     the call's own 2xx. This is a **temporary workaround** — tag the line
+     `// TODO(crud-readback): replace with <Get/List> once ported` so it's
+     greppable.
+   - If siblings are **already ported**, you MUST extend the existing flow
+     with every case this endpoint newly enables — walk the anatomy matrix
+     for the now-present endpoint types and add each (don't append a
+     standalone test). A bare create-only test when siblings exist fails the
+     blocking gate. When adding a GET/LIST, grep the resource's e2e for
+     `TODO(crud-readback)` and **replace** any `cephEnv.Exec` CLI read-back
+     this endpoint can now observe with the gRPC read-back — don't leave
+     both.
+   - Remember the e2e drives the **gRPC client**, which **bypasses the
+     HTTP gateway** — it cannot catch a request-body-shape bug. That class
+     is covered by the proto wire-shape (step 2) and the parity test
+     (step 10), not here.
 10. **Parity test** (`test/<svc>_parity_test.go`): record this endpoint on
    both backends, assert 2xx, with isolated setup/cleanup. Both coverage
    gates require the http route AND the parity test, so this is not
-   optional.
+   optional. The parity layer is the **only** one on the real HTTP wire,
+   so it carries the request-shape check the gRPC e2e can't:
+   - send the dashboard's **real body shape** (flat top-level keys as the
+     dashboard sends them — not a shape you invented to fit the proto).
+   - if the body sets state that a GET/LIST endpoint can read back and that
+     endpoint is ported, add a parity case that reads it back on both
+     backends and diffs — so a silently-dropped key surfaces as a body
+     diff, not a false 2xx pass.
 11. Make sure `make full-gate` passes — it runs the full e2e + parity suite in Docker.
 
 ### Quick test iteration (recipe)
@@ -111,8 +148,10 @@ to justify or remove an entry, do so. Acceptable reason to ignore some field onl
 ## Review findings
 
 You can be resumed with a prompt to address review feedback. Read the task file's Review section — it is appended to the end.
-Review issues are an md list with checkboxes and issue id `M*`/`D*`. M* are mechanical; false positives are not expected but still possible.
-D* are deep review, finding bugs, performance and security issues — but be critical. If an issue is valid, fix it and mark the checkbox done `[x]`. If it is a false positive, skip it — leave the checkbox unmarked and add a reason why it was dismissed.
+Review issues are an md list with checkboxes. Be critical — false positives are possible. Handle by finding id:
+- `M*` (mechanical, checklist) and `D*` (deep — bugs, perf, security): if valid, fix it and tick `[x]`; if a false positive, leave it unticked with a one-line dismissal reason. Dismissal-by-reason is accepted here.
+- `M!*` (**blocking** — only the two structural E2E-flow cases and the request-body wire-shape check): a dismissal reason alone will **not** clear these. Either fix it, or — if you genuinely believe it's a false positive / not applicable — state a **concrete applicability reason** (e.g. "GET isn't ported, so get-after-delete is N/A"). That is re-adjudicated: the boss re-spawns the mechanical reviewer and won't proceed until no `M!*` remains, so a hand-wave just costs a wasted round.
+- `A*` (api-diff): address per the **## api_diff.yaml** section above — fix the proto/matcher and remove the entry, or narrow/justify it as the finding directs.
 
 ## When to HARD STOP
 

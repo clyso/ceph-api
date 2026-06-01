@@ -41,7 +41,13 @@ for every non-obvious claim. Use these `###` subsections:
    timestamp? signed/unsigned? int/float? 32/64-bit? Flag `int64`,
    `google.protobuf.Timestamp`, camelCase (`json_name`). The openapi body
    **can be wrong, not just incomplete** — confirm from controller source
-   AND a live curl.
+   AND a live curl. Capture **every top-level body key the real request
+   sends** (a `**kwargs` controller forwards arbitrary flat keys — list the
+   common ones from live dialogs). Per the `proto-grpc-gateway` skill, flag
+   a flat open-key (`**kwargs`) body explicitly: it must become typed
+   top-level fields or a `Struct` body, NEVER a nested `map` (the gateway
+   silently drops flat keys with no matching field) — call this out so the
+   implementer can't mis-model it into a map.
 6. **Response** — concrete JSON + proto-type annotations + statuses. Note
    shaping transforms the handler must code (int→enum-string, id→name,
    dict→list) and any field whose wire type needs special proto handling
@@ -84,6 +90,8 @@ The implementer writes `http.yaml` from your request/response field tags
   response body (curl) and the exact mon commands (`ceph.audit.log`).
 - The only ceph-api code you read (for §8/§9): proto files `api/*.proto`
   and handler files `pkg/api/*_api_handlers.go`.
+- The `proto-grpc-gateway` skill — to flag request/response wire-shape
+  hazards in §5/§6/§11 (flat-`**kwargs` body, `attrs`-style whitelist).
 
 ## Steps
 
